@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "44164027799",
+    "firebase_url": "https://my-group-events-default-rtdb.firebaseio.com",
+    "project_id": "my-group-events",
+    "storage_bucket": "my-group-events.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44164027799:android:9347d15058b117bec7a0d2",
+        "android_client_info": {
+          "package_name": "lironmatityahu.flutter_app_test"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "44164027799-u9hoijbubca0rnnirag81j3oss26gitp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArRnNh2laQuG6A0enLl_AifcMonfoodbQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "44164027799-u9hoijbubca0rnnirag81j3oss26gitp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44164027799:android:066ce89991baa49bc7a0d2",
+        "android_client_info": {
+          "package_name": "lironmatityahu.group_events"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "44164027799-u9hoijbubca0rnnirag81j3oss26gitp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArRnNh2laQuG6A0enLl_AifcMonfoodbQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "44164027799-u9hoijbubca0rnnirag81j3oss26gitp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44164027799:android:3ded52cb77da6fbac7a0d2",
+        "android_client_info": {
+          "package_name": "lironmatityahu.my_group_events"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "44164027799-u9hoijbubca0rnnirag81j3oss26gitp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArRnNh2laQuG6A0enLl_AifcMonfoodbQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "44164027799-u9hoijbubca0rnnirag81j3oss26gitp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
