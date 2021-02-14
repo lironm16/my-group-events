@@ -23,10 +23,10 @@ class BackgroundPainter extends CustomPainter {
           ..color = Colors.blueGrey[900]
           ..style = PaintingStyle.fill,
         orangePaint = Paint()
-          ..color = Colors.orange.shade400
+          ..color = Colors.purple.shade400
           ..style = PaintingStyle.fill,
         linePaint = Paint()
-          ..color = Colors.orange[300]
+          ..color = Colors.purple[300]
           ..style = PaintingStyle.stroke
           ..strokeWidth = 4;
 

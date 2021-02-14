@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_signin_example/widget/background_painter.dart';
-import 'package:google_signin_example/widget/google_signup_button_widget.dart';
+import 'package:flutter_app_test/widget/background_painter.dart';
+import 'package:flutter_app_test/widget/google_signup_button_widget.dart';
+import 'package:flutter_app_test/widget/facebook_signup_button_widget.dart';
 
 class SignUpWidget extends StatelessWidget {
   @override
@@ -32,6 +33,7 @@ class SignUpWidget extends StatelessWidget {
           ),
           Spacer(),
           GoogleSignupButtonWidget(),
+          FacebookSignupButtonWidget(),
           SizedBox(height: 12),
           Text(
             'Login to continue',
