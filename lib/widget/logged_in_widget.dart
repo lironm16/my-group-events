@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app_test/overview/collapsing_navigation_drawer.dart';
 import 'package:flutter_app_test/provider/facebook_sign_in.dart';
 import 'package:flutter_app_test/provider/google_sign_in.dart';
+import 'package:flutter_app_test/ui/homepage/home_page.dart';
 import 'package:provider/provider.dart';
 
 class LoggedInWidget extends StatelessWidget {
@@ -39,17 +40,15 @@ class LoggedInWidget extends StatelessWidget {
           )
         ],
       ),
-      body: entries.length > 0
-          ? ListView.builder(
-              itemCount: entries.length,
-              itemBuilder: (BuildContext context, int index) {
-                return ListTile(
-                  title: Text('Item ${index + 1}'),
-                  tileColor: Colors.amber[colorCodes[index]],
-                );
-              },
-            )
-          : Center(child: const Text('No items')),
+      body: MaterialApp(
+        title: 'Flutter Demo',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          scaffoldBackgroundColor: Color(0xFFFFFFFF),
+          primaryColor: Color(0xFFFF4700),
+        ),
+        home: HomePage(),
+      ),
       drawer: CollapsingNavigationDrawer(),
     );
   }

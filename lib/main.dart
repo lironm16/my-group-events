@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_app_test/page/home_page.dart';
+import 'package:flutter_app_test/page/sign_in_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 Future<void> main() async {
@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: title,
         theme: ThemeData(primarySwatch: Colors.deepOrange),
-        home: HomePage(),
+        home: SignInPage(),
       );
 }
 

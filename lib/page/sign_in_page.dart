@@ -7,7 +7,7 @@ import 'package:flutter_app_test/widget/logged_in_widget.dart';
 import 'package:flutter_app_test/widget/sign_up_widget.dart';
 import 'package:provider/provider.dart';
 
-class HomePage extends StatelessWidget {
+class SignInPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         body: ChangeNotifierProvider(
