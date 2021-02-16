@@ -15,17 +15,29 @@ final TextStyle whiteHeadingTextStyle = TextStyle(
 final TextStyle categoryTextStyle = TextStyle(
   fontSize: 14.0,
   fontWeight: FontWeight.bold,
-  color: Color(0xFFFFFFFF),
+  color: Color(0xFFfcc56a),
 );
 
 final TextStyle selectedCategoryTextStyle = categoryTextStyle.copyWith(
-  color: Color(0xFFFF4700),
+  color: Color(0xFF436372),
 );
 
 final TextStyle eventTitleTextStyle = TextStyle(
   fontSize: 24.0,
   fontWeight: FontWeight.bold,
-  color: Color(0xFF000000),
+  color: Color(0xFFfcc56a),
+);
+
+final TextStyle eventTitleTextStyle2 = TextStyle(
+  fontSize: 24.0,
+  fontWeight: FontWeight.bold,
+  color: Color(0xFF436372),
+);
+
+final TextStyle cardStyle = TextStyle(
+  fontSize: 18.0,
+  fontWeight: FontWeight.bold,
+  color: Color(0xFF436372),
 );
 
 final TextStyle eventWhiteTitleTextStyle = TextStyle(
@@ -36,13 +48,13 @@ final TextStyle eventWhiteTitleTextStyle = TextStyle(
 
 final TextStyle eventLocationTextStyle = TextStyle(
   fontSize: 20.0,
-  color: Color(0xFF000000),
+  color: Color(0xFFFFFFFF),
 );
 
 final TextStyle guestTextStyle = TextStyle(
   fontSize: 16.0,
   fontWeight: FontWeight.w800,
-  color: Color(0xFF000000),
+  color: Color(0xFFfcc56a),
 );
 
 final TextStyle punchLine1TextStyle = TextStyle(
@@ -51,4 +63,5 @@ final TextStyle punchLine1TextStyle = TextStyle(
   color: Color(0xFFFF4700),
 );
 
-final TextStyle punchLine2TextStyle = punchLine1TextStyle.copyWith(color: Color(0xFF000000));
+final TextStyle punchLine2TextStyle =
+    punchLine1TextStyle.copyWith(color: Color(0xFF000000));

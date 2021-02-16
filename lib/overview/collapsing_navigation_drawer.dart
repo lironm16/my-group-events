@@ -22,7 +22,7 @@ class _CollapsingNavigationDrawerState
       elevation: 80,
       child: Container(
         width: 220.0,
-        color: drawerBackgroundColor,
+        color: drawerBackgroundColor2,
         child: Column(
           children: <Widget>[
             SizedBox(height: 50),

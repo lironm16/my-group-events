@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app_test/overview/theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CollapsingListTile extends StatefulWidget {
   final String title;
@@ -27,22 +28,23 @@ class _CollapsingListTileState extends State<CollapsingListTile> {
             color: widget.isSelected
                 ? Colors.transparent.withOpacity(0.3)
                 : Colors.transparent),
-        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Text(
               widget.title,
-              style: widget.isSelected
-                  ? listTitleSelectedTextStyle
-                  : listTitleDefaultTextStyle,
+              style: GoogleFonts.amaticaSc(
+                  textStyle: widget.isSelected
+                      ? listTitleSelectedTextStyle
+                      : listTitleDefaultTextStyle),
             ),
             SizedBox(
               width: 10.0,
             ),
             Icon(
               widget.icon,
-              color: widget.isSelected ? selectedColor : Colors.white30,
+              color: widget.isSelected ? selectedColor2 : Colors.white30,
               size: 38.0,
             ),
           ],

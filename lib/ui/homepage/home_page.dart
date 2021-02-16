@@ -21,77 +21,76 @@ class HomePage extends StatelessWidget {
             HomePageBackground(
               screenHeight: MediaQuery.of(context).size.height,
             ),
-            SafeArea(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                      child: Row(
-                        children: <Widget>[
-                          Text(
-                            "LOCAL EVENTS",
-                            style: fadedTextStyle,
-                          ),
-                          Spacer(),
-                          Icon(
-                            Icons.person_outline,
-                            color: Color(0x99FFFFFF),
-                            size: 30,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                      child: Text(
-                        "What's Up",
-                        style: whiteHeadingTextStyle,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24.0),
-                      child: Consumer<AppState>(
-                        builder: (context, appState, _) =>
-                            SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: <Widget>[
-                              for (final category in categories)
-                                CategoryWidget(category: category)
-                            ],
-                          ),
+            SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: Row(
+                      children: <Widget>[
+                        Icon(
+                          Icons.person_outline,
+                          color: Color(0x99FFFFFF),
+                          size: 30,
                         ),
-                      ),
+                        Spacer(),
+                        Text(
+                          "אירועים מקומיים",
+                          textAlign: TextAlign.right,
+                          style: fadedTextStyle,
+                        ),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Consumer<AppState>(
-                        builder: (context, appState, _) => Column(
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    child: Text(
+                      "מה חדש",
+                      textAlign: TextAlign.right,
+                      style: whiteHeadingTextStyle,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24.0),
+                    child: Consumer<AppState>(
+                      builder: (context, appState, _) => SingleChildScrollView(
+                        reverse: true,
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
                           children: <Widget>[
-                            for (final event in events.where((e) => e
-                                .categoryIds
-                                .contains(appState.selectedCategoryId)))
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          EventDetailsPage(event: event),
-                                    ),
-                                  );
-                                },
-                                child: EventWidget(
-                                  event: event,
-                                ),
-                              )
+                            for (final category in categories)
+                              CategoryWidget(category: category)
                           ],
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Consumer<AppState>(
+                      builder: (context, appState, _) => Column(
+                        children: <Widget>[
+                          for (final event in events.where((e) => e.categoryIds
+                              .contains(appState.selectedCategoryId)))
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        EventDetailsPage(event: event),
+                                  ),
+                                );
+                              },
+                              child: EventWidget(
+                                event: event,
+                              ),
+                            )
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

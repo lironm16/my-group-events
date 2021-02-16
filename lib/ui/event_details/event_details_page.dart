@@ -6,7 +6,6 @@ import 'event_details_background.dart';
 import 'event_details_content.dart';
 
 class EventDetailsPage extends StatelessWidget {
-
   final Event event;
 
   const EventDetailsPage({Key key, this.event}) : super(key: key);
@@ -19,7 +18,7 @@ class EventDetailsPage extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            EventDetailsBackground(),
+            //EventDetailsBackground(),
             EventDetailsContent(),
           ],
         ),

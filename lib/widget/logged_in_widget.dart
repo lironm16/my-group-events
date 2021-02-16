@@ -1,3 +1,4 @@
+import 'package:badges/badges.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_app_test/overview/collapsing_navigation_drawer.dart';
@@ -22,34 +23,40 @@ class LoggedInWidget extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Center(
-          child: Text(
-            "האירועים שלי",
-            textAlign: TextAlign.center,
-          ),
-        ),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(
-              Icons.add_circle_outline_rounded,
-              color: Colors.white,
+          backgroundColor: Color(0xFF436372),
+          leading: Badge(
+            position: BadgePosition.topEnd(top: 10, end: 10),
+            badgeContent: Text('3'),
+            child: IconButton(
+              icon: Icon(Icons.notifications),
+              onPressed: () {},
             ),
-            onPressed: () {
-              // do something
-            },
           )
-        ],
-      ),
+          // actions: [
+          //   IconButton(
+          //     icon: Icon(Icons.search),
+          //     onPressed: () {},
+          //   ),
+          //   IconButton(
+          //     icon: Icon(Icons.notifications),
+          //     onPressed: () {},
+          //   ),
+          //   IconButton(
+          //     icon: Icon(Icons.add),
+          //     onPressed: () {},
+          //   ),
+          // ],
+          ),
       body: MaterialApp(
         title: 'Flutter Demo',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          scaffoldBackgroundColor: Color(0xFFFFFFFF),
-          primaryColor: Color(0xFFFF4700),
+          scaffoldBackgroundColor: Color(0xFFfcc56a),
+          primaryColor: Color(0xFF436372),
         ),
         home: HomePage(),
       ),
-      drawer: CollapsingNavigationDrawer(),
+      endDrawer: CollapsingNavigationDrawer(),
     );
   }
 }

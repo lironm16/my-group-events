@@ -38,38 +38,39 @@ class EventWidget extends StatelessWidget {
                   Expanded(
                     flex: 3,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: <Widget>[
                         Text(
                           event.title,
-                          style: eventTitleTextStyle,
-                        ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        FittedBox(
-                          child: Row(
-                            children: <Widget>[
-                              Icon(Icons.location_on),
-                              SizedBox(
-                                width: 5,
-                              ),
-                              Text(
-                                event.location,
-                                style: eventLocationTextStyle,
-                              ),
-                            ],
-                          ),
+                          textAlign: TextAlign.center,
+                          style: cardStyle,
                         ),
                       ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "12",
+                      textAlign: TextAlign.left,
+                      style: cardStyle.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                   Expanded(
                     flex: 1,
                     child: Text(
-                      event.duration.toUpperCase(),
+                      "9/2/2021",
                       textAlign: TextAlign.right,
-                      style: eventLocationTextStyle.copyWith(
+                      style: cardStyle.copyWith(
                         fontWeight: FontWeight.w900,
                       ),
                     ),

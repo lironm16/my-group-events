@@ -7,3 +7,6 @@ TextStyle listTitleSelectedTextStyle =
 
 Color selectedColor = Color(0xFF4AC8EA);
 Color drawerBackgroundColor = Color(0xFF272D34);
+
+Color selectedColor2 = Color(0xFFfcc56a);
+Color drawerBackgroundColor2 = Color(0xFF436372);
