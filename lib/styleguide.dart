@@ -37,6 +37,14 @@ final TextStyle eventTitleTextStyle2 = TextStyle(
 final TextStyle cardStyle = TextStyle(
   fontSize: 18.0,
   fontWeight: FontWeight.bold,
+  fontStyle: FontStyle.italic,
+  color: Color(0xFF436372),
+);
+
+final TextStyle cardStyle2 = TextStyle(
+  fontSize: 18.0,
+  fontWeight: FontWeight.normal,
+  fontStyle: FontStyle.italic,
   color: Color(0xFF436372),
 );
 

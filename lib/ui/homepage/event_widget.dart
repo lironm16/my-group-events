@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app_test/styleguide.dart';
-
+import 'package:flutter_app_test/overview/theme.dart';
 import '../../model/event.dart';
 
 class EventWidget extends StatelessWidget {
@@ -43,7 +42,8 @@ class EventWidget extends StatelessWidget {
                         Text(
                           event.title,
                           textAlign: TextAlign.center,
-                          style: cardStyle,
+                          style: eventDetailSubHeaderStyle.copyWith(
+                              fontSize: 35.0, color: darkTheme),
                         ),
                       ],
                     ),
@@ -55,26 +55,14 @@ class EventWidget extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8.0, left: 8.0),
               child: Row(
                 children: <Widget>[
-                  Expanded(
-                    flex: 1,
-                    child: Text(
-                      "12",
-                      textAlign: TextAlign.left,
-                      style: cardStyle.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 1,
-                    child: Text(
-                      "9/2/2021",
-                      textAlign: TextAlign.right,
-                      style: cardStyle.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
+                  // Expanded(
+                  //   flex: 1,
+                  //   child: Text(
+                  //     "9/2/2021",
+                  //     textAlign: TextAlign.right,
+                  //     style: cardStyle2,
+                  //   ),
+                  // ),
                 ],
               ),
             ),

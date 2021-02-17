@@ -23,34 +23,8 @@ class HomePage extends StatelessWidget {
             ),
             SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                    child: Row(
-                      children: <Widget>[
-                        Icon(
-                          Icons.person_outline,
-                          color: Color(0x99FFFFFF),
-                          size: 30,
-                        ),
-                        Spacer(),
-                        Text(
-                          "אירועים מקומיים",
-                          textAlign: TextAlign.right,
-                          style: fadedTextStyle,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                    child: Text(
-                      "מה חדש",
-                      textAlign: TextAlign.right,
-                      style: whiteHeadingTextStyle,
-                    ),
-                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24.0),
                     child: Consumer<AppState>(

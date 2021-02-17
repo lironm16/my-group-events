@@ -32,19 +32,16 @@ class _CollapsingListTileState extends State<CollapsingListTile> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text(
-              widget.title,
-              style: GoogleFonts.amaticaSc(
-                  textStyle: widget.isSelected
-                      ? listTitleSelectedTextStyle
-                      : listTitleDefaultTextStyle),
-            ),
+            Text(widget.title,
+                style: widget.isSelected
+                    ? listTitleSelectedTextStyle
+                    : listTitleDefaultTextStyle),
             SizedBox(
               width: 10.0,
             ),
             Icon(
               widget.icon,
-              color: widget.isSelected ? selectedColor2 : Colors.white30,
+              color: widget.isSelected ? lightTheme : Colors.white30,
               size: 38.0,
             ),
           ],

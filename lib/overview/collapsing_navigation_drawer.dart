@@ -22,33 +22,33 @@ class _CollapsingNavigationDrawerState
       elevation: 80,
       child: Container(
         width: 220.0,
-        color: drawerBackgroundColor2,
+        color: darkTheme,
         child: Column(
           children: <Widget>[
-            SizedBox(height: 50),
+            SizedBox(height: 30),
             Container(
-                alignment: Alignment.center,
+                //alignment: Alignment.topCenter,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(height: 8),
-                    CircleAvatar(
-                      maxRadius: 25,
-                      backgroundImage: NetworkImage(user.photoURL),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      user.displayName,
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ],
-                )),
+              //crossAxisAlignment: CrossAxisAlignment.center,
+              //mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(height: 8),
+                CircleAvatar(
+                  maxRadius: 25,
+                  backgroundImage: NetworkImage(user.photoURL),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  user.displayName,
+                  style: TextStyle(color: Colors.white),
+                ),
+              ],
+            )),
             // SizedBox(height: 50),
             // CollapsingListTile(title: "Liron Matityahu", icon: Icons.person),
             Divider(
               color: Colors.grey,
-              height: 40.0,
+              height: 30.0,
             ),
             Expanded(
               child: ListView.builder(

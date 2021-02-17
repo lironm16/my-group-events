@@ -26,20 +26,20 @@ final weddingEvent = Event(
     description: "",
     location: "ירושלים",
     duration: "3h",
-    punchLine1: "Marathon!",
-    punchLine2: "The latest fad in foodology, get the inside scoup.",
-    galleryImages: [],
+    punchLine1: "הנכם מוזמנים לחתונה שלנו",
+    punchLine2:
+        "אל תשכחו להביא הרבה מצב רוח, יהיה אוכל טוב, מזגן והרבה הרבה שמח",
+    galleryImages: ["assets/event_images/wedding.jpg"],
     categoryIds: [0, 1]);
 
 final cookingEvent = Event(
     imagePath: "assets/event_images/friday_dinner.jpeg",
     title: "ארוחת שישי",
-    description:
-        "Guest list fill up fast so be sure to apply before handto secure a spot.",
+    description: "ארוחת שישי רגילה בבית של סבא וסבתא. אוכלים בשעה 20:00",
     location: "חבר 16, גבעת זאב",
     duration: "4h",
-    punchLine1: "Granite Cooking",
-    punchLine2: "The latest fad in foodology, get the inside scoup.",
+    punchLine1: "אנחנו רוצים שתבואו בזמן",
+    punchLine2: "היום אוכלים קוסקוס, ירקות ויש גם עוגה לקינוח",
     categoryIds: [
       0,
       2

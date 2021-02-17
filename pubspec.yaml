@@ -59,6 +59,45 @@ flutter:
     - assets/event_images/
     - assets/guest_images/
 
+  fonts:
+    - family: DanaYadAlefAlefAlef
+      fonts:
+        - asset: fonts/DanaYadAlefAlefAlef-Normal.otf
+    - family: yehudaclm Bold
+      fonts:
+        - asset: fonts/yehudaclm-bold-webfont.ttf
+    - family: yehudaclm Light
+      fonts:
+        - asset: fonts/yehudaclm-light-webfont.ttf
+    - family: comixno2clm Bold
+      fonts:
+        - asset: fonts/comixno2clm_bold-webfont.ttf
+    - family: comixno2clm Medium
+      fonts:
+        - asset: fonts/comixno2clm_medium-webfont.ttf
+    - family: Abraham
+      fonts:
+        - asset: fonts/Abraham-Regular.ttf
+    - family: elliniaclm bold
+      fonts:
+        - asset: fonts/elliniaclm-bold-webfont.ttf
+    - family: elliniaclm bolditalic
+      fonts:
+        - asset: fonts/elliniaclm-bolditalic-webfont.ttf
+    - family: elliniaclm light
+      fonts:
+        - asset: fonts/elliniaclm-light-webfont.ttf
+    - family: elliniaclm lightitalic
+      fonts:
+        - asset: fonts/elliniaclm-lightitalic-webfont.ttf
+    - family: miriwin
+      fonts:
+        - asset: fonts/miriwin-webfont.ttf
+    - family: nehama
+      fonts:
+        - asset: fonts/nehama-webfont.ttf
+
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
 
@@ -70,17 +109,6 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
+
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
