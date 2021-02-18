@@ -1,14 +1,23 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_app_test/overview/theme.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_app_test/ui/event_details/users_page.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/event.dart';
 import '../../model/guest.dart';
 import '../../styleguide.dart';
 
 class EventDetailsContent extends StatelessWidget {
+  launchURL(url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final event = Provider.of<Event>(context);
@@ -20,6 +29,15 @@ class EventDetailsContent extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
+            TextButton(
+              child: Text(
+                'Back',
+                style: TextStyle(color: Colors.white),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
             if (event.galleryImages.isNotEmpty)
               CarouselSlider(
                 items: event.galleryImages
@@ -40,88 +58,36 @@ class EventDetailsContent extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Column(
-                    children: [
-                      Text(
-                        event.title,
-                        textAlign: TextAlign.center,
-                        style: eventDetailSubHeaderStyle.copyWith(
-                          fontSize: 60.0,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                "מתי",
-                textAlign: TextAlign.right,
-                style: eventDetailSubHeaderStyle,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
                   Text(
-                    "היום, 18:00",
-                    style: eventDetailTextStyle,
-                  ),
-                  SizedBox(
-                    width: 5,
-                  ),
-                  Icon(
-                    Icons.schedule,
-                    color: Colors.white,
-                    size: 20,
+                    event.title,
+                    textAlign: TextAlign.center,
+                    style: eventDetailSubHeaderStyle.copyWith(
+                      fontSize: 40.0,
+                    ),
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                "איפה",
-                textAlign: TextAlign.right,
-                style: eventDetailSubHeaderStyle,
-              ),
+            EventDetailsLine(
+              title: "מתי",
+              desc: "היום, 18:00",
+              iconData: Icons.schedule,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  Text(
-                    event.location,
-                    style: eventDetailTextStyle,
-                  ),
-                  SizedBox(
-                    width: 5,
-                  ),
-                  Icon(
-                    Icons.location_on,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ],
-              ),
+            EventDetailsLine(
+              title: "איפה",
+              desc: event.location,
+              iconData: Icons.location_on,
             ),
-            SizedBox(
-              height: 10,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Text(
-                " < מי מגיע",
-                textAlign: TextAlign.right,
-                style: eventDetailSubHeaderStyle,
-              ),
+            EventDetailsLine(
+              title: "< מי מגיע",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UsersPage(),
+                  ),
+                );
+              },
             ),
             SingleChildScrollView(
               reverse: true,
@@ -143,48 +109,16 @@ class EventDetailsContent extends StatelessWidget {
                 ],
               ),
             ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                "מה הולך להיות",
-                textAlign: TextAlign.right,
-                style: eventDetailSubHeaderStyle,
-              ),
+            EventDetailsLine(
+              title: "מה הולך להיות",
+              desc: event.description,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                event.punchLine1,
-                textAlign: TextAlign.right,
-                style: eventDetailTextStyle,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                event.punchLine2,
-                textAlign: TextAlign.right,
-                style: eventDetailTextStyle,
-              ),
-            ),
-            if (event.description.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  event.description,
-                  textAlign: TextAlign.right,
-                  style: eventDetailTextStyle,
-                ),
-              ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                "לינק לאירוע",
-                textAlign: TextAlign.right,
-                style: eventDetailSubHeaderStyle,
-              ),
+            EventDetailsLine(
+              title: "< לינק לאירוע",
+              onPressed: () {
+                String url = "https://pub.dev/packages/url_launcher";
+                launchURL(url);
+              },
             ),
             if (event.galleryImages.isNotEmpty)
               Padding(
@@ -217,6 +151,75 @@ class EventDetailsContent extends StatelessWidget {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EventDetailsLine extends StatefulWidget {
+  final String title;
+  final String desc;
+  final IconData iconData;
+  final VoidCallback onPressed;
+  EventDetailsLine({this.title, this.desc, this.iconData, this.onPressed});
+
+  @override
+  _EventDetailsLineState createState() => _EventDetailsLineState();
+}
+
+class _EventDetailsLineState extends State<EventDetailsLine> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  child: Text(
+                    widget.title,
+                    textAlign: TextAlign.right,
+                    style: eventDetailSubHeaderStyle,
+                  ),
+                  onPressed: widget.onPressed,
+                ),
+              ],
+            ),
+            if (widget.desc != null)
+              SizedBox(
+                height: 0,
+              ),
+            if (widget.desc != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    Flexible(
+                      child: Text(
+                        widget.desc,
+                        textAlign: TextAlign.right,
+                        style: eventDetailTextStyle,
+                      ),
+                    ),
+                    if (widget.iconData != null)
+                      SizedBox(
+                        width: 5,
+                      ),
+                    if (widget.iconData != null)
+                      Icon(
+                        widget.iconData,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                  ],
+                ),
+              )
           ],
         ),
       ),

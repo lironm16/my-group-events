@@ -23,30 +23,28 @@ class LoggedInWidget extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-          backgroundColor: Color(0xFF436372),
-          leading: Badge(
-            position: BadgePosition.topEnd(top: 10, end: 10),
-            badgeContent: Text('3'),
-            child: IconButton(
-              icon: Icon(Icons.notifications),
-              onPressed: () {},
-            ),
-          )
-          // actions: [
-          //   IconButton(
-          //     icon: Icon(Icons.search),
-          //     onPressed: () {},
-          //   ),
-          //   IconButton(
-          //     icon: Icon(Icons.notifications),
-          //     onPressed: () {},
-          //   ),
-          //   IconButton(
-          //     icon: Icon(Icons.add),
-          //     onPressed: () {},
-          //   ),
-          // ],
+        backgroundColor: Color(0xFF436372),
+        leading: Badge(
+          position: BadgePosition.topEnd(top: 10, end: 10),
+          badgeContent: Text('3'),
+          child: IconButton(
+            icon: Icon(Icons.notifications),
+            onPressed: () {},
           ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+          ),
+        ],
+      ),
       body: MaterialApp(
         title: 'Flutter Demo',
         debugShowCheckedModeBanner: false,
@@ -56,7 +54,7 @@ class LoggedInWidget extends StatelessWidget {
         ),
         home: HomePage(),
       ),
-      endDrawer: CollapsingNavigationDrawer(),
+      //endDrawer: CollapsingNavigationDrawer(),
     );
   }
 }

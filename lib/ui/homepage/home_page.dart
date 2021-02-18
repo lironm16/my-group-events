@@ -49,7 +49,8 @@ class HomePage extends StatelessWidget {
                               .contains(appState.selectedCategoryId)))
                             GestureDetector(
                               onTap: () {
-                                Navigator.of(context).push(
+                                Navigator.push(
+                                  context,
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         EventDetailsPage(event: event),
