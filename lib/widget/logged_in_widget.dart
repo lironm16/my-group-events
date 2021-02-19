@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app_test/overview/collapsing_navigation_drawer.dart';
 import 'package:flutter_app_test/provider/facebook_sign_in.dart';
 import 'package:flutter_app_test/provider/google_sign_in.dart';
+import 'package:flutter_app_test/ui/homepage/add_event.dart';
 import 'package:flutter_app_test/ui/homepage/home_page.dart';
 import 'package:provider/provider.dart';
 
@@ -35,7 +36,14 @@ class LoggedInWidget extends StatelessWidget {
         actions: [
           IconButton(
             icon: Icon(Icons.add),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddEventPage(),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: Icon(Icons.menu),

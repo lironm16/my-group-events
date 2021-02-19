@@ -11,13 +11,13 @@ class Category {
 
 final allCategory = Category(
   categoryId: 0,
-  name: "All",
+  name: "הכל",
   icon: Icons.search,
 );
 
 final musicCategory = Category(
   categoryId: 1,
-  name: "Music",
+  name: "אירוע",
   icon: Icons.music_note,
 );
 
@@ -29,20 +29,20 @@ final meetUpCategory = Category(
 
 final golfCategory = Category(
   categoryId: 3,
-  name: "Golf",
-  icon: Icons.golf_course,
+  name: "ארוחה",
+  icon: Icons.local_dining,
 );
 
 final birthdayCategory = Category(
   categoryId: 4,
-  name: "Birthday",
+  name: "יום הולדת",
   icon: Icons.cake,
 );
 
 final categories = [
-  allCategory,
-  musicCategory,
   meetUpCategory,
   golfCategory,
+  musicCategory,
   birthdayCategory,
+  allCategory,
 ];

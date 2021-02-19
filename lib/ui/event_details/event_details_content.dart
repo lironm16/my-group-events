@@ -23,135 +23,134 @@ class EventDetailsContent extends StatelessWidget {
     final event = Provider.of<Event>(context);
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return SingleChildScrollView(
-      child: Container(
-        color: Color(0xFF436372),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: <Widget>[
-            TextButton(
-              child: Text(
-                'Back',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-            if (event.galleryImages.isNotEmpty)
-              CarouselSlider(
-                items: event.galleryImages
-                    .map((item) => Container(
-                          child: Image.asset(item),
-                        ))
-                    .toList(),
-                options: CarouselOptions(
-                  reverse: true,
-                  autoPlay: true,
-                  enlargeCenterPage: true,
-                  enableInfiniteScroll: true,
+    return Scaffold(
+      appBar: AppBar(
+          title: Text(
+            event.title,
+            style: eventDetailTextStyle,
+          ),
+          backgroundColor: darkTheme),
+      backgroundColor: darkTheme,
+      body: Container(
+        padding: EdgeInsets.all(10.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              if (event.galleryImages.isNotEmpty)
+                CarouselSlider(
+                  items: event.galleryImages
+                      .map((item) => Container(
+                            child: Image.asset(item),
+                          ))
+                      .toList(),
+                  options: CarouselOptions(
+                    reverse: true,
+                    autoPlay: true,
+                    enlargeCenterPage: true,
+                    enableInfiniteScroll: true,
+                  ),
                 ),
-              ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    event.title,
-                    textAlign: TextAlign.center,
-                    style: eventDetailSubHeaderStyle.copyWith(
-                      fontSize: 40.0,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            EventDetailsLine(
-              title: "מתי",
-              desc: "היום, 18:00",
-              iconData: Icons.schedule,
-            ),
-            EventDetailsLine(
-              title: "איפה",
-              desc: event.location,
-              iconData: Icons.location_on,
-            ),
-            EventDetailsLine(
-              title: "< מי מגיע",
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => UsersPage(),
-                  ),
-                );
-              },
-            ),
-            SingleChildScrollView(
-              reverse: true,
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: <Widget>[
-                  for (final guest in guests)
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: ClipOval(
-                        child: Image.asset(
-                          guest.imagePath,
-                          width: 90,
-                          height: 90,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            EventDetailsLine(
-              title: "מה הולך להיות",
-              desc: event.description,
-            ),
-            EventDetailsLine(
-              title: "< לינק לאירוע",
-              onPressed: () {
-                String url = "https://pub.dev/packages/url_launcher";
-                launchURL(url);
-              },
-            ),
-            if (event.galleryImages.isNotEmpty)
               Padding(
                 padding:
-                    const EdgeInsets.only(right: 16.0, top: 16, bottom: 16),
-                child: Text(
-                  "גלריה",
-                  style: guestTextStyle,
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      event.title,
+                      textAlign: TextAlign.center,
+                      style: eventDetailTextStyle.copyWith(
+                          fontSize: 30.0, color: lightTheme),
+                    ),
+                  ],
                 ),
               ),
-            SingleChildScrollView(
-              reverse: true,
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: <Widget>[
-                  for (final galleryImagePath in event.galleryImages)
-                    Container(
-                      margin: const EdgeInsets.only(
-                          left: 16, right: 16, bottom: 32),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        child: Image.asset(
-                          galleryImagePath,
-                          width: 180,
-                          height: 180,
-                          fit: BoxFit.cover,
+              EventDetailsLine(
+                title: "מתי",
+                desc: "היום, 18:00",
+                iconData: Icons.schedule,
+              ),
+              EventDetailsLine(
+                title: "איפה",
+                desc: event.location,
+                iconData: Icons.location_on,
+              ),
+              EventDetailsLine(
+                title: "< מי מגיע",
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => UsersPage(),
+                    ),
+                  );
+                },
+              ),
+              SingleChildScrollView(
+                reverse: true,
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: <Widget>[
+                    for (final guest in guests)
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: ClipOval(
+                          child: Image.asset(
+                            guest.imagePath,
+                            width: 90,
+                            height: 90,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              EventDetailsLine(
+                title: "מה הולך להיות",
+                desc: event.description,
+              ),
+              EventDetailsLine(
+                title: "< לינק לאירוע",
+                onPressed: () {
+                  String url = "https://pub.dev/packages/url_launcher";
+                  launchURL(url);
+                },
+              ),
+              if (event.galleryImages.isNotEmpty)
+                Padding(
+                  padding:
+                      const EdgeInsets.only(right: 16.0, top: 16, bottom: 16),
+                  child: Text(
+                    "גלריה",
+                    style: guestTextStyle,
+                  ),
+                ),
+              SingleChildScrollView(
+                reverse: true,
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: <Widget>[
+                    for (final galleryImagePath in event.galleryImages)
+                      Container(
+                        margin: const EdgeInsets.only(
+                            left: 16, right: 16, bottom: 32),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.all(Radius.circular(20)),
+                          child: Image.asset(
+                            galleryImagePath,
+                            width: 180,
+                            height: 180,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -173,55 +172,48 @@ class _EventDetailsLineState extends State<EventDetailsLine> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  child: Text(
-                    widget.title,
-                    textAlign: TextAlign.right,
-                    style: eventDetailSubHeaderStyle,
-                  ),
-                  onPressed: widget.onPressed,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                child: Text(
+                  widget.title,
+                  textAlign: TextAlign.right,
+                  style: eventDetailSubHeaderStyle,
                 ),
-              ],
-            ),
-            if (widget.desc != null)
-              SizedBox(
-                height: 0,
+                onPressed: widget.onPressed,
               ),
-            if (widget.desc != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: <Widget>[
-                    Flexible(
-                      child: Text(
-                        widget.desc,
-                        textAlign: TextAlign.right,
-                        style: eventDetailTextStyle,
-                      ),
+            ],
+          ),
+          if (widget.desc != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  Flexible(
+                    child: Text(
+                      widget.desc,
+                      textAlign: TextAlign.right,
+                      style: eventDetailTextStyle,
                     ),
-                    if (widget.iconData != null)
-                      SizedBox(
-                        width: 5,
-                      ),
-                    if (widget.iconData != null)
-                      Icon(
-                        widget.iconData,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                  ],
-                ),
-              )
-          ],
-        ),
+                  ),
+                  if (widget.iconData != null)
+                    SizedBox(
+                      width: 5,
+                    ),
+                  if (widget.iconData != null)
+                    Icon(
+                      widget.iconData,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                ],
+              ),
+            )
+        ],
       ),
     );
   }

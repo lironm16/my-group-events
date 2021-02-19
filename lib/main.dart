@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app_test/overview/theme.dart';
 import 'package:flutter_app_test/page/sign_in_page.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,8 +20,27 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: title,
-        theme: ThemeData(primarySwatch: Colors.deepOrange),
+        // theme: new ThemeData(
+        //   timePickerTheme: TimePickerThemeData(
+        //     backgroundColor: lightTheme,
+        //   ),
+        //   brightness: Brightness.light,
+        //   primaryColor: Colors.blueGrey,
+        //   accentColor: Colors.orangeAccent,
+        // ),
+        theme: ThemeData(primarySwatch: Colors.blueGrey),
         home: SignInPage(),
+        localizationsDelegates: [
+          // ... app-specific localization delegate[s] here
+          // TODO: uncomment the line below after codegen
+          //AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [
+          const Locale('he', 'IL'), // Hebrew, Israel
+        ],
       );
 }
 

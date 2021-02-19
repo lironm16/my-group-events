@@ -42,8 +42,8 @@ class EventWidget extends StatelessWidget {
                         Text(
                           event.title,
                           textAlign: TextAlign.center,
-                          style: eventDetailSubHeaderStyle.copyWith(
-                              fontSize: 35.0, color: darkTheme),
+                          style: eventDetailTextStyle.copyWith(
+                              fontSize: 24.0, color: darkTheme),
                         ),
                       ],
                     ),
