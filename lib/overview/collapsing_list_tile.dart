@@ -30,20 +30,19 @@ class _CollapsingListTileState extends State<CollapsingListTile> {
                 : Colors.transparent),
         margin: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text(widget.title,
-                style: widget.isSelected
-                    ? listTitleSelectedTextStyle
-                    : listTitleDefaultTextStyle),
-            SizedBox(
-              width: 10.0,
-            ),
             Icon(
               widget.icon,
               color: widget.isSelected ? lightTheme : Colors.white30,
               size: 38.0,
             ),
+            SizedBox(
+              width: 10.0,
+            ),
+            Text(widget.title,
+                style: widget.isSelected
+                    ? listTitleSelectedTextStyle
+                    : listTitleDefaultTextStyle),
           ],
         ),
       ),

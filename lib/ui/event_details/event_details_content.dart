@@ -7,7 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../model/event.dart';
 import '../../model/guest.dart';
-import '../../styleguide.dart';
 
 class EventDetailsContent extends StatelessWidget {
   launchURL(url) async {
@@ -77,6 +76,28 @@ class EventDetailsContent extends StatelessWidget {
                 iconData: Icons.location_on,
               ),
               EventDetailsLine(
+                title: "מי מארגן",
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => UsersPage(),
+                    ),
+                  );
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: ClipOval(
+                  child: Image.asset(
+                    guests[0].imagePath,
+                    width: 90,
+                    height: 90,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              EventDetailsLine(
                 title: "< מי מגיע",
                 onPressed: () {
                   Navigator.push(
@@ -88,7 +109,6 @@ class EventDetailsContent extends StatelessWidget {
                 },
               ),
               SingleChildScrollView(
-                reverse: true,
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: <Widget>[
@@ -117,37 +137,6 @@ class EventDetailsContent extends StatelessWidget {
                   String url = "https://pub.dev/packages/url_launcher";
                   launchURL(url);
                 },
-              ),
-              if (event.galleryImages.isNotEmpty)
-                Padding(
-                  padding:
-                      const EdgeInsets.only(right: 16.0, top: 16, bottom: 16),
-                  child: Text(
-                    "גלריה",
-                    style: guestTextStyle,
-                  ),
-                ),
-              SingleChildScrollView(
-                reverse: true,
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: <Widget>[
-                    for (final galleryImagePath in event.galleryImages)
-                      Container(
-                        margin: const EdgeInsets.only(
-                            left: 16, right: 16, bottom: 32),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.all(Radius.circular(20)),
-                          child: Image.asset(
-                            galleryImagePath,
-                            width: 180,
-                            height: 180,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
               ),
             ],
           ),

@@ -1,10 +1,12 @@
+import 'dart:io';
+
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_app_test/overview/theme.dart';
 import 'package:flutter_form_bloc/flutter_form_bloc.dart';
 import 'package:searchable_dropdown/searchable_dropdown.dart';
-
-import 'extended_text_field.dart';
+import 'dart:async';
+import 'ImageFieldBlocBuilder.dart';
 
 class MyStatefulWidget extends StatefulWidget {
   MyStatefulWidget({Key key}) : super(key: key);
@@ -270,6 +272,7 @@ class AddEventPage extends StatelessWidget {
       child: Builder(
         builder: (context) {
           final formBloc = BlocProvider.of<AllFieldsFormBloc>(context);
+          final imagePicker = InputFieldBloc<File, Object>();
 
           return Theme(
             data: Theme.of(context).copyWith(
@@ -306,8 +309,37 @@ class AddEventPage extends StatelessWidget {
                       child: Column(
                         children: <Widget>[
                           TextFieldBlocBuilder(
+                            maxLines: null,
+                            keyboardType: TextInputType.multiline,
+                            textFieldBloc: formBloc.desc,
+                            maxLength: 250,
+                            decoration: InputDecoration(
+                              labelText: "תיאור האירוע",
+                              prefixIcon: Icon(Icons.description),
+                            ),
+                          ),
+                          ImageFieldBlocBuilder(
+                            formBloc: formBloc,
+                            fileFieldBloc: imagePicker,
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          DateTimeFieldBlocBuilder(
+                            dateTimeFieldBloc: formBloc.dateAndTime1,
+                            canSelectTime: true,
+                            format: DateFormat('dd-MM-yyyy  hh:mm'),
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2100),
+                            decoration: InputDecoration(
+                              labelText: 'תאריך ושעה',
+                              prefixIcon: Icon(Icons.date_range),
+                            ),
+                          ),
+                          TextFieldBlocBuilder(
                             textFieldBloc: formBloc.link,
-                            maxLength: 200,
+                            maxLength: 50,
                             decoration: InputDecoration(
                               labelText: "לינק לאירוע",
                               prefixIcon: Icon(Icons.link),
@@ -331,30 +363,6 @@ class AddEventPage extends StatelessWidget {
                               prefixIcon: Icon(Icons.category),
                             ),
                             itemBuilder: (context, value) => value,
-                          ),
-
-                          TextFieldBlocBuilder(
-                            maxLines: null,
-                            keyboardType: TextInputType.multiline,
-                            textFieldBloc: formBloc.desc,
-                            maxLength: 250,
-                            decoration: InputDecoration(
-                              labelText: "תיאור האירוע",
-                              prefixIcon: Icon(Icons.description),
-                            ),
-                          ),
-
-                          DateTimeFieldBlocBuilder(
-                            dateTimeFieldBloc: formBloc.dateAndTime1,
-                            canSelectTime: true,
-                            format: DateFormat('dd-MM-yyyy  hh:mm'),
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                            decoration: InputDecoration(
-                              labelText: 'תאריך ושעה',
-                              prefixIcon: Icon(Icons.date_range),
-                            ),
                           ),
 
                           // RadioButtonGroupFieldBlocBuilder<String>(
@@ -401,13 +409,13 @@ class AddEventPage extends StatelessWidget {
                           //     child: Text('CheckboxFieldBlocBuilder'),
                           //   ),
                           // ),
-                          // CheckboxFieldBlocBuilder(
-                          //   booleanFieldBloc: formBloc.boolean1,
-                          //   body: Container(
-                          //     alignment: Alignment.centerRight,
-                          //     child: Text('לשלוח הזמנות לאירוע'),
-                          //   ),
-                          // ),
+                          CheckboxFieldBlocBuilder(
+                            booleanFieldBloc: formBloc.boolean1,
+                            body: Container(
+                              alignment: Alignment.centerRight,
+                              child: Text('לשלוח הזמנות לאירוע'),
+                            ),
+                          ),
                         ],
                       ),
                     ),

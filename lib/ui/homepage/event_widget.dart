@@ -22,12 +22,12 @@ class EventWidget extends StatelessWidget {
           children: <Widget>[
             ClipRRect(
               borderRadius: BorderRadius.all(
-                Radius.circular(30),
+                Radius.circular(20),
               ),
               child: Image.asset(
                 event.imagePath,
                 height: 150,
-                fit: BoxFit.fitWidth,
+                fit: BoxFit.cover,
               ),
             ),
             Padding(
@@ -42,8 +42,9 @@ class EventWidget extends StatelessWidget {
                         Text(
                           event.title,
                           textAlign: TextAlign.center,
-                          style: eventDetailTextStyle.copyWith(
-                              fontSize: 24.0, color: darkTheme),
+                          style: TextStyle(fontSize: 20.0),
+                          // style: eventDetailTextStyle.copyWith(
+                          //     fontSize: 24.0, color: darkTheme),
                         ),
                       ],
                     ),
