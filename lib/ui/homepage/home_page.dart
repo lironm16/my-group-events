@@ -48,11 +48,11 @@ class HomePage extends StatelessWidget {
                               .contains(appState.selectedCategoryId)))
                             GestureDetector(
                               onTap: () {
-                                Navigator.push(
-                                  context,
+                                Navigator.of(context, rootNavigator: true).push(
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         EventDetailsPage(event: event),
+                                    //fullscreenDialog: true,
                                   ),
                                 );
                               },

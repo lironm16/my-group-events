@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 TextStyle listTitleDefaultTextStyle = eventDetailTextStyle.copyWith(
-    color: Colors.white70, fontSize: 20.0, fontWeight: FontWeight.w600);
+    color: Colors.white70, fontSize: 16.0, fontWeight: FontWeight.w600);
 
 TextStyle listTitleSelectedTextStyle = listTitleDefaultTextStyle.copyWith(
   color: Colors.white,
@@ -10,7 +10,7 @@ TextStyle listTitleSelectedTextStyle = listTitleDefaultTextStyle.copyWith(
 Color selectedColor = Color(0xFF4AC8EA);
 Color drawerBackgroundColor = Color(0xFF272D34);
 
-Color lightTheme = Color(0xFFfcc56a);
+Color lightTheme = Colors.white; //Color(0xFFfcc56a);
 Color darkTheme = Color(0xFF436372);
 
 final eventDetailSubHeaderStyle = TextStyle(
@@ -22,7 +22,7 @@ final eventDetailSubHeaderStyle = TextStyle(
 
 final eventDetailTextStyle = TextStyle(
   fontSize: 20.0,
-  fontFamily: "yehudaclm light",
-  fontWeight: FontWeight.bold,
+  //fontFamily: "yehudaclm light",
+  fontWeight: FontWeight.normal,
   color: Colors.white,
 );

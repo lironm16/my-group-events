@@ -98,7 +98,7 @@ class EventDetailsContent extends StatelessWidget {
                 ),
               ),
               EventDetailsLine(
-                title: "< מי מגיע",
+                title: "< מי מוזמן",
                 onPressed: () {
                   Navigator.push(
                     context,

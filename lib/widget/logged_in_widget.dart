@@ -51,7 +51,6 @@ class LoggedInWidget extends StatelessWidget {
         title: 'Flutter Demo',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          scaffoldBackgroundColor: Color(0xFFfcc56a),
           primaryColor: Color(0xFF436372),
         ),
         home: HomePage(),
@@ -60,56 +59,3 @@ class LoggedInWidget extends StatelessWidget {
     );
   }
 }
-
-// Drawer(
-// // Add a ListView to the drawer. This ensures the user can scroll
-// // through the options in the drawer if there isn't enough vertical
-// // space to fit everything.
-// child: ListView(
-// // Important: Remove any padding from the ListView.
-// padding: EdgeInsets.zero,
-// children: <Widget>[
-// DrawerHeader(
-// child: Container(
-// alignment: Alignment.center,
-// child: Column(
-// crossAxisAlignment: CrossAxisAlignment.center,
-// mainAxisAlignment: MainAxisAlignment.center,
-// children: [
-// SizedBox(height: 8),
-// CircleAvatar(
-// maxRadius: 25,
-// backgroundImage: NetworkImage(user.photoURL),
-// ),
-// SizedBox(height: 8),
-// Text(
-// user.displayName,
-// style: TextStyle(color: Colors.white),
-// ),
-// ],
-// ),
-// ),
-// decoration: BoxDecoration(
-// color: Colors.purple,
-// ),
-// ),
-// ListTile(
-// title: Text('Logout'),
-// onTap: () {
-// final provider =
-// Provider.of<GoogleSignInProvider>(context, listen: false);
-// provider.logout();
-// },
-// ),
-// ListTile(
-// title: Text('Item 2'),
-// onTap: () {
-// // Update the state of the app
-// // ...
-// // Then close the drawer
-// Navigator.pop(context);
-// },
-// ),
-// ],
-// ),
-// )

@@ -7,7 +7,7 @@ Color appGreyColor =
     Colors.white; //.withOpacity(0.7); //Color.fromRGBO(64, 75, 96, .9);
 
 // Strings
-const appTitle = "Contactly";
+const appTitle = "מי מוזמן";
 const pinCodeHintText = "Pin Code";
 const loginButtonText = "Login";
 

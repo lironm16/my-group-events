@@ -5,6 +5,61 @@ import 'package:flutter_app_test/models/Record.dart';
 import 'package:flutter_app_test/helpers/Constants.dart';
 import 'package:flutter_app_test/overview/theme.dart';
 
+enum Status { coming, notComing, maybe, unknown }
+
+class StatusItem {
+  final int status;
+
+  Color color = Colors.grey;
+  IconData icon = Icons.calendar_today;
+  String title = "לא ידוע";
+
+  StatusItem({this.status}) {
+    if (status == Status.coming.index) {
+      this.color = Colors.green;
+      this.icon = Icons.event_available;
+      this.title = "מגיע";
+    } else if (status == Status.notComing.index) {
+      this.color = Colors.red;
+      this.icon = Icons.event_busy;
+      this.title = "לא מגיע";
+    } else if (status == Status.maybe.index) {
+      this.color = Colors.orange;
+      this.icon = Icons.event_note;
+      this.title = "אולי";
+    }
+  }
+}
+
+class StatusRow extends StatelessWidget {
+  final StatusItem statusItem;
+
+  StatusRow({this.statusItem});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Text(
+          statusItem.title,
+          textAlign: TextAlign.right,
+          style: eventDetailTextStyle.copyWith(
+              color: darkTheme, fontWeight: FontWeight.normal, fontSize: 16.0),
+        ),
+        SizedBox(
+          width: 3,
+        ),
+        Icon(
+          statusItem.icon,
+          color: statusItem.color,
+          size: 20,
+        )
+      ],
+    );
+  }
+}
+
 class UsersPage extends StatefulWidget {
   @override
   _UsersPageState createState() {
@@ -12,7 +67,8 @@ class UsersPage extends StatefulWidget {
   }
 }
 
-class _UsersPageState extends State<UsersPage> {
+class _UsersPageState extends State<UsersPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _filter = new TextEditingController();
 
   RecordList _records = new RecordList();
@@ -23,15 +79,56 @@ class _UsersPageState extends State<UsersPage> {
   Icon _searchIcon = new Icon(Icons.search);
 
   Widget _appBarTitle = new Text(appTitle);
+  TabController _tabController;
+  int _activeTabIndex = 0;
+
+  final List<Tab> myTabs = <Tab>[
+    Tab(
+      text: "לא ידוע",
+      icon: Icon(
+        Icons.calendar_today,
+        color: Colors.grey,
+        size: 30,
+      ),
+    ),
+    Tab(
+      text: "אולי",
+      icon: Icon(
+        Icons.event_note,
+        color: Colors.orange,
+        size: 30,
+      ),
+    ),
+    Tab(
+      text: "לא מגיע",
+      icon: Icon(
+        Icons.event_busy,
+        color: Colors.red,
+        size: 30,
+      ),
+    ),
+    Tab(
+      text: "מגיע",
+      icon: Icon(Icons.event_available, color: Colors.green, size: 30),
+    ),
+    Tab(text: "הכל", icon: Icon(Icons.event, color: Colors.white, size: 30)),
+  ];
 
   @override
   void initState() {
     super.initState();
-
+    _tabController = new TabController(
+        vsync: this, length: myTabs.length, initialIndex: myTabs.length - 1);
     _records.records = new List();
     _filteredRecords.records = new List();
 
     _getRecords();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   void _getRecords() async {
@@ -46,35 +143,56 @@ class _UsersPageState extends State<UsersPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildBar(context),
-      backgroundColor: appDarkGreyColor,
-      body: _buildList(context),
-      resizeToAvoidBottomPadding: false,
+    return DefaultTabController(
+      length: 5,
+      child: Scaffold(
+        appBar: _buildBar(context),
+        backgroundColor: appDarkGreyColor,
+        body: _buildList(context),
+        resizeToAvoidBottomPadding: false,
+      ),
     );
   }
 
   Widget _buildBar(BuildContext context) {
     return new AppBar(
-        elevation: 0.1,
-        backgroundColor: appDarkGreyColor,
-        centerTitle: true,
-        title: _appBarTitle,
-        leading: new IconButton(icon: _searchIcon, onPressed: _searchPressed));
+      elevation: 0.1,
+      backgroundColor: appDarkGreyColor,
+      centerTitle: true,
+      title: _appBarTitle,
+      bottom: TabBar(
+        controller: _tabController,
+        labelPadding: EdgeInsets.symmetric(horizontal: 2.0),
+        tabs: myTabs,
+        onTap: (index) {
+          _tabPressed(index);
+        },
+      ),
+      actions: [
+        IconButton(icon: _searchIcon, onPressed: _searchPressed),
+      ],
+    );
   }
 
   Widget _buildList(BuildContext context) {
-    if (!(_searchText.isEmpty)) {
-      _filteredRecords.records = new List();
-      for (int i = 0; i < _records.records.length; i++) {
-        if (_records.records[i].name
-                .toLowerCase()
-                .contains(_searchText.toLowerCase()) ||
-            _records.records[i].address
-                .toLowerCase()
-                .contains(_searchText.toLowerCase())) {
-          _filteredRecords.records.add(_records.records[i]);
-        }
+    _filteredRecords.records = new List();
+    for (int i = 0; i < _records.records.length; i++) {
+      bool inCategory = _activeTabIndex == 0 ||
+          _records.records[i].status == _activeTabIndex - 1;
+      bool inSearch = _searchText.isEmpty ||
+          (_records.records[i].name.contains(_searchText) ||
+              _records.records[i].address
+                  .toLowerCase()
+                  .contains(_searchText.toLowerCase()));
+      bool inSearch2 = _searchText.isEmpty ||
+          (_records.records[i].name
+                  .toLowerCase()
+                  .contains(_searchText.toLowerCase()) ||
+              _records.records[i].address
+                  .toLowerCase()
+                  .contains(_searchText.toLowerCase()));
+      if (inCategory && inSearch) {
+        _filteredRecords.records.add(_records.records[i]);
       }
     }
 
@@ -122,96 +240,20 @@ class _UsersPageState extends State<UsersPage> {
                   child: new Column(
                       //crossAxisAlignment: CrossAxisAlignment.end,
                       children: <Widget>[
-                    RichText(
-                      textAlign: TextAlign.right,
-                      text: TextSpan(
-                        text: record.address,
-                        style: TextStyle(color: darkTheme),
-                      ),
-                      maxLines: 3,
-                      softWrap: true,
-                    ),
+                    StatusRow(statusItem: StatusItem(status: record.status)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(
-                          "מגיע",
+                        RichText(
                           textAlign: TextAlign.right,
-                          style: eventDetailTextStyle.copyWith(
-                            color: darkTheme,
-                            fontWeight: FontWeight.normal,
+                          text: TextSpan(
+                            text: record.address,
+                            style: TextStyle(
+                              color: Colors.black45,
+                            ),
                           ),
-                        ),
-                        SizedBox(
-                          width: 5,
-                        ),
-                        Icon(
-                          Icons.event_available,
-                          color: Colors.green,
-                          size: 30,
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          "לא מגיע",
-                          textAlign: TextAlign.right,
-                          style: eventDetailTextStyle.copyWith(
-                            color: darkTheme,
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 5,
-                        ),
-                        Icon(
-                          Icons.event_busy,
-                          color: Colors.red,
-                          size: 30,
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          "לא השיב",
-                          textAlign: TextAlign.right,
-                          style: eventDetailTextStyle.copyWith(
-                            color: darkTheme,
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 5,
-                        ),
-                        Icon(
-                          Icons.event,
-                          color: Colors.grey,
-                          size: 30,
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          "לא החליט",
-                          textAlign: TextAlign.right,
-                          style: eventDetailTextStyle.copyWith(
-                            color: darkTheme,
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 5,
-                        ),
-                        Icon(
-                          Icons.event_note,
-                          color: Colors.orange,
-                          size: 30,
+                          maxLines: 3,
+                          softWrap: true,
                         ),
                       ],
                     ),
@@ -282,15 +324,6 @@ class _UsersPageState extends State<UsersPage> {
                   value: "/newchat"),
             ],
           ),
-
-          // IconButton(
-          //   icon: Icon(Icons.more_vert),
-          //   iconSize: 30.0,
-          //   color: darkTheme,
-          //   onPressed: () {
-          //     Navigator.pop(context);
-          //   },
-          // ),
           onTap: () {
             // Navigator.push(
             //     context,
@@ -324,17 +357,24 @@ class _UsersPageState extends State<UsersPage> {
     }
   }
 
+  void _tabPressed(int index) {
+    setState(() {
+      _activeTabIndex = _tabController.length - index - 1;
+    });
+  }
+
   void _searchPressed() {
     setState(() {
       if (this._searchIcon.icon == Icons.search) {
         this._searchIcon = new Icon(Icons.close);
         this._appBarTitle = new TextField(
           controller: _filter,
+          textAlign: TextAlign.end,
           style: new TextStyle(color: Colors.white),
           decoration: new InputDecoration(
-            prefixIcon: new Icon(Icons.search, color: Colors.white),
+            suffixIcon: new Icon(Icons.search, color: Colors.white),
             fillColor: Colors.white,
-            hintText: 'Search by name',
+            hintText: 'חפש',
             hintStyle: TextStyle(color: Colors.white),
           ),
         );
