@@ -1,0 +1,101 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Family {
+  id         String   @id @default(cuid())
+  name       String
+  inviteCode String   @unique
+  members    User[]
+  events     Event[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String?  @unique
+  image     String?
+  role      String   @default("member")
+  family    Family?  @relation(fields: [familyId], references: [id])
+  familyId  String?
+  accounts  Account[]
+  sessions  Session[]
+  rsvps     RSVP[]
+  hosted    Event[]  @relation("EventHost")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id                 String   @id @default(cuid())
+  title              String
+  description        String?
+  location           String?
+  startAt            DateTime
+  endAt              DateTime?
+  externalLink       String?
+  isHolidayGenerated Boolean  @default(false)
+  holidayKey         String?
+  host               User     @relation("EventHost", fields: [hostId], references: [id])
+  hostId             String
+  family             Family?  @relation(fields: [familyId], references: [id])
+  familyId           String?
+  rsvps              RSVP[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model RSVP {
+  id        String     @id @default(cuid())
+  status    RSVPStatus
+  note      String?
+  event     Event      @relation(fields: [eventId], references: [id])
+  eventId   String
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([eventId, userId])
+}
+
+enum RSVPStatus {
+  APPROVED
+  DECLINED
+  MAYBE
+}
+
+model Account {
+  id                String @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id])
+}
+
