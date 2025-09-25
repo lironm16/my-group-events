@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci || npm install",
+  "framework": "nextjs",
+  "env": {
+    "NEXTAUTH_URL": "https://preview-url.vercel.app"
+  },
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  }
+}
+
