@@ -105,12 +105,12 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           {imageUrl && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <img src={imageUrl} alt="preview" className="w-10 h-10 rounded" />
-              <span>התמונה הועלתה</span>
+              <span>תמונה נבחרה</span>
             </div>
           )}
           {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
           <div className="space-y-2">
-            <div className="text-sm text-gray-600">בחרו אייקון (חובה):</div>
+            <div className="text-sm text-gray-600">בחרו אייקון</div>
             <div className="grid grid-cols-4 gap-3">
               {(['mom','dad','boy','girl'] as const).map((k) => {
                 const url = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(k)}&radius=50&backgroundType=gradientLinear&backgroundColor=ffdfbf,ffd5dc`;
@@ -118,7 +118,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                   <label key={k} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===k?'ring-2 ring-blue-500':''}`}>
                     <input className="hidden" type="radio" name="icon" value={k} onChange={()=>setIcon(k)} />
                     <img src={url} alt={k} className="w-16 h-16" />
-                    <span className="text-xs text-gray-700">{k==='mom'?'אמא':k==='dad'?'אבא':k==='boy'?'ילד':'ילדה'}</span>
+                    <span className="text-xs text-gray-700">{k==='mom'?'אמא':k==='dad'?'אבא':k==='girl'?'ילדה':'ילד'}</span>
                   </label>
                 );
               })}
