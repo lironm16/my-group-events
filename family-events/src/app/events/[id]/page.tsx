@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import RSVPButtons from '@/components/RSVPButtons';
 import DeleteEventButton from '@/components/DeleteEventButton';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/auth';
 
 type EventDetail = {
   id: string;
@@ -22,7 +24,10 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
 }
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
-  const event = await fetchEvent(params.id);
+  const [event, session] = await Promise.all([
+    fetchEvent(params.id),
+    getServerSession(authOptions),
+  ]);
   const base = process.env.NEXTAUTH_URL ?? '';
   const shareText = `מצטרפים לאירוע? ראו פרטים וקישור: ${base}/events/${params.id}`;
   const wa = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
@@ -34,9 +39,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
       </main>
     );
   }
+  const userId = (session?.user as any)?.id as string | undefined;
+  const myRsvp = userId ? event.rsvps.find(r => r.user.id === userId)?.status ?? null : null;
+  const isHost = userId ? event.host?.id === userId : false;
   return (
     <main className="container-page space-y-4">
-      <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} />
+      <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
         <dl className="grid md:grid-cols-2 gap-4">
           <div>
@@ -68,7 +76,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
         <div className="mt-4">
           <h3 className="font-semibold mb-2">אישור הגעה</h3>
           {/* Initial status is the first RSVP (for the current user) if present; server API restricts data to family/users */}
-          <RSVPButtons eventId={event.id} initial={event.rsvps[0]?.status ?? null as any} />
+          <RSVPButtons eventId={event.id} initial={myRsvp as any} />
         </div>
       </div>
       <section>
@@ -90,15 +98,15 @@ export default async function EventDetailPage({ params }: { params: { id: string
   );
 }
 
-function HeaderActions({ id, wa, ics }: { id: string; wa: string; ics: string }) {
+function HeaderActions({ id, wa, ics, isHost }: { id: string; wa: string; ics: string; isHost: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <h1 className="text-2xl font-bold">פרטי אירוע</h1>
       <div className="flex gap-2">
         <Link className="px-3 py-2 bg-green-600 text-white rounded" href={wa}>שיתוף בוואטסאפ</Link>
         <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
-        <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>
-        <DeleteEventButton id={id} />
+        {isHost && <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
+        {isHost && <DeleteEventButton id={id} />}
         <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href="/events">חזרה</Link>
       </div>
     </div>

@@ -1,8 +1,9 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { redirect } from 'next/navigation';
 
-export default async function FamilyPage() {
+export default async function FamilyPage({ searchParams }: { searchParams?: { code?: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return (
@@ -12,7 +13,15 @@ export default async function FamilyPage() {
       </main>
     );
   }
-  const user = await prisma.user.findUnique({ where: { email: session.user.email }, include: { family: true } });
+  let user = await prisma.user.findUnique({ where: { email: session.user.email }, include: { family: { include: { members: true } } } });
+  const code = searchParams?.code;
+  if (!user?.family && code) {
+    const family = await prisma.family.findUnique({ where: { inviteCode: code } });
+    if (family) {
+      await prisma.user.update({ where: { id: user!.id }, data: { familyId: family.id } });
+      redirect('/family');
+    }
+  }
   let family = user?.family ?? null;
 
   if (!family) {
@@ -31,13 +40,21 @@ export default async function FamilyPage() {
   return (
     <main className="container-page space-y-4 max-w-2xl">
       <h1 className="text-2xl font-bold">{family.name}</h1>
-      <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
+      <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="text-sm text-gray-500">קוד הזמנה</div>
             <div className="font-mono text-lg">{family.inviteCode}</div>
           </div>
           <CopyButton value={inviteUrl} />
+        </div>
+        <div>
+          <h2 className="font-semibold mb-2">חברים</h2>
+          <ul className="space-y-1">
+            {family.members.map((m) => (
+              <li key={m.id} className="text-sm text-gray-700 dark:text-gray-300">{m.name ?? m.email ?? m.id}</li>
+            ))}
+          </ul>
         </div>
       </div>
     </main>

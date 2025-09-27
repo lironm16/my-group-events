@@ -1,6 +1,6 @@
 export { default as middleware } from 'next-auth/middleware';
 
 export const config = {
-  matcher: ['/events/:path*'],
+  matcher: ['/events/:path*', '/family/:path*'],
 };
 

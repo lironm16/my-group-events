@@ -12,17 +12,18 @@ type EventCard = {
   rsvps: { status: string }[];
 };
 
-async function fetchEvents(): Promise<{ events: EventCard[]; authorized: boolean }> {
-  const res = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/events`, { cache: 'no-store' });
+async function fetchEvents(page: number): Promise<{ events: EventCard[]; authorized: boolean; page: number; pageSize: number; total: number }> {
+  const res = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/events?page=${page}`, { cache: 'no-store' });
   if (!res.ok) {
-    return { events: [], authorized: false };
+    return { events: [], authorized: false, page: 1, pageSize: 12, total: 0 };
   }
   const data = await res.json();
-  return { events: data.events as EventCard[], authorized: true };
+  return { events: data.events as EventCard[], authorized: true, page: data.page, pageSize: data.pageSize, total: data.total };
 }
 
-export default async function EventsPage() {
-  const { events, authorized } = await fetchEvents();
+export default async function EventsPage({ searchParams }: { searchParams?: { page?: string } }) {
+  const page = Number(searchParams?.page ?? '1') || 1;
+  const { events, authorized, total, pageSize } = await fetchEvents(page);
   return (
     <main className="container-page space-y-4">
       <div className="flex items-center justify-between">
@@ -41,7 +42,10 @@ export default async function EventsPage() {
       ) : events.length === 0 ? (
         <p className="text-gray-600 dark:text-gray-300">אין אירועים להצגה כרגע.</p>
       ) : (
-        <Cards initial={events} />
+        <>
+          <Cards initial={events} />
+          <Pagination total={total} pageSize={pageSize} page={page} />
+        </>
       )}
     </main>
   );
@@ -51,6 +55,24 @@ function ClientSearch({ initial }: { initial: EventItem[] }) {
   return (
     <div>
       <EventsSearch items={initial} onFilter={() => {}} />
+    </div>
+  );
+}
+
+function Pagination({ total, pageSize, page }: { total: number; pageSize: number; page: number }) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  if (pages <= 1) return null;
+  const items = Array.from({ length: pages }, (_, i) => i + 1);
+  return (
+    <div className="flex flex-wrap gap-2 items-center justify-center mt-6">
+      {items.map((p) => (
+        <Link key={p} href={`/events?page=${p}`} className={[
+          'px-3 py-1 rounded border text-sm',
+          p === page ? 'bg-blue-600 text-white border-transparent' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800',
+        ].join(' ')}>
+          {p}
+        </Link>
+      ))}
     </div>
   );
 }
