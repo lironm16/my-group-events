@@ -30,6 +30,9 @@ export default function AvatarPicker({
   function randomize() {
     const rnd = Math.random().toString(36).slice(2, 10);
     setSeed(rnd);
+    // Immediately emit selection so it feels responsive
+    const nextUrl = buildUrl(style, rnd);
+    onChange({ style, seed: rnd, url: nextUrl });
   }
 
   return (

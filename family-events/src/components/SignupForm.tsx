@@ -96,7 +96,16 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 if (j.url) setImageUrl(j.url);
               }} />
             </label>
+            {imageUrl && (
+              <button type="button" className="px-2 py-1 text-sm border rounded" onClick={()=>setImageUrl('')}>הסרת תמונה</button>
+            )}
           </div>
+          {imageUrl && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <img src={imageUrl} alt="preview" className="w-10 h-10 rounded" />
+              <span>התמונה הועלתה</span>
+            </div>
+          )}
           {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
           <div className="space-y-2">
             <div className="text-sm text-gray-600">בחרו אייקון (חובה):</div>
