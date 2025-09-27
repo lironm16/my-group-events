@@ -11,25 +11,30 @@ type EventCard = {
   rsvps: { status: string }[];
 };
 
-async function fetchEvents(): Promise<EventCard[]> {
+async function fetchEvents(): Promise<{ events: EventCard[]; authorized: boolean }> {
   const res = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/events`, { cache: 'no-store' });
   if (!res.ok) {
-    // When unauthenticated, show empty list to avoid redirect loops
-    return [];
+    return { events: [], authorized: false };
   }
   const data = await res.json();
-  return data.events as EventCard[];
+  return { events: data.events as EventCard[], authorized: true };
 }
 
 export default async function EventsPage() {
-  const events = await fetchEvents();
+  const { events, authorized } = await fetchEvents();
   return (
     <main className="container-page space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">אירועים</h1>
-        <Link className="px-3 py-2 bg-blue-600 text-white rounded" href="/events/new">אירוע חדש</Link>
+        {authorized ? (
+          <Link className="px-3 py-2 bg-blue-600 text-white rounded" href="/events/new">אירוע חדש</Link>
+        ) : (
+          <Link className="px-3 py-2 bg-blue-600 text-white rounded" href="/api/auth/signin">התחברות</Link>
+        )}
       </div>
-      {events.length === 0 ? (
+      {!authorized ? (
+        <p className="text-gray-600 dark:text-gray-300">התחברו כדי לראות וליצור אירועים.</p>
+      ) : events.length === 0 ? (
         <p className="text-gray-600 dark:text-gray-300">אין אירועים להצגה כרגע.</p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

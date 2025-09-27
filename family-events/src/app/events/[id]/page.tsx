@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import RSVPButtons from '@/components/RSVPButtons';
+import DeleteEventButton from '@/components/DeleteEventButton';
 
 type EventDetail = {
   id: string;
@@ -9,7 +10,7 @@ type EventDetail = {
   startAt: string;
   endAt: string | null;
   externalLink: string | null;
-  host: { name: string | null };
+  host: { id?: string; name: string | null };
   rsvps: { id: string; status: string; user: { id: string; name: string | null } }[];
 };
 
@@ -35,13 +36,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
   }
   return (
     <main className="container-page space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{event.title}</h1>
-        <div className="flex gap-2">
-          <Link className="px-3 py-2 bg-green-600 text-white rounded" href={wa}>שיתוף בוואטסאפ</Link>
-          <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href="/events">חזרה</Link>
-        </div>
-      </div>
+      <HeaderActions id={event.id} wa={wa} />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
         <dl className="grid md:grid-cols-2 gap-4">
           <div>
@@ -92,6 +87,20 @@ export default async function EventDetailPage({ params }: { params: { id: string
         )}
       </section>
     </main>
+  );
+}
+
+function HeaderActions({ id, wa }: { id: string; wa: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <h1 className="text-2xl font-bold">פרטי אירוע</h1>
+      <div className="flex gap-2">
+        <Link className="px-3 py-2 bg-green-600 text-white rounded" href={wa}>שיתוף בוואטסאפ</Link>
+        <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>
+        <DeleteEventButton id={id} />
+        <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href="/events">חזרה</Link>
+      </div>
+    </div>
   );
 }
 
