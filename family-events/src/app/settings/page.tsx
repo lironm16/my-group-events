@@ -151,7 +151,23 @@ function ProfileForm({ userId, current }: { userId: string; current: { name: str
       <h2 className="font-semibold">פרופיל</h2>
       <input name="name" defaultValue={current.name} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="שם תצוגה" />
       <input name="email" defaultValue={current.email} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="אימייל" />
-      <input name="image" defaultValue={current.image} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="קישור לתמונה" />
+      <div className="flex items-center gap-2">
+        <input name="image" defaultValue={current.image} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="קישור לתמונה" />
+        <label className="px-3 py-2 border rounded cursor-pointer">
+          העלאה
+          <input type="file" accept="image/*" className="hidden" onChange={async (e)=>{
+            const f = (e.target as HTMLInputElement).files?.[0];
+            if (!f) return;
+            const form = new FormData();
+            form.append('file', f);
+            const res = await fetch('/api/upload', { method: 'POST', body: form });
+            const j = await res.json();
+            if (j.url) {
+              (e.currentTarget.form as HTMLFormElement).image.value = j.url;
+            }
+          }} />
+        </label>
+      </div>
       <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
     </form>
   );

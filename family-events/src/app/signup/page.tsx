@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [icon, setIcon] = useState<'mom' | 'dad' | 'boy' | 'girl' | ''>('');
   const [groupId, setGroupId] = useState<string>('');
   const [newGroup, setNewGroup] = useState('');
@@ -64,7 +65,24 @@ export default function SignupPage() {
         <input className="w-full border p-2 rounded" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
         <input className="w-full border p-2 rounded" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
         <input className="w-full border p-2 rounded" placeholder="שם תצוגה" value={nickname} onChange={e=>setNickname(e.target.value)} />
-        <input className="w-full border p-2 rounded" placeholder="קישור לתמונה (לא חובה)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
+        <div className="flex items-center gap-2">
+          <input className="w-full border p-2 rounded" placeholder="קישור לתמונה (לא חובה)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
+          <label className="px-3 py-2 border rounded cursor-pointer">
+            העלאה
+            <input type="file" accept="image/*" className="hidden" onChange={async (e)=>{
+              const f = e.target.files?.[0];
+              if (!f) return;
+              setUploading(true);
+              const form = new FormData();
+              form.append('file', f);
+              const res = await fetch('/api/upload', { method: 'POST', body: form });
+              const j = await res.json();
+              setUploading(false);
+              if (j.url) setImageUrl(j.url);
+            }} />
+          </label>
+        </div>
+        {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
         <div className="flex gap-2 items-center">
           <span className="text-sm text-gray-600">אייקון:</span>
           {(['mom','dad','boy','girl'] as const).map(i => (
