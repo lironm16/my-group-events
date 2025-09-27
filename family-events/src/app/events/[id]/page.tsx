@@ -3,6 +3,7 @@ import RSVPButtons from '@/components/RSVPButtons';
 import DeleteEventButton from '@/components/DeleteEventButton';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
+import { prisma } from '@/lib/prisma';
 
 type EventDetail = {
   id: string;
@@ -17,10 +18,19 @@ type EventDetail = {
 };
 
 async function fetchEvent(id: string): Promise<EventDetail | null> {
-  const res = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/events/${id}`, { cache: 'no-store' });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.event as EventDetail;
+  const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: true } }, host: true } });
+  if (!row) return null;
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    location: row.location,
+    startAt: row.startAt.toISOString(),
+    endAt: row.endAt ? row.endAt.toISOString() : null,
+    externalLink: row.externalLink,
+    host: { id: row.hostId, name: row.host?.name ?? null },
+    rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, user: { id: r.userId, name: r.user?.name ?? null } })),
+  };
 }
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {

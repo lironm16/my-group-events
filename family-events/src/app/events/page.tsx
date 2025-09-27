@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import EventsCards from '@/components/EventsCards';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/auth';
+import { prisma } from '@/lib/prisma';
 
 type EventCard = {
   id: string;
@@ -12,18 +15,37 @@ type EventCard = {
   rsvps: { status: string }[];
 };
 
-async function fetchEvents(page: number): Promise<{ events: EventCard[]; authorized: boolean; page: number; pageSize: number; total: number }> {
-  const res = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/events?page=${page}`, { cache: 'no-store' });
-  if (!res.ok) {
-    return { events: [], authorized: false, page: 1, pageSize: 12, total: 0 };
-  }
-  const data = await res.json();
-  return { events: data.events as EventCard[], authorized: true, page: data.page, pageSize: data.pageSize, total: data.total };
-}
-
 export default async function EventsPage({ searchParams }: { searchParams?: { page?: string } }) {
+  const session = await getServerSession(authOptions);
+  const authorized = !!session?.user?.email;
   const page = Number(searchParams?.page ?? '1') || 1;
-  const { events, authorized, total, pageSize } = await fetchEvents(page);
+  const pageSize = 12;
+  let events: EventCard[] = [];
+  let total = 0;
+  if (authorized) {
+    const user = await prisma.user.findUnique({ where: { email: session!.user!.email as string } });
+    if (user) {
+      const where = { OR: [{ hostId: user.id }, { familyId: user.familyId ?? undefined }] } as any;
+      total = await prisma.event.count({ where });
+      const rows = await prisma.event.findMany({
+        where,
+        orderBy: { startAt: 'asc' },
+        include: { rsvps: true, host: true },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+      events = rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        location: r.location,
+        startAt: r.startAt.toISOString(),
+        endAt: r.endAt ? r.endAt.toISOString() : null,
+        host: { name: r.host?.name ?? null },
+        rsvps: r.rsvps.map(x => ({ status: x.status })),
+      }));
+    }
+  }
   return (
     <main className="container-page space-y-4">
       <div className="flex items-center justify-between">
