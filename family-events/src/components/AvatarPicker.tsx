@@ -16,7 +16,7 @@ function buildUrl(style: Style, seed: string, bg = 'ffdfbf,ffd5dc') {
   return `${base}?${params.toString()}`;
 }
 
-export default function AvatarPicker({ value }: { value?: { style: Style; seed: string } }) {
+export default function AvatarPicker({ value, onSelect }: { value?: { style: Style; seed: string }, onSelect?: (url: string) => void }) {
   const [style, setStyle] = useState<Style>(value?.style ?? 'adventurer');
   const [seed, setSeed] = useState<string>(value?.seed ?? 'family');
   const url = useMemo(() => buildUrl(style, seed), [style, seed]);
@@ -34,6 +34,9 @@ export default function AvatarPicker({ value }: { value?: { style: Style; seed: 
         </select>
         <input className="border rounded p-2 flex-1" value={seed} onChange={(e)=>setSeed(e.target.value)} placeholder="Seed" />
         <button type="button" className="px-3 py-2 border rounded" onClick={randomize}>אקראי</button>
+        {onSelect && (
+          <button type="button" className="px-3 py-2 bg-gray-200 rounded" onClick={()=>onSelect(url)}>בחרו אווטאר זה</button>
+        )}
       </div>
       <div className="flex items-center gap-3">
         <img src={url} alt="preview" className="w-20 h-20" />

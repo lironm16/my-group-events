@@ -104,7 +104,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           </div>
           <div className="pt-2">
             <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
-            <AvatarPicker />
+            <AvatarPicker onSelect={(url)=>setImageUrl(url)} />
           </div>
           {imageUrl && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
