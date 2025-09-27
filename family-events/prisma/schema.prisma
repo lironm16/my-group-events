@@ -27,6 +27,7 @@ model User {
   image     String?
   role      String   @default("member")
   passwordHash String?
+  approved  Boolean  @default(false)
   family    Family?  @relation(fields: [familyId], references: [id])
   familyId  String?
   group     Group?   @relation(fields: [groupId], references: [id])

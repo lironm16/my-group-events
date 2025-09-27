@@ -17,6 +17,7 @@ export default async function SettingsPage() {
   return (
     <main className="container-page space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">הגדרות</h1>
+      <Approvals familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
       <ProfileForm userId={user!.id} current={{ name: user?.name ?? '', email: user?.email ?? '', image: user?.image ?? '' }} />
       <PasswordForm userId={user!.id} />
       <FamilyNameForm familyId={user?.family?.id ?? null} name={user?.family?.name ?? ''} isAdmin={user?.role === 'admin'} />
@@ -105,6 +106,39 @@ async function regenerateInvite() {
 
 async function getMembers(familyId: string) {
   return prisma.user.findMany({ where: { familyId }, select: { id: true, name: true, email: true, role: true } });
+}
+
+async function getApprovals() {
+  const res = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/admin/approvals`, { cache: 'no-store' });
+  if (!res.ok) return [] as { id: string; name: string | null; email: string | null; username: string | null; image: string | null }[];
+  const j = await res.json();
+  return j.users as { id: string; name: string | null; email: string | null; username: string | null; image: string | null }[];
+}
+
+async function Approvals({ familyId, isAdmin }: { familyId: string | null; isAdmin: boolean }) {
+  if (!familyId || !isAdmin) return null;
+  const users = await getApprovals();
+  if (!users.length) return null;
+  async function act(userId: string, action: 'approve' | 'deny') {
+    'use server';
+    await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/admin/approvals`, { method: 'POST', body: JSON.stringify({ userId, action }) });
+  }
+  return (
+    <div className="space-y-2">
+      <h2 className="font-semibold">בקשות הצטרפות ממתינות</h2>
+      <ul className="space-y-1">
+        {users.map(u => (
+          <li key={u.id} className="flex items-center justify-between text-sm">
+            <span>{u.name ?? u.username ?? u.email ?? u.id}</span>
+            <div className="flex gap-2">
+              <form action={async ()=>act(u.id,'approve')}><button className="px-2 py-1 border rounded">אישור</button></form>
+              <form action={async ()=>act(u.id,'deny')}><button className="px-2 py-1 border rounded">דחייה</button></form>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 async function AdminMembers({ familyId, isAdmin }: { familyId: string | null; isAdmin: boolean }) {

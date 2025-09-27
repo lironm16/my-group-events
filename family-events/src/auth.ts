@@ -30,6 +30,12 @@ export const authOptions: NextAuthOptions = {
       (session.user as any).role = (user as any).role;
       return session;
     },
+    async signIn({ user }) {
+      // Allow only approved users to sign in
+      // First user (admin) will be approved at creation time
+      if ((user as any).approved === false) return false;
+      return true;
+    },
   },
 };
 

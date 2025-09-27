@@ -42,6 +42,7 @@ export async function POST(req: Request) {
       email: email.toLowerCase(),
       passwordHash,
       role: isFirst ? 'admin' : 'member',
+      approved: isFirst ? true : false,
       familyId: family.id,
       groupId: finalGroupId,
     },
