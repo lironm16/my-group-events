@@ -3,7 +3,7 @@ import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 
-export default async function FamilyPage({ searchParams }: { searchParams?: { code?: string } }) {
+export default async function FamilyPage({ searchParams }: { searchParams?: { code?: string; groupId?: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return (
