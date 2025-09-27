@@ -98,18 +98,28 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
             </label>
           </div>
           {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
-          <div className="flex gap-2 items-center">
-            <span className="text-sm text-gray-600">אייקון:</span>
-            {(['mom','dad','boy','girl'] as const).map(i => (
-              <label key={i} className={`px-2 py-1 border rounded cursor-pointer ${icon===i?'bg-blue-100':''}`}>
-                <input className="hidden" type="radio" name="icon" value={i} onChange={()=>setIcon(i)} />
-                {i === 'mom' ? '👩' : i === 'dad' ? '👨' : i === 'boy' ? '👦' : '👧'}
-              </label>
-            ))}
+          <div className="space-y-2">
+            <div className="text-sm text-gray-600">בחרו אייקון (חובה):</div>
+            <div className="grid grid-cols-4 gap-3">
+              {(['mom','dad','boy','girl'] as const).map((k) => {
+                const url = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(k)}&radius=50&backgroundType=gradientLinear&backgroundColor=ffdfbf,ffd5dc`;
+                return (
+                  <label key={k} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===k?'ring-2 ring-blue-500':''}`}>
+                    <input className="hidden" type="radio" name="icon" value={k} onChange={()=>setIcon(k)} />
+                    <img src={url} alt={k} className="w-16 h-16" />
+                    <span className="text-xs text-gray-700">{k==='mom'?'אמא':k==='dad'?'אבא':k==='boy'?'ילד':'ילדה'}</span>
+                  </label>
+                );
+              })}
+            </div>
           </div>
           <div className="flex gap-2 justify-between">
             <button className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
-            <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{ setStep(3); }}>הבא</button>
+            <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{ 
+              if (!icon) { setError('יש לבחור אייקון (אמא/אבא/ילד/ילדה)'); return; }
+              setError('');
+              setStep(3); 
+            }}>הבא</button>
           </div>
         </div>
       )}
