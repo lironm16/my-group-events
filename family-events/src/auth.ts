@@ -33,6 +33,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, user }) {
       // Attach user.id to session for server components usage
       (session.user as any).id = user.id;
+      (session.user as any).role = (user as any).role;
       return session;
     },
   },

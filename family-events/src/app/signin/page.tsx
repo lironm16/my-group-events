@@ -20,13 +20,7 @@ export default function SignInPage() {
     e.preventDefault();
     try {
       setLoading('email');
-      const res = await signIn('credentials', { email, redirect: false });
-      if (res?.error) {
-        alert('כניסה נכשלה, נסו אימייל אחר');
-        setLoading(null);
-        return;
-      }
-      window.location.href = '/events';
+      await signIn('credentials', { email, callbackUrl: '/events' });
     } catch (e) {
       alert('אירעה שגיאה בתהליך הכניסה');
       setLoading(null);
