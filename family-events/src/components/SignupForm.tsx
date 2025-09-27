@@ -58,11 +58,11 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       {step === 1 && (
         <div className="space-y-3">
           {isFirst && (
-            <input className="w-full border p-2 rounded" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
+            <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
           )}
-          <input className="w-full border p-2 rounded" placeholder="שם תצוגה" value={nickname} onChange={e=>setNickname(e.target.value)} />
-          <input className="w-full border p-2 rounded" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-          <input className="w-full border p-2 rounded" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
+          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="שם תצוגה" value={nickname} onChange={e=>setNickname(e.target.value)} />
+          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
           <div className="flex gap-2 justify-between">
             <span />
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{
@@ -81,9 +81,9 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       )}
       {step === 2 && (
         <div className="space-y-3">
-          <input className="w-full border p-2 rounded" placeholder="שם תצוגה (לא חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
+          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="שם תצוגה (לא חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
           <div className="flex items-center gap-2">
-            <input className="w-full border p-2 rounded" placeholder="קישור לתמונה (לא חובה)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
+            <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="קישור לתמונה (לא חובה)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
             <label className="px-3 py-2 border rounded cursor-pointer">
               העלאה
               <input type="file" accept="image/*" className="hidden" onChange={async (e)=>{
@@ -143,7 +143,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
         <form onSubmit={submit} className="space-y-3">
           {groups.length > 0 ? (
             <>
-              <select className="w-full border p-2 rounded" value={groupId} onChange={e=>setGroupId(e.target.value)}>
+              <select className="w-full border p-2 rounded text-gray-900 dark:text-gray-100" value={groupId} onChange={e=>setGroupId(e.target.value)}>
                 <option value="">— לבחור קבוצה —</option>
                 {groups.map(g => (
                   <option key={g.id} value={g.id}>{g.nickname}</option>
