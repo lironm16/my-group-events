@@ -36,7 +36,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
   }
   return (
     <main className="container-page space-y-4">
-      <HeaderActions id={event.id} wa={wa} />
+      <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
         <dl className="grid md:grid-cols-2 gap-4">
           <div>
@@ -90,12 +90,13 @@ export default async function EventDetailPage({ params }: { params: { id: string
   );
 }
 
-function HeaderActions({ id, wa }: { id: string; wa: string }) {
+function HeaderActions({ id, wa, ics }: { id: string; wa: string; ics: string }) {
   return (
     <div className="flex items-center justify-between">
       <h1 className="text-2xl font-bold">פרטי אירוע</h1>
       <div className="flex gap-2">
         <Link className="px-3 py-2 bg-green-600 text-white rounded" href={wa}>שיתוף בוואטסאפ</Link>
+        <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
         <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>
         <DeleteEventButton id={id} />
         <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href="/events">חזרה</Link>
