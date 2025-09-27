@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import AvatarPicker from '@/components/AvatarPicker';
 import { useRouter } from 'next/navigation';
 
@@ -103,9 +102,13 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
               <button type="button" className="px-2 py-1 text-sm border rounded" onClick={()=>setImageUrl('')}>הסרת תמונה</button>
             )}
           </div>
+          <div className="pt-2">
+            <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
+            <AvatarPicker onChange={({ url }) => setImageUrl(url)} />
+          </div>
           {imageUrl && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Image src={imageUrl} alt="preview" width={40} height={40} className="rounded" />
+              <img src={imageUrl} alt="preview" className="w-10 h-10 rounded" />
               <span>תמונה נבחרה</span>
             </div>
           )}
@@ -118,15 +121,11 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 return (
                   <label key={k} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===k?'ring-2 ring-blue-500':''}`}>
                     <input className="hidden" type="radio" name="icon" value={k} onChange={()=>setIcon(k)} />
-                    <Image src={url} alt={k} width={64} height={64} />
+                    <img src={url} alt={k} className="w-16 h-16" />
                     <span className="text-xs text-gray-700">{k==='mom'?'אמא':k==='dad'?'אבא':k==='girl'?'ילדה':'ילד'}</span>
                   </label>
                 );
               })}
-            </div>
-            <div className="pt-2 border-t">
-              <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
-              <AvatarPicker onChange={({ url }) => setImageUrl(url)} />
             </div>
           </div>
           <div className="flex gap-2 justify-between">
