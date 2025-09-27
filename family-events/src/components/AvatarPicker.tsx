@@ -16,13 +16,7 @@ function buildUrl(style: Style, seed: string, bg = 'ffdfbf,ffd5dc') {
   return `${base}?${params.toString()}`;
 }
 
-export default function AvatarPicker({
-  value,
-  onChange,
-}: {
-  value?: { style: Style; seed: string };
-  onChange: (v: { style: Style; seed: string; url: string }) => void;
-}) {
+export default function AvatarPicker({ value }: { value?: { style: Style; seed: string } }) {
   const [style, setStyle] = useState<Style>(value?.style ?? 'adventurer');
   const [seed, setSeed] = useState<string>(value?.seed ?? 'family');
   const url = useMemo(() => buildUrl(style, seed), [style, seed]);
@@ -30,9 +24,6 @@ export default function AvatarPicker({
   function randomize() {
     const rnd = Math.random().toString(36).slice(2, 10);
     setSeed(rnd);
-    // Immediately emit selection so it feels responsive
-    const nextUrl = buildUrl(style, rnd);
-    onChange({ style, seed: rnd, url: nextUrl });
   }
 
   return (
@@ -43,7 +34,6 @@ export default function AvatarPicker({
         </select>
         <input className="border rounded p-2 flex-1" value={seed} onChange={(e)=>setSeed(e.target.value)} placeholder="Seed" />
         <button type="button" className="px-3 py-2 border rounded" onClick={randomize}>אקראי</button>
-        <button type="button" className="px-3 py-2 bg-gray-200 rounded" onClick={()=>onChange({ style, seed, url })}>בחרו אווטאר</button>
       </div>
       <div className="flex items-center gap-3">
         <img src={url} alt="preview" className="w-20 h-20" />
