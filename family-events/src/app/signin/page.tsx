@@ -4,17 +4,9 @@ import { useState } from 'react';
 
 export default function SignInPage() {
   const [username, setUsername] = useState('');
-  const [loading, setLoading] = useState<'google' | 'email' | null>(null);
+  const [loading, setLoading] = useState<'email' | null>(null);
 
-  async function signInGoogle() {
-    try {
-      setLoading('google');
-      await signIn('google', { callbackUrl: '/events' });
-    } catch (e) {
-      setLoading(null);
-      alert('שגיאה בהתחברות עם Google');
-    }
-  }
+  // Google removed per request
 
   async function signInEmail(e: React.FormEvent) {
     e.preventDefault();
@@ -31,10 +23,7 @@ export default function SignInPage() {
   return (
     <main className="container-page max-w-md mx-auto space-y-4">
       <h1 className="text-2xl font-bold">התחברות</h1>
-      <button onClick={signInGoogle} disabled={loading === 'google'} className="w-full px-3 py-2 bg-blue-600 text-white rounded">
-        {loading === 'google' ? 'מתחבר…' : 'התחברות עם Google'}
-      </button>
-      <div className="text-center text-sm text-gray-500">או</div>
+      <a href="/signup" className="text-sm text-blue-600">אין לכם משתמש? הרשמה</a>
       <form onSubmit={signInEmail} className="space-y-2">
         <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" name="username" placeholder="כינוי / אימייל" value={username} onChange={(e)=>setUsername(e.target.value)} />
         <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" name="password" type="password" placeholder="סיסמה" />
