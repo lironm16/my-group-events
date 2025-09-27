@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import AvatarPicker from '@/components/AvatarPicker';
 import { useRouter } from 'next/navigation';
 
@@ -104,7 +105,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           </div>
           {imageUrl && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <img src={imageUrl} alt="preview" className="w-10 h-10 rounded" />
+              <Image src={imageUrl} alt="preview" width={40} height={40} className="rounded" />
               <span>תמונה נבחרה</span>
             </div>
           )}
@@ -117,7 +118,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 return (
                   <label key={k} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===k?'ring-2 ring-blue-500':''}`}>
                     <input className="hidden" type="radio" name="icon" value={k} onChange={()=>setIcon(k)} />
-                    <img src={url} alt={k} className="w-16 h-16" />
+                    <Image src={url} alt={k} width={64} height={64} />
                     <span className="text-xs text-gray-700">{k==='mom'?'אמא':k==='dad'?'אבא':k==='girl'?'ילדה':'ילד'}</span>
                   </label>
                 );
