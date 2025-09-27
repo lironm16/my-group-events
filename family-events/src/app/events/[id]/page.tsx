@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import RSVPButtons from '@/components/RSVPButtons';
 
 type EventDetail = {
   id: string;
@@ -9,7 +10,7 @@ type EventDetail = {
   endAt: string | null;
   externalLink: string | null;
   host: { name: string | null };
-  rsvps: { id: string; status: string; user: { name: string | null } }[];
+  rsvps: { id: string; status: string; user: { id: string; name: string | null } }[];
 };
 
 async function fetchEvent(id: string): Promise<EventDetail | null> {
@@ -69,6 +70,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
         {event.description && (
           <p className="mt-4 text-gray-700 dark:text-gray-300">{event.description}</p>
         )}
+        <div className="mt-4">
+          <h3 className="font-semibold mb-2">אישור הגעה</h3>
+          {/* Initial status is the first RSVP (for the current user) if present; server API restricts data to family/users */}
+          <RSVPButtons eventId={event.id} initial={event.rsvps[0]?.status ?? null as any} />
+        </div>
       </div>
       <section>
         <h2 className="font-semibold mb-2">אישורי הגעה</h2>
