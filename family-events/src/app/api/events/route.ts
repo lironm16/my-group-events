@@ -37,6 +37,8 @@ export async function POST(req: Request) {
       startAt: new Date(body.startAt),
       endAt: body.endAt ? new Date(body.endAt) : null,
       externalLink: body.externalLink ?? null,
+      isHolidayGenerated: body.holidayKey ? true : false,
+      holidayKey: body.holidayKey ?? null,
       hostId: user.id,
       familyId: user.familyId ?? null,
     },

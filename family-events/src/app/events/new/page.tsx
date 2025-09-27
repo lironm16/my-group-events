@@ -17,7 +17,8 @@ export default function NewEventPage() {
     e.preventDefault();
     if (Object.keys(errors).length > 0) return;
     setSaving(true);
-    const res = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const body = { ...form, holidayKey: (window as any).__holidayKey ?? null } as any;
+    const res = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     setSaving(false);
     if (res.ok) {
       window.location.href = '/events';
@@ -30,6 +31,17 @@ export default function NewEventPage() {
   return (
     <main className="container-page space-y-4">
       <h1 className="text-2xl font-bold">אירוע חדש</h1>
+      <Templates onPick={(tpl)=>{
+        setForm({
+          title: tpl.title,
+          description: tpl.description ?? '',
+          location: tpl.location ?? '',
+          startAt: tpl.startAt ?? '',
+          endAt: tpl.endAt ?? '',
+          externalLink: ''
+        });
+        (window as any).__holidayKey = tpl.holidayKey ?? null;
+      }} />
       <form onSubmit={submit} className="space-y-3 max-w-xl">
         <div>
           <input className={inputCls} placeholder="כותרת" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
@@ -49,9 +61,41 @@ export default function NewEventPage() {
           <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
           {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
         </div>
-        <button disabled={saving || Object.keys(errors).length > 0} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
+        <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
     </main>
+  );
+}
+
+type Template = { title: string; description?: string; location?: string; startAt?: string; endAt?: string; holidayKey?: string };
+
+function Templates({ onPick }: { onPick: (tpl: Template) => void }) {
+  const now = new Date();
+  const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  const nextFriday = (() => {
+    const d = new Date(now);
+    const day = d.getDay();
+    const diff = (5 - day + 7) % 7 || 7; // next Friday
+    d.setDate(d.getDate() + diff);
+    d.setHours(19,0,0,0);
+    return d;
+  })();
+  const tonight = (()=>{ const d=new Date(now); d.setHours(19,0,0,0); return d; })();
+  const nextWeek = (()=>{ const d=new Date(now); d.setDate(d.getDate()+7); d.setHours(12,0,0,0); return d; })();
+  const tpls: { label: string; tpl: Template }[] = [
+    { label: 'ערב שישי', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
+    { label: 'ערב חג', tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
+    { label: 'חג', tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+  ];
+  return (
+    <div className="flex flex-wrap gap-2">
+      {tpls.map((t)=> (
+        <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="px-3 py-1 rounded border">
+          {t.label}
+        </button>
+      ))}
+      <button type="button" onClick={()=>onPick({ title: '', description: '', startAt: '' })} className="px-3 py-1 rounded border">מותאם אישית</button>
+    </div>
   );
 }
 

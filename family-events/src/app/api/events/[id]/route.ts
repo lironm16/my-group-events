@@ -29,6 +29,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       startAt: body.startAt ? new Date(body.startAt) : undefined,
       endAt: body.endAt ? new Date(body.endAt) : undefined,
       externalLink: body.externalLink ?? null,
+      isHolidayGenerated: body.holidayKey !== undefined ? !!body.holidayKey : undefined,
+      holidayKey: body.holidayKey ?? undefined,
     },
   });
   return NextResponse.json({ event });
