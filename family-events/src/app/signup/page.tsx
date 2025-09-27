@@ -16,6 +16,8 @@ export default function SignupPage() {
   const [newGroup, setNewGroup] = useState('');
   const [groups, setGroups] = useState<{ id: string; nickname: string }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isFirst, setIsFirst] = useState(false);
+  const [familyName, setFamilyName] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -25,6 +27,11 @@ export default function SignupPage() {
         const data = await res.json();
         setGroups(data.groups ?? []);
       }
+      const first = await fetch('/api/signup/first');
+      if (first.ok) {
+        const j = await first.json();
+        setIsFirst(j.isFirst);
+      }
     }
     load();
   }, [code]);
@@ -33,7 +40,7 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, username, password, nickname, icon, groupId: groupId || null, email, imageUrl: imageUrl || null, newGroup: newGroup || null }) });
+      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, username, password, nickname, icon, groupId: groupId || null, email, imageUrl: imageUrl || null, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
       if (res.ok) {
         router.push('/signin');
       } else {
@@ -49,6 +56,9 @@ export default function SignupPage() {
     <main className="container-page max-w-md mx-auto space-y-4">
       <h1 className="text-2xl font-bold">הרשמה</h1>
       <form onSubmit={submit} className="space-y-3">
+        {isFirst && (
+          <input className="w-full border p-2 rounded" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
+        )}
         <input className="w-full border p-2 rounded" placeholder="קוד הזמנה" value={code} onChange={e=>setCode(e.target.value)} />
         <input className="w-full border p-2 rounded" placeholder="כינוי/שם משתמש" value={username} onChange={e=>setUsername(e.target.value)} />
         <input className="w-full border p-2 rounded" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
