@@ -15,10 +15,11 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
   }
   let user = await prisma.user.findUnique({ where: { email: session.user.email }, include: { family: { include: { members: true, groups: true } }, group: true } });
   const code = searchParams?.code;
+  const groupId = searchParams?.groupId;
   if (!user?.family && code) {
     const family = await prisma.family.findUnique({ where: { inviteCode: code } });
     if (family) {
-      await prisma.user.update({ where: { id: user!.id }, data: { familyId: family.id } });
+      await prisma.user.update({ where: { id: user!.id }, data: { familyId: family.id, groupId: groupId ?? undefined } });
       redirect('/family');
     }
   }
@@ -63,9 +64,15 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
             <p className="text-sm text-gray-600 dark:text-gray-300">אין קבוצות עדיין. ניתן ליצור קבוצה חדשה ב-&apos;הגדרות&apos;.</p>
           ) : (
             <ul className="space-y-1">
-              {family.groups.map((g) => (
-                <li key={g.id} className="text-sm text-gray-700 dark:text-gray-300">{g.nickname}</li>
-              ))}
+              {family.groups.map((g) => {
+                const link = `${base}/family?code=${encodeURIComponent(family.inviteCode)}&groupId=${g.id}`;
+                return (
+                  <li key={g.id} className="flex items-center justify-between text-sm text-gray-700 dark:text-gray-300 gap-2">
+                    <span>{g.nickname}</span>
+                    <CopyButton value={link} />
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

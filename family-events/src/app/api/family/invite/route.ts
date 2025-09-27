@@ -37,3 +37,16 @@ export async function GET() {
   return NextResponse.json({ inviteCode: family.inviteCode, familyId: family.id });
 }
 
+export async function POST() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  if (!user?.familyId) return NextResponse.json({ error: 'No family' }, { status: 400 });
+  let code: string = generateCode();
+  while (await prisma.family.findUnique({ where: { inviteCode: code } })) {
+    code = generateCode();
+  }
+  const family = await prisma.family.update({ where: { id: user.familyId }, data: { inviteCode: code } });
+  return NextResponse.json({ inviteCode: family.inviteCode, familyId: family.id });
+}
+
