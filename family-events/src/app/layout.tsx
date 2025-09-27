@@ -5,8 +5,8 @@ import ThemeProvider from '@/components/ThemeProvider';
 import AuthProvider from '@/components/AuthProvider';
 
 export const metadata: Metadata = {
-  title: 'אירועי משפחה',
-  description: 'ניהול אירועים משפחתיים וחגים',
+  title: 'אירועי משפחת מתתיהו',
+  description: 'ניהול אירועים למשפחת מתתיהו',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -7,14 +7,30 @@ export default function SignInPage() {
   const [loading, setLoading] = useState<'google' | 'email' | null>(null);
 
   async function signInGoogle() {
-    setLoading('google');
-    await signIn('google', { callbackUrl: '/events' });
+    try {
+      setLoading('google');
+      await signIn('google', { callbackUrl: '/events' });
+    } catch (e) {
+      setLoading(null);
+      alert('שגיאה בהתחברות עם Google');
+    }
   }
 
   async function signInEmail(e: React.FormEvent) {
     e.preventDefault();
-    setLoading('email');
-    await signIn('credentials', { email, callbackUrl: '/events' });
+    try {
+      setLoading('email');
+      const res = await signIn('credentials', { email, redirect: false });
+      if (res?.error) {
+        alert('כניסה נכשלה, נסו אימייל אחר');
+        setLoading(null);
+        return;
+      }
+      window.location.href = '/events';
+    } catch (e) {
+      alert('אירעה שגיאה בתהליך הכניסה');
+      setLoading(null);
+    }
   }
 
   return (
