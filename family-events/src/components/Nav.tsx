@@ -24,6 +24,7 @@ export default function Nav() {
           <Link href="/" className={linkCls('/')}>בית</Link>
           <Link href="/events" className={linkCls('/events')}>אירועים</Link>
           <Link href="/family" className={linkCls('/family')}>משפחה</Link>
+          {status === 'authenticated' && <Link href="/settings" className={linkCls('/settings')}>הגדרות</Link>}
         </div>
         <div className="flex items-center gap-2">
           <button onClick={toggle} className="px-2 py-1 rounded border text-sm dark:border-gray-700">

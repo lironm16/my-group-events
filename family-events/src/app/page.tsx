@@ -10,7 +10,7 @@ export default async function HomePage() {
       <section className="max-w-3xl mx-auto text-center py-12">
         <h1 className="text-4xl font-extrabold tracking-tight flex items-center justify-center gap-3">
           <span>🎉</span>
-          <span>אירועי משפחת מתתיהו</span>
+          <span>אירועי משפחה, פשוט</span>
         </h1>
         <p className="mt-3 text-gray-600 dark:text-gray-300">ניהול אירועים, הזמנות ואישורי הגעה במקום אחד.</p>
         <div className="mt-6 flex items-center justify-center gap-3">

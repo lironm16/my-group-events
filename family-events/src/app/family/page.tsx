@@ -13,7 +13,7 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
       </main>
     );
   }
-  let user = await prisma.user.findUnique({ where: { email: session.user.email }, include: { family: { include: { members: true } } } });
+  let user = await prisma.user.findUnique({ where: { email: session.user.email }, include: { family: { include: { members: true, groups: true } }, group: true } });
   const code = searchParams?.code;
   if (!user?.family && code) {
     const family = await prisma.family.findUnique({ where: { inviteCode: code } });
@@ -37,6 +37,7 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
   const base = process.env.NEXTAUTH_URL ?? '';
   const inviteUrl = `${base}/family?code=${encodeURIComponent(family.inviteCode)}`;
 
+  const needsGroup = !!family && !user?.groupId;
   return (
     <main className="container-page space-y-4 max-w-2xl">
       <h1 className="text-2xl font-bold">{family.name}</h1>
@@ -56,6 +57,24 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
             ))}
           </ul>
         </div>
+        <div>
+          <h2 className="font-semibold mb-2">קבוצות</h2>
+          {family.groups.length === 0 ? (
+            <p className="text-sm text-gray-600 dark:text-gray-300">אין קבוצות עדיין. ניתן ליצור קבוצה חדשה ב'הגדרות'.</p>
+          ) : (
+            <ul className="space-y-1">
+              {family.groups.map((g) => (
+                <li key={g.id} className="text-sm text-gray-700 dark:text-gray-300">{g.nickname}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+        {needsGroup && (
+          <div className="rounded border border-blue-200 dark:border-blue-900 p-3 bg-blue-50/50 dark:bg-blue-900/20">
+            <div className="mb-2 font-medium">לא שויכת לקבוצה</div>
+            <div className="text-sm">גשו ל'הגדרות' כדי לבחור קבוצה קיימת או ליצור אחת חדשה.</div>
+          </div>
+        )}
       </div>
     </main>
   );
