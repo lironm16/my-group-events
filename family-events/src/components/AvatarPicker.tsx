@@ -28,19 +28,19 @@ export default function AvatarPicker({ value, onSelect }: { value?: { style: Sty
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <select className="border rounded p-2" value={style} onChange={(e)=>setStyle(e.target.value as Style)}>
           {STYLES.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <input className="border rounded p-2 flex-1" value={seed} onChange={(e)=>setSeed(e.target.value)} placeholder="Seed" />
+        <input className="border rounded p-2 flex-1 min-w-[140px]" value={seed} onChange={(e)=>setSeed(e.target.value)} placeholder="Seed" />
         <button type="button" className="px-3 py-2 border rounded" onClick={randomize}>אקראי</button>
         {onSelect && (
           <button type="button" className="px-3 py-2 bg-gray-200 rounded" onClick={()=>onSelect(url)}>בחרו אווטאר זה</button>
         )}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 overflow-x-auto">
         <img src={url} alt="preview" className="w-20 h-20" />
-        <div className="text-xs text-gray-500 break-all">{url}</div>
+        <div className="text-xs text-gray-500 break-all max-w-full">{url}</div>
       </div>
     </div>
   );

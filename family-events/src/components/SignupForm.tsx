@@ -52,7 +52,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   }
 
   return (
-    <main className="container-page max-w-md mx-auto space-y-4">
+    <main className="container-page max-w-md mx-auto space-y-4 px-3">
       <h1 className="text-2xl font-bold">הרשמה</h1>
       {error && <div className="text-sm text-red-600">{error}</div>}
       {step === 1 && (
@@ -82,7 +82,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       {step === 2 && (
         <div className="space-y-3">
           <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="שם תצוגה (לא חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="קישור לתמונה (לא חובה)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
             <label className="px-3 py-2 border rounded cursor-pointer">
               העלאה
@@ -111,7 +111,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
           <div className="space-y-2">
             <div className="text-sm text-gray-600">בחרו אייקון</div>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
               {(['mom','dad','boy','girl'] as const).map((k) => {
                 const seed = k === 'boy' ? 'girl' : k === 'girl' ? 'boy' : k;
                 const url = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(seed)}&radius=50&backgroundType=gradientLinear&backgroundColor=ffdfbf,ffd5dc`;
