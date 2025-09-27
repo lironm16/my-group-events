@@ -60,17 +60,19 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           {isFirst && (
             <input className="w-full border p-2 rounded" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
           )}
-          <input className="w-full border p-2 rounded" placeholder="שם משתמש" value={username} onChange={e=>setUsername(e.target.value)} />
-          <input className="w-full border p-2 rounded" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
-          <input className="w-full border p-2 rounded" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+          <input className="w-full border p-2 rounded" placeholder="שם תצוגה (חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
+          <input className="w-full border p-2 rounded" placeholder="סיסמה (חובה)" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+          <input className="w-full border p-2 rounded" placeholder="אימייל (חובה)" value={email} onChange={e=>setEmail(e.target.value)} />
           <div className="flex gap-2 justify-between">
             <span />
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{
               const missing: string[] = [];
-              if (!username.trim()) missing.push('שם משתמש');
-              if (!email.trim()) missing.push('אימייל');
+              if (!nickname.trim()) missing.push('שם תצוגה');
               if (!password.trim()) missing.push('סיסמה');
+              if (!email.trim()) missing.push('אימייל');
               if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
+              // derive username automatically from nickname if empty
+              if (!username.trim()) setUsername(nickname.trim());
               setError('');
               setStep(2);
             }}>הבא</button>
