@@ -42,6 +42,9 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const userId = (session?.user as any)?.id as string | undefined;
   const myRsvp = userId ? event.rsvps.find(r => r.user.id === userId)?.status ?? null : null;
   const isHost = userId ? event.host?.id === userId : false;
+  const toRSVPStatus = (s: string | null): 'APPROVED' | 'DECLINED' | 'MAYBE' | null => {
+    return s === 'APPROVED' || s === 'DECLINED' || s === 'MAYBE' ? s : null;
+  };
   return (
     <main className="container-page space-y-4">
       <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} />
@@ -76,7 +79,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
         <div className="mt-4">
           <h3 className="font-semibold mb-2">אישור הגעה</h3>
           {/* Initial status is the first RSVP (for the current user) if present; server API restricts data to family/users */}
-          <RSVPButtons eventId={event.id} initial={myRsvp as any} />
+          <RSVPButtons eventId={event.id} initial={toRSVPStatus(myRsvp)} />
         </div>
       </div>
       <section>
