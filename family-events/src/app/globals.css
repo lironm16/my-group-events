@@ -20,8 +20,8 @@ input, select, textarea {
   caret-color: #0f172a;
 }
 .dark input, .dark select, .dark textarea {
-  color: #f9fafb !important; /* gray-50 */
-  caret-color: #f9fafb;
+  color: #ffffff !important; /* pure white for higher contrast */
+  caret-color: #ffffff;
 }
 input:disabled, select:disabled, textarea:disabled {
   color: #1f2937; /* gray-800 */
@@ -32,7 +32,7 @@ input:disabled, select:disabled, textarea:disabled {
 
 /* Ensure placeholder stays lighter than filled text */
 ::placeholder { color: #9ca3af; /* gray-400 */ opacity: 1; }
-.dark ::placeholder { color: #9ca3af; }
+.dark ::placeholder { color: #a3a3a3; /* slightly darker placeholder for dark mode */ }
 
 /* Improve autofill readability */
 input:-webkit-autofill,
