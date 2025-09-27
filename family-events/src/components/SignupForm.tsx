@@ -114,7 +114,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           )}
           {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
           <div className="space-y-2">
-            <div className="text-sm text-gray-600">בחרו אייקון</div>
+            <div className="text-sm text-gray-600">בחרו אייקון (חובה)</div>
             <div className="grid grid-cols-4 gap-3">
               {(['mom','dad','boy','girl'] as const).map((k) => {
                 const seed = k === 'boy' ? 'girl' : k === 'girl' ? 'boy' : k;
