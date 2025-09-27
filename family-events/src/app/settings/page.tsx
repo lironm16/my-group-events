@@ -1,7 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import AvatarPicker from '@/components/AvatarPicker';
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -205,7 +204,7 @@ function ProfileForm({ userId, current }: { userId: string; current: { name: str
       </div>
       <div className="pt-2 border-t">
         <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
-        <AvatarPicker onChange={({ url }) => { (document.querySelector('input[name="image"]') as HTMLInputElement).value = url; }} />
+        
       </div>
       <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
     </form>
