@@ -12,13 +12,24 @@ export async function POST(req: Request) {
   if (!password) missing.push('סיסמה');
   if (!icon) missing.push('אייקון');
   if (missing.length) return NextResponse.json({ error: `שדות חסרים: ${missing.join(', ')}` }, { status: 400 });
-  const family = await prisma.family.findUnique({ where: { inviteCode: code } });
-  if (!family) return NextResponse.json({ error: 'Invalid invite code' }, { status: 400 });
+  let family = null as null | { id: string };
+  if (code) {
+    const f = await prisma.family.findUnique({ where: { inviteCode: code } });
+    if (f) family = { id: f.id };
+  }
   const existing = await prisma.user.findFirst({ where: { OR: [{ username: username.toLowerCase() }, { email: email.toLowerCase() }] } });
   if (existing) return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
   const passwordHash = await bcrypt.hash(password, 10);
   const isFirst = (await prisma.user.count()) === 0;
   let finalGroupId = groupId ?? undefined;
+  // If no family via code, create a new family for this user
+  if (!family) {
+    const name = (familyName && familyName.trim()) || (nickname && nickname.trim()) || `המשפחה של ${username}`;
+    // generate a simple inviteCode placeholder (not used now)
+    const inviteCode = Math.random().toString(36).slice(2, 10).toUpperCase();
+    const created = await prisma.family.create({ data: { name, inviteCode } });
+    family = { id: created.id };
+  }
   if (!finalGroupId && newGroup && newGroup.trim()) {
     const g = await prisma.group.create({ data: { nickname: newGroup.trim(), familyId: family.id } });
     finalGroupId = g.id;

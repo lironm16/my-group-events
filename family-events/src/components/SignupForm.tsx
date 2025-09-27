@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function SignupForm({ initialCode }: { initialCode: string }) {
   const router = useRouter();
-  const [code, setCode] = useState(initialCode);
+  const [code] = useState(initialCode);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
