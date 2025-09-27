@@ -16,6 +16,8 @@ export default async function SettingsPage() {
   return (
     <main className="container-page space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">הגדרות</h1>
+      <ProfileForm userId={user!.id} current={{ name: user?.name ?? '', email: user?.email ?? '', image: user?.image ?? '' }} />
+      <PasswordForm userId={user!.id} />
       <FamilyNameForm familyId={user?.family?.id ?? null} name={user?.family?.name ?? ''} isAdmin={user?.role === 'admin'} />
       <AdminMembers familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
       <GroupForm userId={user!.id} currentGroupId={user?.group?.id ?? null} groups={groups} />
@@ -131,6 +133,47 @@ async function AdminMembers({ familyId, isAdmin }: { familyId: string | null; is
         ))}
       </ul>
     </div>
+  );
+}
+
+function ProfileForm({ userId, current }: { userId: string; current: { name: string; email: string; image: string } }) {
+  return (
+    <form
+      className="space-y-2"
+      action={async (fd: FormData) => {
+        'use server';
+        const name = String(fd.get('name') ?? '').trim();
+        const email = String(fd.get('email') ?? '').trim().toLowerCase();
+        const image = String(fd.get('image') ?? '').trim();
+        await prisma.user.update({ where: { id: userId }, data: { name: name || null, email: email || null, image: image || null } });
+      }}
+    >
+      <h2 className="font-semibold">פרופיל</h2>
+      <input name="name" defaultValue={current.name} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="שם תצוגה" />
+      <input name="email" defaultValue={current.email} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="אימייל" />
+      <input name="image" defaultValue={current.image} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="קישור לתמונה" />
+      <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
+    </form>
+  );
+}
+
+function PasswordForm({ userId }: { userId: string }) {
+  return (
+    <form
+      className="space-y-2"
+      action={async (fd: FormData) => {
+        'use server';
+        const password = String(fd.get('password') ?? '');
+        if (!password) return;
+        const bcrypt = (await import('bcryptjs')).default;
+        const hash = await bcrypt.hash(password, 10);
+        await prisma.user.update({ where: { id: userId }, data: { passwordHash: hash } });
+      }}
+    >
+      <h2 className="font-semibold">החלפת סיסמה</h2>
+      <input name="password" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="סיסמה חדשה" type="password" />
+      <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
+    </form>
   );
 }
 

@@ -23,7 +23,10 @@ export default function SignInPage() {
   return (
     <main className="container-page max-w-md mx-auto space-y-4">
       <h1 className="text-2xl font-bold">התחברות</h1>
-      <a href="/signup" className="text-sm text-blue-600">אין לכם משתמש? הרשמה</a>
+      <div className="flex items-center justify-between text-sm">
+        <a href="/signup" className="text-blue-600">אין לכם משתמש? הרשמה</a>
+        <a href="/forgot" className="text-blue-600">שכחת סיסמה?</a>
+      </div>
       <form onSubmit={signInEmail} className="space-y-2">
         <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" name="username" placeholder="כינוי / אימייל" value={username} onChange={(e)=>setUsername(e.target.value)} />
         <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" name="password" type="password" placeholder="סיסמה" />
