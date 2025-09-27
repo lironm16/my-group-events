@@ -18,15 +18,13 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   const [isFirst, setIsFirst] = useState(false);
   const [familyName, setFamilyName] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     async function load() {
-      if (!code) return;
-      const res = await fetch('/api/family/groups');
-      if (res.ok) {
-        const data = await res.json();
-        setGroups(data.groups ?? []);
-      }
+      // Groups endpoint requires auth; before login this will likely be empty
+      // This will gracefully force "create new group" flow.
       const first = await fetch('/api/signup/first');
       if (first.ok) {
         const j = await first.json();
@@ -45,7 +43,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
         router.push('/signin');
       } else {
         const j = await res.json().catch(()=>({}));
-        alert(j.error || 'שגיאה בהרשמה');
+        setError(j.error || 'אירעה שגיאה בהרשמה');
       }
     } finally {
       setLoading(false);
@@ -55,51 +53,91 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   return (
     <main className="container-page max-w-md mx-auto space-y-4">
       <h1 className="text-2xl font-bold">הרשמה</h1>
-      <form onSubmit={submit} className="space-y-3">
-        {isFirst && (
-          <input className="w-full border p-2 rounded" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
-        )}
-        <input className="w-full border p-2 rounded" placeholder="קוד הזמנה" value={code} onChange={e=>setCode(e.target.value)} />
-        <input className="w-full border p-2 rounded" placeholder="כינוי/שם משתמש" value={username} onChange={e=>setUsername(e.target.value)} />
-        <input className="w-full border p-2 rounded" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
-        <input className="w-full border p-2 rounded" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-        <input className="w-full border p-2 rounded" placeholder="שם תצוגה" value={nickname} onChange={e=>setNickname(e.target.value)} />
-        <div className="flex items-center gap-2">
-          <input className="w-full border p-2 rounded" placeholder="קישור לתמונה (לא חובה)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
-          <label className="px-3 py-2 border rounded cursor-pointer">
-            העלאה
-            <input type="file" accept="image/*" className="hidden" onChange={async (e)=>{
-              const f = e.target.files?.[0];
-              if (!f) return;
-              setUploading(true);
-              const form = new FormData();
-              form.append('file', f);
-              const res = await fetch('/api/upload', { method: 'POST', body: form });
-              const j = await res.json();
-              setUploading(false);
-              if (j.url) setImageUrl(j.url);
-            }} />
-          </label>
+      {error && <div className="text-sm text-red-600">{error}</div>}
+      {step === 1 && (
+        <div className="space-y-3">
+          {isFirst && (
+            <input className="w-full border p-2 rounded" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
+          )}
+          <input className="w-full border p-2 rounded" placeholder="שם משתמש" value={username} onChange={e=>setUsername(e.target.value)} />
+          <input className="w-full border p-2 rounded" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
+          <input className="w-full border p-2 rounded" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+          <div className="flex gap-2 justify-between">
+            <span />
+            <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{
+              const missing: string[] = [];
+              if (!username.trim()) missing.push('שם משתמש');
+              if (!email.trim()) missing.push('אימייל');
+              if (!password.trim()) missing.push('סיסמה');
+              if (!code) missing.push('קוד הזמנה');
+              if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
+              setError('');
+              setStep(2);
+            }}>הבא</button>
+          </div>
         </div>
-        {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
-        <div className="flex gap-2 items-center">
-          <span className="text-sm text-gray-600">אייקון:</span>
-          {(['mom','dad','boy','girl'] as const).map(i => (
-            <label key={i} className={`px-2 py-1 border rounded cursor-pointer ${icon===i?'bg-blue-100':''}`}>
-              <input className="hidden" type="radio" name="icon" value={i} onChange={()=>setIcon(i)} />
-              {i === 'mom' ? '👩' : i === 'dad' ? '👨' : i === 'boy' ? '👦' : '👧'}
+      )}
+      {step === 2 && (
+        <div className="space-y-3">
+          <input className="w-full border p-2 rounded" placeholder="שם תצוגה (לא חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
+          <div className="flex items-center gap-2">
+            <input className="w-full border p-2 rounded" placeholder="קישור לתמונה (לא חובה)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
+            <label className="px-3 py-2 border rounded cursor-pointer">
+              העלאה
+              <input type="file" accept="image/*" className="hidden" onChange={async (e)=>{
+                const f = e.target.files?.[0];
+                if (!f) return;
+                setUploading(true);
+                const form = new FormData();
+                form.append('file', f);
+                const res = await fetch('/api/upload', { method: 'POST', body: form });
+                const j = await res.json();
+                setUploading(false);
+                if (j.url) setImageUrl(j.url);
+              }} />
             </label>
-          ))}
+          </div>
+          {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
+          <div className="flex gap-2 items-center">
+            <span className="text-sm text-gray-600">אייקון:</span>
+            {(['mom','dad','boy','girl'] as const).map(i => (
+              <label key={i} className={`px-2 py-1 border rounded cursor-pointer ${icon===i?'bg-blue-100':''}`}>
+                <input className="hidden" type="radio" name="icon" value={i} onChange={()=>setIcon(i)} />
+                {i === 'mom' ? '👩' : i === 'dad' ? '👨' : i === 'boy' ? '👦' : '👧'}
+              </label>
+            ))}
+          </div>
+          <div className="flex gap-2 justify-between">
+            <button className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
+            <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{ setStep(3); }}>הבא</button>
+          </div>
         </div>
-        <select className="w-full border p-2 rounded" value={groupId} onChange={e=>setGroupId(e.target.value)}>
-          <option value="">— לבחור קבוצה (אופציונלי) —</option>
-          {groups.map(g => (
-            <option key={g.id} value={g.id}>{g.nickname}</option>
-          ))}
-        </select>
-        <input className="w-full border p-2 rounded" placeholder="או צרו קבוצה חדשה (שם)" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
-        <button disabled={loading} className="w-full px-3 py-2 bg-blue-600 text-white rounded">{loading?'שולח…':'הרשמה'}</button>
-      </form>
+      )}
+      {step === 3 && (
+        <form onSubmit={submit} className="space-y-3">
+          {groups.length > 0 ? (
+            <>
+              <select className="w-full border p-2 rounded" value={groupId} onChange={e=>setGroupId(e.target.value)}>
+                <option value="">— לבחור קבוצה —</option>
+                {groups.map(g => (
+                  <option key={g.id} value={g.id}>{g.nickname}</option>
+                ))}
+              </select>
+              <div className="text-sm text-gray-500">או צרו קבוצה חדשה:</div>
+              <input className="w-full border p-2 rounded" placeholder="שם קבוצה" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
+            </>
+          ) : (
+            <>
+              <div className="text-sm text-gray-500">אין קבוצות קיימות. צרו קבוצה חדשה:</div>
+              <input className="w-full border p-2 rounded" placeholder="שם קבוצה" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
+            </>
+          )}
+          <div className="flex gap-2 justify-between">
+            <button type="button" className="px-3 py-2 border rounded" onClick={()=>setStep(2)}>חזרה</button>
+            <button disabled={loading} className="px-3 py-2 bg-blue-600 text-white rounded">{loading?'שולח…':'סיום הרשמה'}</button>
+          </div>
+        </form>
+      )}
     </main>
   );
 }
