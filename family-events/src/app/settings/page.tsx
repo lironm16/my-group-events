@@ -16,14 +16,21 @@ export default async function SettingsPage() {
   return (
     <main className="container-page space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">הגדרות</h1>
-      <FamilyNameForm familyId={user?.family?.id ?? null} name={user?.family?.name ?? ''} />
+      <FamilyNameForm familyId={user?.family?.id ?? null} name={user?.family?.name ?? ''} isAdmin={user?.role === 'admin'} />
+      <AdminMembers familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
       <GroupForm userId={user!.id} currentGroupId={user?.group?.id ?? null} groups={groups} />
     </main>
   );
 }
 
-function FamilyNameForm({ familyId, name }: { familyId: string | null; name: string }) {
+function FamilyNameForm({ familyId, name, isAdmin }: { familyId: string | null; name: string; isAdmin: boolean }) {
   if (!familyId) return null;
+  if (!isAdmin) return (
+    <div>
+      <label className="block text-sm text-gray-600">שם המשפחה</label>
+      <div className="mt-1">{name}</div>
+    </div>
+  );
   return (
     <form
       className="space-y-2"
@@ -80,6 +87,50 @@ function GroupForm({ userId, currentGroupId, groups }: { userId: string; current
         </div>
       </div>
     </form>
+  );
+}
+
+async function doMemberAction(userId: string, action: 'promote' | 'demote' | 'remove') {
+  'use server';
+  await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/admin/members`, { method: 'POST', body: JSON.stringify({ userId, action }) });
+}
+
+async function regenerateInvite() {
+  'use server';
+  await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/family/invite`, { method: 'POST' });
+}
+
+async function getMembers(familyId: string) {
+  return prisma.user.findMany({ where: { familyId }, select: { id: true, name: true, email: true, role: true } });
+}
+
+async function AdminMembers({ familyId, isAdmin }: { familyId: string | null; isAdmin: boolean }) {
+  if (!familyId || !isAdmin) return null;
+  const members = await getMembers(familyId);
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold">ניהול חברים</h2>
+        <form action={regenerateInvite}>
+          <button className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">יצירת קוד הזמנה חדש</button>
+        </form>
+      </div>
+      <ul className="space-y-1">
+        {members.map((m) => (
+          <li key={m.id} className="flex items-center justify-between text-sm">
+            <span>{m.name ?? m.email ?? m.id} · {m.role}</span>
+            <div className="flex gap-2">
+              {m.role !== 'admin' ? (
+                <form action={async () => doMemberAction(m.id, 'promote')}><button className="px-2 py-1 border rounded">הפוך למנהל</button></form>
+              ) : (
+                <form action={async () => doMemberAction(m.id, 'demote')}><button className="px-2 py-1 border rounded">הפוך לחבר</button></form>
+              )}
+              <form action={async () => doMemberAction(m.id, 'remove')}><button className="px-2 py-1 border rounded">הסרה</button></form>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

@@ -23,8 +23,10 @@ model User {
   id        String   @id @default(cuid())
   name      String?
   email     String?  @unique
+  username  String?  @unique
   image     String?
   role      String   @default("member")
+  passwordHash String?
   family    Family?  @relation(fields: [familyId], references: [id])
   familyId  String?
   group     Group?   @relation(fields: [groupId], references: [id])

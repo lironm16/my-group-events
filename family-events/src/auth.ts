@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -15,17 +16,16 @@ export const authOptions: NextAuthOptions = {
       allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
-      name: 'Email',
-      credentials: { email: { label: 'Email', type: 'email' } },
+      name: 'Credentials',
+      credentials: { username: { label: 'Username', type: 'text' }, password: { label: 'Password', type: 'password' } },
       async authorize(credentials) {
-        const email = (credentials?.email as string | undefined)?.toLowerCase();
-        if (!email) return null;
-        const user = await prisma.user.upsert({
-          where: { email },
-          create: { email, name: email.split('@')[0] },
-          update: {},
-        });
-        return user;
+        const username = (credentials?.username as string | undefined)?.trim().toLowerCase();
+        const password = credentials?.password as string | undefined;
+        if (!username || !password) return null;
+        const user = await prisma.user.findFirst({ where: { OR: [{ username }, { email: username }] } });
+        if (!user?.passwordHash) return null;
+        const ok = await bcrypt.compare(password, user.passwordHash);
+        return ok ? user : null;
       },
     }),
   ],

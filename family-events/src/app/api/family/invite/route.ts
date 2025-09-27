@@ -41,7 +41,7 @@ export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user?.familyId) return NextResponse.json({ error: 'No family' }, { status: 400 });
+  if (!user?.familyId || user.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   let code: string = generateCode();
   while (await prisma.family.findUnique({ where: { inviteCode: code } })) {
     code = generateCode();
