@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import EventsCards from '@/components/EventsCards';
+import EventsExplorer from '@/components/EventsExplorer';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -61,10 +61,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
       ) : events.length === 0 ? (
         <p className="text-gray-600 dark:text-gray-300">אין אירועים להצגה כרגע.</p>
       ) : (
-        <>
-          <EventsCards initial={events} />
-          <Pagination total={total} pageSize={pageSize} page={page} />
-        </>
+        <EventsExplorer initial={events} />
       )}
     </main>
   );
