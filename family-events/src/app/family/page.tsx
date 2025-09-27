@@ -60,7 +60,7 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
         <div>
           <h2 className="font-semibold mb-2">קבוצות</h2>
           {family.groups.length === 0 ? (
-            <p className="text-sm text-gray-600 dark:text-gray-300">אין קבוצות עדיין. ניתן ליצור קבוצה חדשה ב'הגדרות'.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">אין קבוצות עדיין. ניתן ליצור קבוצה חדשה ב-&apos;הגדרות&apos;.</p>
           ) : (
             <ul className="space-y-1">
               {family.groups.map((g) => (
@@ -72,7 +72,7 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
         {needsGroup && (
           <div className="rounded border border-blue-200 dark:border-blue-900 p-3 bg-blue-50/50 dark:bg-blue-900/20">
             <div className="mb-2 font-medium">לא שויכת לקבוצה</div>
-            <div className="text-sm">גשו ל'הגדרות' כדי לבחור קבוצה קיימת או ליצור אחת חדשה.</div>
+            <div className="text-sm">גשו ל-&apos;הגדרות&apos; כדי לבחור קבוצה קיימת או ליצור אחת חדשה.</div>
           </div>
         )}
       </div>
