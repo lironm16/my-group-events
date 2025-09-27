@@ -16,12 +16,12 @@ body {
 
 /* Form field text colors for better readability */
 input, select, textarea {
-  color: #0f172a !important; /* slate-950 for darker readable text */
-  caret-color: #0f172a;
+  color: #000000 !important; /* black */
+  caret-color: #000000;
 }
 .dark input, .dark select, .dark textarea {
-  color: #ffffff !important; /* pure white for higher contrast */
-  caret-color: #ffffff;
+  color: #000000 !important; /* black as requested */
+  caret-color: #000000;
 }
 input:disabled, select:disabled, textarea:disabled {
   color: #1f2937; /* gray-800 */
