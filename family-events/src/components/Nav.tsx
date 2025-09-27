@@ -1,24 +1,13 @@
 "use client";
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function Nav() {
-  const [signedIn, setSignedIn] = useState<boolean>(false);
+  const { data: session, status } = useSession();
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/auth/session', { cache: 'no-store' });
-        setSignedIn(res.ok);
-      } catch {
-        setSignedIn(false);
-      }
-    })();
-  }, []);
 
   const linkCls = (href: string) =>
     [
@@ -40,10 +29,10 @@ export default function Nav() {
           <button onClick={toggle} className="px-2 py-1 rounded border text-sm dark:border-gray-700">
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-          {!signedIn ? (
+          {status !== 'authenticated' ? (
             <Link href="/signin" className="px-3 py-1 bg-blue-600 text-white rounded">התחברות</Link>
           ) : (
-            <Link href="/api/auth/signout" className="px-3 py-1 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">התנתקות</Link>
+            <button onClick={() => signOut({ callbackUrl: '/' })} className="px-3 py-1 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">התנתקות</button>
           )}
         </div>
       </div>
