@@ -102,10 +102,6 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
               <button type="button" className="px-2 py-1 text-sm border rounded" onClick={()=>setImageUrl('')}>הסרת תמונה</button>
             )}
           </div>
-          <div className="pt-2">
-            <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
-            <AvatarPicker onSelect={(url)=>setImageUrl(url)} />
-          </div>
           {imageUrl && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <img src={imageUrl} alt="preview" className="w-10 h-10 rounded" />
@@ -114,7 +110,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           )}
           {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
           <div className="space-y-2">
-            <div className="text-sm text-gray-600">בחרו אייקון (חובה)</div>
+            <div className="text-sm text-gray-600">בחרו אייקון</div>
             <div className="grid grid-cols-4 gap-3">
               {(['mom','dad','boy','girl'] as const).map((k) => {
                 const seed = k === 'boy' ? 'girl' : k === 'girl' ? 'boy' : k;
@@ -123,11 +119,15 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                   <label key={k} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===k?'ring-2 ring-blue-500':''}`}>
                     <input className="hidden" type="radio" name="icon" value={k} onChange={()=>setIcon(k)} />
                     <img src={url} alt={k} className="w-16 h-16" />
-                    <span className="text-xs text-gray-700">{k==='mom'?'אמא':k==='dad'?'אבא':k==='girl'?'ילדה':'ילד'}</span>
+                    <span className="text-xs text-gray-700">{k==='mom'?'אבא':k==='dad'?'אמא':k==='girl'?'ילדה':'ילד'}</span>
                   </label>
                 );
               })}
             </div>
+          </div>
+          <div className="pt-2">
+            <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
+            <AvatarPicker onSelect={(url)=>setImageUrl(url)} />
           </div>
           <div className="flex gap-2 justify-between">
             <button className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
