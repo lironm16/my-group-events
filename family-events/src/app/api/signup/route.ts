@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { code, username, password, nickname, icon, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; username: string; password: string; nickname?: string; icon?: 'mom' | 'dad' | 'boy' | 'girl' | undefined; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
   const missing: string[] = [];
-  if (!code) missing.push('קוד הזמנה');
+  // Invite code should come from the link; do not require manual entry
   if (!username) missing.push('שם משתמש');
   if (!email) missing.push('אימייל');
   if (!password) missing.push('סיסמה');

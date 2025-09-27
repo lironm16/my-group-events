@@ -70,7 +70,6 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
               if (!username.trim()) missing.push('שם משתמש');
               if (!email.trim()) missing.push('אימייל');
               if (!password.trim()) missing.push('סיסמה');
-              if (!code) missing.push('קוד הזמנה');
               if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
               setError('');
               setStep(2);
