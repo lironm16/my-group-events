@@ -1,8 +1,26 @@
-export default function HomePage() {
+import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/auth';
+
+export default async function HomePage() {
+  const session = await getServerSession(authOptions);
+  const signedIn = !!session?.user;
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold">ברוכים הבאים</h1>
-      <p className="mt-2">ניהול אירועי משפחה וחגים</p>
+    <main className="container-page">
+      <section className="max-w-3xl mx-auto text-center py-12">
+        <h1 className="text-4xl font-extrabold tracking-tight">אירועי משפחה, פשוט</h1>
+        <p className="mt-3 text-gray-600 dark:text-gray-300">נהלו אירועים משפחתיים, הזמנות ואישורי הגעה במקום אחד.</p>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          {signedIn ? (
+            <Link href="/events" className="px-5 py-3 bg-blue-600 text-white rounded">לעבור לאירועים</Link>
+          ) : (
+            <>
+              <Link href="/signin" className="px-5 py-3 bg-blue-600 text-white rounded">התחברות</Link>
+              <Link href="/events" className="px-5 py-3 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">דפדוף כאורח</Link>
+            </>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

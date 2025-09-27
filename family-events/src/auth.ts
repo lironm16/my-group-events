@@ -7,6 +7,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'database' },
+  pages: { signIn: '/signin' },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
@@ -28,5 +29,12 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  callbacks: {
+    async session({ session, user }) {
+      // Attach user.id to session for server components usage
+      (session.user as any).id = user.id;
+      return session;
+    },
+  },
 };
 

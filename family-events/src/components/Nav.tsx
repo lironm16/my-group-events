@@ -41,7 +41,7 @@ export default function Nav() {
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
           {!signedIn ? (
-            <Link href="/api/auth/signin" className="px-3 py-1 bg-blue-600 text-white rounded">התחברות</Link>
+            <Link href="/signin" className="px-3 py-1 bg-blue-600 text-white rounded">התחברות</Link>
           ) : (
             <Link href="/api/auth/signout" className="px-3 py-1 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">התנתקות</Link>
           )}
