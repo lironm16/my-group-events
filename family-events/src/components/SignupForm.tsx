@@ -60,9 +60,9 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           {isFirst && (
             <input className="w-full border p-2 rounded" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
           )}
-          <input className="w-full border p-2 rounded" placeholder="שם תצוגה (חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
-          <input className="w-full border p-2 rounded" placeholder="סיסמה (חובה)" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-          <input className="w-full border p-2 rounded" placeholder="אימייל (חובה)" value={email} onChange={e=>setEmail(e.target.value)} />
+          <input className="w-full border p-2 rounded" placeholder="שם תצוגה" value={nickname} onChange={e=>setNickname(e.target.value)} />
+          <input className="w-full border p-2 rounded" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+          <input className="w-full border p-2 rounded" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
           <div className="flex gap-2 justify-between">
             <span />
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{
@@ -117,7 +117,8 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
             <div className="text-sm text-gray-600">בחרו אייקון</div>
             <div className="grid grid-cols-4 gap-3">
               {(['mom','dad','boy','girl'] as const).map((k) => {
-                const url = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(k)}&radius=50&backgroundType=gradientLinear&backgroundColor=ffdfbf,ffd5dc`;
+                const seed = k === 'boy' ? 'girl' : k === 'girl' ? 'boy' : k;
+                const url = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(seed)}&radius=50&backgroundType=gradientLinear&backgroundColor=ffdfbf,ffd5dc`;
                 return (
                   <label key={k} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===k?'ring-2 ring-blue-500':''}`}>
                     <input className="hidden" type="radio" name="icon" value={k} onChange={()=>setIcon(k)} />
