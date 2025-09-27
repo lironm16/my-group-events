@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import AvatarPicker from '@/components/AvatarPicker';
 import { useRouter } from 'next/navigation';
 
 export default function SignupForm({ initialCode }: { initialCode: string }) {
@@ -111,6 +112,10 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                   </label>
                 );
               })}
+            </div>
+            <div className="pt-2 border-t">
+              <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
+              <AvatarPicker onChange={({ url }) => setImageUrl(url)} />
             </div>
           </div>
           <div className="flex gap-2 justify-between">
