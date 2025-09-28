@@ -79,8 +79,6 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       )}
       {step === 2 && (
         <div className="space-y-3">
-          <div className="text-sm text-gray-600">שם משתמש</div>
-          <input className="w-full border p-2 rounded bg-gray-100" value={username} disabled />
           <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="כינוי (לא חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
           <div className="flex items-center gap-2 flex-wrap">
             <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="קישור לתמונה (לא חובה)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
