@@ -6,7 +6,8 @@ import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  session: { strategy: 'database' },
+  // Credentials requires JWT strategy
+  session: { strategy: 'jwt' },
   pages: { signIn: '/signin' },
   providers: [
     CredentialsProvider({
@@ -25,10 +26,17 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      // Attach user.id to session for server components usage
-      (session.user as any).id = user.id;
-      (session.user as any).role = (user as any).role;
+    async jwt({ token, user }) {
+      if (user) {
+        (token as any).id = (user as any).id;
+        (token as any).role = (user as any).role;
+        (token as any).approved = (user as any).approved;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      (session.user as any).id = (token as any).id ?? token.sub;
+      (session.user as any).role = (token as any).role;
       return session;
     },
     async signIn({ user }) {
