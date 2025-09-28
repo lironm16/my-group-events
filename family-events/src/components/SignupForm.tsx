@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 export default function SignupForm({ initialCode }: { initialCode: string }) {
@@ -46,7 +47,13 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
     try {
       const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, username, password, nickname, icon, groupId: groupId || null, email, imageUrl: imageUrl || null, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
       if (res.ok) {
-        router.push('/signin');
+        // Try automatic login, then redirect to events
+        const login = await signIn('credentials', { username: (username || nickname).trim(), password, redirect: false });
+        if (login?.ok) {
+          router.replace('/events');
+        } else {
+          router.push('/signin');
+        }
       } else {
         const j = await res.json().catch(()=>({}));
         setError(j.error || 'אירעה שגיאה בהרשמה');
