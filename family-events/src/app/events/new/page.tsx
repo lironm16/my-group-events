@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from 'react';
 import EventTypeIcon from '@/components/EventTypeIcon';
+import DateTimePicker from '@/components/DateTimePicker';
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
@@ -61,11 +62,11 @@ export default function NewEventPage() {
         <input className={inputCls} placeholder="תיאור" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
         <input className={inputCls} placeholder="מיקום" value={form.location} onChange={e=>setForm({...form, location:e.target.value})} />
         <div>
-          <input className={inputCls} placeholder="תאריך התחלה" type="datetime-local" value={form.startAt} onChange={e=>setForm({...form, startAt:e.target.value})} />
+          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} />
           {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
         </div>
         <div>
-          <input className={inputCls} placeholder="תאריך סיום" type="datetime-local" value={form.endAt} onChange={e=>setForm({...form, endAt:e.target.value})} />
+          <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} />
           {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
         </div>
         <div>
