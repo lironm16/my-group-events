@@ -93,20 +93,24 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   })();
   const tonight = (()=>{ const d=new Date(now); d.setHours(19,0,0,0); return d; })();
   const nextWeek = (()=>{ const d=new Date(now); d.setDate(d.getDate()+7); d.setHours(12,0,0,0); return d; })();
-  const dice = (seed: string) => `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(seed)}&backgroundType=gradientLinear&radius=50`;
+  // Use DiceBear shapes as an avatar-like background, overlay a relevant emoji icon
+  const bg = (seed: string) => `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
   const random = () => Math.random().toString(36).slice(2,6);
-  const tpls: { label: string; iconUrl: string; tpl: Template }[] = [
-    { label: 'ערב שישי', iconUrl: dice(`ShabbatFamily-${random()}`), tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
-    { label: 'ערב חג', iconUrl: dice(`HolidayEve-${random()}`), tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
-    { label: 'חג', iconUrl: dice(`Holiday-${random()}`), tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { label: 'מותאם אישית', iconUrl: dice(`Custom-${random()}`), tpl: { title: '', description: '', startAt: '' } },
+  const tpls: { label: string; emoji: string; bgUrl: string; tpl: Template }[] = [
+    { label: 'ערב שישי', emoji: '🕯️', bgUrl: bg(`Shabbat-${random()}`), tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
+    { label: 'ערב חג', emoji: '✨', bgUrl: bg(`HolidayEve-${random()}`), tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
+    { label: 'חג', emoji: '🌟', bgUrl: bg(`Holiday-${random()}`), tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { label: 'מותאם אישית', emoji: '🎯', bgUrl: bg(`Custom-${random()}`), tpl: { title: '', description: '', startAt: '' } },
   ];
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
       {tpls.map((t)=> (
         <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={t.iconUrl} alt={t.label} width={120} height={120} className="w-28 h-28" />
+          <div className="relative w-32 h-32">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={t.bgUrl} alt="" className="absolute inset-0 w-full h-full rounded-xl" />
+            <div className="absolute inset-0 flex items-center justify-center text-5xl select-none">{t.emoji}</div>
+          </div>
           <div className="font-medium mt-3 text-sm md:text-base">{t.label}</div>
         </button>
       ))}
