@@ -23,6 +23,9 @@ export default function Nav() {
         <div className="flex gap-2">
           <Link href="/" className={linkCls('/')}>בית</Link>
           <Link href="/events" className={linkCls('/events')}>אירועים</Link>
+          {status === 'authenticated' && (
+            <Link href="/events/new" className="px-2 py-1 bg-green-600 text-white rounded">יצירת אירוע</Link>
+          )}
           <Link href="/family" className={linkCls('/family')}>משפחה</Link>
           {status === 'authenticated' && <Link href="/settings" className={linkCls('/settings')}>הגדרות</Link>}
         </div>
