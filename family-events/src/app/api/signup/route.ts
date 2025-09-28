@@ -61,6 +61,12 @@ export async function POST(req: Request) {
         groupId: finalGroupId,
       },
     });
+    if (isFirst) {
+      // Ensure first user is approved and admin for immediate access
+      try {
+        await (prisma as any).user.update({ where: { id: user.id }, data: { approved: true, role: 'admin' } });
+      } catch {}
+    }
     if (isFirst && familyName && familyName.trim()) {
       await prisma.family.update({ where: { id: family.id }, data: { name: familyName.trim() } });
     }
