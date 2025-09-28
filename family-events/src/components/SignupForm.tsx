@@ -113,7 +113,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 setImageUrl(u);
               }}>אקראי</button>
               <input className="border rounded p-2 flex-1 min-w-[160px]" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ const v = e.target.value; setCustomSeed(v); setIcon('custom'); const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(v)}`; setImageUrl(u); }} />
-              <a className="text-sm text-blue-600 underline" href="https://www.dicebear.com/styles/adventurer" target="_blank" rel="noreferrer">עיון בגלריה</a>
+              <a className="text-sm text-blue-600 underline" href="https://www.dicebear.com/playground?style=adventurer" target="_blank" rel="noreferrer">עיון בגלריה (עם שדה Seed)</a>
             </div>
           </div>
           <div className="pt-2">
