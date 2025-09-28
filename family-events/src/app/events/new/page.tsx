@@ -97,6 +97,10 @@ export default function NewEventPage() {
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
       )}
+      <section className="space-y-2 max-w-xl">
+        <h2 className="font-semibold">יצירת חגים (ישראל)</h2>
+        <GenerateHolidays />
+      </section>
     </main>
   );
 }
@@ -139,6 +143,30 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
           <div className="font-medium mt-3 text-sm md:text-base">{t.label}</div>
         </button>
       ))}
+    </div>
+  );
+}
+
+function GenerateHolidays() {
+  'use client';
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string>('');
+  async function run() {
+    setSaving(true); setMsg('');
+    try {
+      const res = await fetch('/api/events/generate-holidays', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ year, tz: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
+      const j = await res.json();
+      if (!res.ok) { setMsg(j.error || 'שגיאה'); return; }
+      setMsg(`נוצרו ${j.created} אירועים לשנת ${j.year}`);
+    } catch { setMsg('שגיאה'); }
+    finally { setSaving(false); }
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <input type="number" value={year} onChange={e=>setYear(Number(e.target.value)||new Date().getFullYear())} className="w-32 border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700" />
+      <button disabled={saving} onClick={run} className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">{saving?'מייצר…':'יצירת חגים'}</button>
+      {msg && <span className="text-sm text-gray-600 dark:text-gray-300">{msg}</span>}
     </div>
   );
 }
