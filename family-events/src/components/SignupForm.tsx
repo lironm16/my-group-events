@@ -89,35 +89,8 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       {step === 2 && (
         <div className="space-y-3">
           <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="כינוי (לא חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
-          <div className="flex items-center gap-2 flex-wrap">
-            <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="קישור לתמונה (לא חובה)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
-            <label className="px-3 py-2 border rounded cursor-pointer">
-              העלאה
-              <input type="file" accept="image/*" className="hidden" onChange={async (e)=>{
-                const f = e.target.files?.[0];
-                if (!f) return;
-                setUploading(true);
-                const form = new FormData();
-                form.append('file', f);
-                const res = await fetch('/api/upload', { method: 'POST', body: form });
-                const j = await res.json();
-                setUploading(false);
-                if (j.url) setImageUrl(j.url);
-              }} />
-            </label>
-            {imageUrl && (
-              <button type="button" className="px-2 py-1 text-sm border rounded" onClick={()=>setImageUrl('')}>הסרת תמונה</button>
-            )}
-          </div>
-          {imageUrl && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <img src={imageUrl} alt="preview" className="w-10 h-10 rounded" />
-              <span>תמונה נבחרה</span>
-            </div>
-          )}
-          {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
           <div className="space-y-2">
-            <div className="text-sm text-gray-600">בחרו אייקון (אופציונלי)</div>
+            <div className="text-sm text-gray-600">בחרו אייקון (חובה)</div>
             <div className="grid grid-cols-3 gap-3">
               {([ 
                 { key: 'mom', label: 'אישה', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Maria' },
@@ -150,6 +123,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           <div className="flex gap-2 justify-between">
             <button className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{ 
+              if (!icon) { setError('יש לבחור אייקון'); return; }
               setError('');
               setStep(3); 
             }}>הבא</button>
