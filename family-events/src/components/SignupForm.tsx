@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from 'react';
-import AvatarPicker from '@/components/AvatarPicker';
 import { useRouter } from 'next/navigation';
 
 export default function SignupForm({ initialCode }: { initialCode: string }) {
@@ -104,10 +103,17 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 </label>
               ))}
             </div>
-          </div>
-          <div className="pt-2">
-            <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
-            <AvatarPicker onSelect={(url)=>setImageUrl(url)} />
+            <div className="flex items-center gap-2 flex-wrap">
+              <button type="button" className="px-3 py-2 border rounded" onClick={()=>{
+                const rnd = Math.random().toString(36).slice(2,10);
+                setCustomSeed(rnd);
+                setIcon('custom');
+                const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(rnd)}`;
+                setImageUrl(u);
+              }}>אקראי</button>
+              <input className="border rounded p-2 flex-1 min-w-[160px]" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ const v = e.target.value; setCustomSeed(v); setIcon('custom'); const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(v)}`; setImageUrl(u); }} />
+              <a className="text-sm text-blue-600 underline" href="https://www.dicebear.com/playground?style=adventurer" target="_blank" rel="noreferrer">עיון בגלריה</a>
+            </div>
           </div>
           <div className="flex gap-2 justify-between">
             <button className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
