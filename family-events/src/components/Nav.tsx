@@ -36,7 +36,7 @@ export default function Nav() {
                 const name = (session?.user as any)?.name || (session?.user as any)?.username || '';
                 const first = String(name).trim().split(' ')[0] || '';
                 const h = new Date().getHours();
-                const g = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+                const g = h < 5 ? 'לילה טוב' : h < 12 ? 'בוקר טוב' : h < 18 ? 'צהריים טובים' : 'ערב טוב';
                 return `${g}${first ? ', ' + first : ''}`;
               })()}
             </span>
