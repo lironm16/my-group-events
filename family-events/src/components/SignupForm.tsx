@@ -119,7 +119,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                   <label key={k} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===k?'ring-2 ring-blue-500':''}`}>
                     <input className="hidden" type="radio" name="icon" value={k} onChange={()=>setIcon(k)} />
                     <img src={url} alt={k} className="w-16 h-16" />
-                    <span className="text-xs text-gray-700">{k==='mom'?'אבא':k==='dad'?'אמא':k==='girl'?'ילדה':'ילד'}</span>
+                    <span className="text-xs text-gray-700">{k==='mom'?'אישה':k==='dad'?'גבר':k==='girl'?'ילדה':'ילד'}</span>
                   </label>
                 );
               })}
