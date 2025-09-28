@@ -11,7 +11,8 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [icon, setIcon] = useState<'mom' | 'dad' | 'boy' | 'girl' | ''>('');
+  const [icon, setIcon] = useState<'mom' | 'dad' | 'custom' | ''>('');
+  const [customSeed, setCustomSeed] = useState<string>('custom');
   const [groupId, setGroupId] = useState<string>('');
   const [newGroup, setNewGroup] = useState('');
   const [groups, setGroups] = useState<{ id: string; nickname: string }[]>([]);
@@ -116,26 +117,28 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           )}
           {uploading && <div className="text-sm text-gray-500">מעלה...</div>}
           <div className="space-y-2">
-            <div className="text-sm text-gray-600">בחרו אייקון</div>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
-              {(['mom','dad','boy','girl'] as const).map((k) => {
-                const url = k === 'boy'
-                  ? 'https://api.dicebear.com/9.x/adventurer/svg?seed=Emery'
-                  : k === 'mom'
-                  ? 'https://api.dicebear.com/9.x/adventurer/svg?seed=Maria'
-                  : k === 'dad'
-                  ? 'https://api.dicebear.com/9.x/adventurer/svg?seed=sjd7uzub'
-                  : k === 'girl'
-                  ? 'https://api.dicebear.com/9.x/adventurer/svg?seed=sjd7uzub'
-                  : `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(k)}&radius=50&backgroundType=gradientLinear&backgroundColor=ffdfbf,ffd5dc`;
-                return (
-                  <label key={k} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===k?'ring-2 ring-blue-500':''}`}>
-                    <input className="hidden" type="radio" name="icon" value={k} onChange={()=>setIcon(k)} />
-                    <img src={url} alt={k} className="w-16 h-16" />
-                    <span className="text-xs text-gray-700">{k==='mom'?'אישה':k==='dad'?'גבר':k==='girl'?'ילדה':'ילד'}</span>
-                  </label>
-                );
-              })}
+            <div className="text-sm text-gray-600">בחרו אייקון (אופציונלי)</div>
+            <div className="grid grid-cols-3 gap-3">
+              {([
+                { key: 'mom', label: 'אישה', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Maria' },
+                { key: 'dad', label: 'גבר', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=la86p9t0' },
+                { key: 'custom', label: 'מותאם', url: `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(customSeed)}` },
+              ] as const).map((opt) => (
+                <label key={opt.key} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===opt.key?'ring-2 ring-blue-500':''}`}>
+                  <input className="hidden" type="radio" name="icon" value={opt.key} onChange={()=>setIcon(opt.key)} />
+                  <img src={opt.url} alt={opt.label} className="w-16 h-16" />
+                  <span className="text-xs text-gray-700">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button type="button" className="px-3 py-2 border rounded" onClick={()=>{
+                const rnd = Math.random().toString(36).slice(2,10);
+                setCustomSeed(rnd);
+                setIcon('custom');
+              }}>אקראי</button>
+              <input className="border rounded p-2 flex-1 min-w-[160px]" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ setCustomSeed(e.target.value); setIcon('custom'); }} />
+              <a className="text-sm text-blue-600 underline" href="https://www.dicebear.com/styles/adventurer" target="_blank" rel="noreferrer">עיון בגלריה</a>
             </div>
           </div>
           <div className="pt-2">
@@ -145,7 +148,6 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           <div className="flex gap-2 justify-between">
             <button className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{ 
-              if (!icon) { setError('יש לבחור אייקון (אמא/אבא/ילד/ילדה)'); return; }
               setError('');
               setStep(3); 
             }}>הבא</button>
