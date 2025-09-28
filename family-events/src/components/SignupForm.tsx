@@ -60,19 +60,17 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           {isFirst && (
             <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
           )}
-          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="שם משתמש" value={nickname} onChange={e=>setNickname(e.target.value)} />
+          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="שם משתמש" value={username} onChange={e=>setUsername(e.target.value)} />
           <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
           <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
           <div className="flex gap-2 justify-between">
             <span />
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{
               const missing: string[] = [];
-              if (!nickname.trim()) missing.push('שם תצוגה');
+              if (!username.trim()) missing.push('שם משתמש');
               if (!password.trim()) missing.push('סיסמה');
               if (!email.trim()) missing.push('אימייל');
               if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
-              // derive username automatically from nickname if empty
-              if (!username.trim()) setUsername(nickname.trim());
               setError('');
               setStep(2);
             }}>הבא</button>
@@ -81,7 +79,9 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       )}
       {step === 2 && (
         <div className="space-y-3">
-          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="שם תצוגה (לא חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
+          <div className="text-sm text-gray-600">שם משתמש</div>
+          <input className="w-full border p-2 rounded bg-gray-100" value={username} disabled />
+          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="כינוי (לא חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
           <div className="flex items-center gap-2 flex-wrap">
             <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="קישור לתמונה (לא חובה)" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
             <label className="px-3 py-2 border rounded cursor-pointer">
