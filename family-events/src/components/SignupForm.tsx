@@ -24,12 +24,17 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
 
   useEffect(() => {
     async function load() {
-      // Groups endpoint requires auth; before login this will likely be empty
-      // This will gracefully force "create new group" flow.
       const first = await fetch('/api/signup/first');
       if (first.ok) {
         const j = await first.json();
         setIsFirst(j.isFirst);
+      }
+      if (code) {
+        const res = await fetch(`/api/family/groups?code=${encodeURIComponent(code)}`);
+        if (res.ok) {
+          const j = await res.json();
+          setGroups(j.groups || []);
+        }
       }
     }
     load();
@@ -129,24 +134,30 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
         <form onSubmit={submit} className="space-y-3">
           {groups.length > 0 ? (
             <>
-              <select className="w-full border p-2 rounded text-gray-900 dark:text-gray-100" value={groupId} onChange={e=>setGroupId(e.target.value)}>
-                <option value="">— לבחור קבוצה —</option>
+              <div className="grid grid-cols-2 gap-3">
                 {groups.map(g => (
-                  <option key={g.id} value={g.id}>{g.nickname}</option>
+                  <label key={g.id} className={`border rounded p-3 cursor-pointer flex items-center gap-3 ${groupId===g.id?'ring-2 ring-blue-500':''}`}>
+                    <input type="radio" className="hidden" name="group" value={g.id} onChange={()=>setGroupId(g.id)} />
+                    <img src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(g.nickname)}`} alt={g.nickname} className="w-10 h-10" />
+                    <span className="text-sm">{g.nickname}</span>
+                  </label>
                 ))}
-              </select>
-              <div className="text-sm text-gray-500">או צרו קבוצה חדשה:</div>
-              <input className="w-full border p-2 rounded" placeholder="שם קבוצה" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
+              </div>
+              <div className="text-sm text-gray-500 pt-2">או צרו קבוצה חדשה:</div>
+              <input className="w-full border p-2 rounded" placeholder="שם קבוצה (ייחודי)" value={newGroup} onChange={e=>{ setNewGroup(e.target.value); setGroupId(''); }} />
             </>
           ) : (
             <>
               <div className="text-sm text-gray-500">אין קבוצות קיימות. צרו קבוצה חדשה:</div>
-              <input className="w-full border p-2 rounded" placeholder="שם קבוצה" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
+              <input className="w-full border p-2 rounded" placeholder="שם קבוצה (ייחודי)" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
             </>
           )}
           <div className="flex gap-2 justify-between">
             <button type="button" className="px-3 py-2 border rounded" onClick={()=>setStep(2)}>חזרה</button>
-            <button disabled={loading} className="px-3 py-2 bg-blue-600 text-white rounded">{loading?'שולח…':'סיום הרשמה'}</button>
+            <button disabled={loading} className="px-3 py-2 bg-blue-600 text-white rounded" onClick={(e)=>{
+              if (!groupId && !newGroup.trim()) { e.preventDefault(); setError('חובה לבחור קבוצה קיימת או ליצור קבוצה חדשה'); return; }
+              if (!groupId && newGroup.trim() && groups.some(g => g.nickname.trim() === newGroup.trim())) { e.preventDefault(); setError('שם הקבוצה כבר קיים'); return; }
+            }}>{loading?'שולח…':'סיום הרשמה'}</button>
           </div>
         </form>
       )}

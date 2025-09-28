@@ -18,8 +18,9 @@ export async function POST(req: Request) {
     const f = await prisma.family.findUnique({ where: { inviteCode: code } });
     if (f) family = { id: f.id };
   }
-  const existing = await prisma.user.findFirst({ where: { OR: [{ username: finalUsername.toLowerCase() }, { email: email.toLowerCase() }] } });
-  if (existing) return NextResponse.json({ error: 'Username already taken' }, { status: 400 });
+  // וידוא ייחודיות שם משתמש בלבד (אימייל אינו ייחודי)
+  const existing = await prisma.user.findFirst({ where: { username: finalUsername.toLowerCase() } });
+  if (existing) return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
   const passwordHash = await bcrypt.hash(password, 10);
   const isFirst = (await prisma.user.count()) === 0;
   let finalGroupId = groupId ?? undefined;
@@ -31,9 +32,16 @@ export async function POST(req: Request) {
     const created = await prisma.family.create({ data: { name, inviteCode } });
     family = { id: created.id };
   }
-  if (!finalGroupId && newGroup && newGroup.trim()) {
-    const g = await prisma.group.create({ data: { nickname: newGroup.trim(), familyId: family.id } });
-    finalGroupId = g.id;
+  if (!finalGroupId) {
+    if (newGroup && newGroup.trim()) {
+      // ייחודיות שם קבוצה בתוך המשפחה
+      const existsGroup = await prisma.group.findFirst({ where: { familyId: family.id, nickname: newGroup.trim() } });
+      if (existsGroup) return NextResponse.json({ error: 'שם הקבוצה כבר קיים' }, { status: 400 });
+      const g = await prisma.group.create({ data: { nickname: newGroup.trim(), familyId: family.id } });
+      finalGroupId = g.id;
+    } else {
+      return NextResponse.json({ error: 'חובה לבחור קבוצה קיימת או ליצור קבוצה חדשה' }, { status: 400 });
+    }
   }
   const user = await prisma.user.create({
     data: {
