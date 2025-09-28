@@ -94,6 +94,7 @@ export default function NewEventPage() {
           <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
           {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
         </div>
+        <GuestSelector />
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
       )}
@@ -167,6 +168,85 @@ function GenerateHolidays() {
       <input type="number" value={year} onChange={e=>setYear(Number(e.target.value)||new Date().getFullYear())} className="w-32 border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700" />
       <button disabled={saving} onClick={run} className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">{saving?'מייצר…':'יצירת חגים'}</button>
       {msg && <span className="text-sm text-gray-600 dark:text-gray-300">{msg}</span>}
+    </div>
+  );
+}
+
+function GuestSelector() {
+  'use client';
+  const [loading, setLoading] = useState(true);
+  const [me, setMe] = useState<{ id: string; groupId: string | null } | null>(null);
+  const [groups, setGroups] = useState<{ id: string; nickname: string; members: { id: string; name: string | null; image: string | null; username: string | null }[] }[]>([]);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const m = await fetch('/api/users/me');
+        const mj = await m.json();
+        setMe(mj.user);
+        const g = await fetch('/api/family/groups');
+        const gj = await g.json();
+        setGroups(gj.groups || []);
+        // Default: select everyone (placeholder; apply opt-outs here later)
+        const sel: Record<string, boolean> = {};
+        (gj.groups || []).forEach((gr: any) => gr.members.forEach((u: any) => { sel[u.id] = true; }));
+        setSelected(sel);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  function toggleUser(id: string) {
+    setSelected((s) => ({ ...s, [id]: !s[id] }));
+  }
+  function toggleGroup(id: string, members: { id: string }[]) {
+    setSelectedGroups((g) => ({ ...g, [id]: !g[id] }));
+    const on = !selectedGroups[id];
+    setSelected((s) => {
+      const ns = { ...s };
+      members.forEach((m) => { ns[m.id] = on; });
+      return ns;
+    });
+  }
+
+  useEffect(() => {
+    // Serialize selection into hidden input for server
+    const input = document.getElementById('guestSelection') as HTMLInputElement | null;
+    if (!input) return;
+    const ids = Object.entries(selected).filter(([, v]) => v).map(([k]) => k);
+    input.value = JSON.stringify(ids);
+  }, [selected]);
+
+  if (loading) return <div className="text-sm text-gray-600 dark:text-gray-300">טוען קבוצות…</div>;
+  if (!groups.length) return <div className="text-sm text-gray-600 dark:text-gray-300">אין קבוצות עדיין.</div>;
+
+  return (
+    <div className="space-y-2">
+      <h3 className="font-semibold">מוזמנים</h3>
+      <input type="hidden" id="guestSelection" name="guestSelection" />
+      <div className="space-y-3">
+        {groups.map((g) => (
+          <div key={g.id} className="rounded border border-gray-200 dark:border-gray-800 p-3">
+            <label className="inline-flex items-center gap-2 mb-2">
+              <input type="checkbox" checked={!!selectedGroups[g.id]} onChange={() => toggleGroup(g.id, g.members)} />
+              <span className="font-medium">{g.nickname}</span>
+            </label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {g.members.map((u) => (
+                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.username || u.name || 'user')}`} alt={u.name || u.username || ''} className="w-5 h-5" />
+                  <span>{u.name || u.username}</span>
+                  <input type="checkbox" className="ml-1" checked={!!selected[u.id]} onChange={() => toggleUser(u.id)} />
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
