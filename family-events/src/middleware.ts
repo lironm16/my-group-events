@@ -5,8 +5,8 @@ export default withAuth({
   callbacks: {
     authorized: ({ req, token }) => {
       const pathname = req.nextUrl.pathname;
-      // Allow unauthenticated access to the event creation page
-      if (pathname === '/events/new') return true;
+      // Temporarily allow unauthenticated access to key pages during setup
+      if (['/events', '/events/new', '/settings'].includes(pathname)) return true;
       return !!token;
     },
   },
