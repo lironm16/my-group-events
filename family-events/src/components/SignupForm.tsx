@@ -139,7 +139,6 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                   <label key={g.id} className={`border rounded p-3 cursor-pointer flex flex-col gap-2 ${groupId===g.id?'ring-2 ring-blue-500':''}`}>
                     <input type="radio" className="hidden" name="group" value={g.id} onChange={()=>setGroupId(g.id)} />
                     <div className="flex items-center gap-3">
-                      <img src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(g.nickname)}`} alt={g.nickname} className="w-8 h-8" />
                       <span className="text-sm font-medium">{g.nickname}</span>
                     </div>
                     {g.members && g.members.length > 0 ? (
