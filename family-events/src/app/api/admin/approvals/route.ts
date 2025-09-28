@@ -25,7 +25,9 @@ export async function POST(req: Request) {
   if (!userId || !['approve','deny'].includes(action)) return NextResponse.json({ error: 'Bad request' }, { status: 400 });
   const target = await prisma.user.findUnique({ where: { id: userId } });
   if (!target || target.familyId !== me.familyId) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  if (action === 'approve') await prisma.user.update({ where: { id: userId }, data: { approved: true } });
+  if (action === 'approve') {
+    await prisma.user.update({ where: { id: userId }, data: { approved: true, familyId: me.familyId } });
+  }
   if (action === 'deny') await prisma.user.delete({ where: { id: userId } });
   return NextResponse.json({ ok: true });
 }

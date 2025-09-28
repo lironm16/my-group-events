@@ -29,10 +29,9 @@ export async function POST(req: Request) {
   const passwordHash = await bcrypt.hash(password, 10);
   const isFirst = (await prisma.user.count()) === 0;
   let finalGroupId = groupId ?? undefined;
-  // If no family via code, create a new family for this user
-  if (!family) {
+  // If no family via code: create a family ONLY for the very first user.
+  if (!family && isFirst) {
     const name = (familyName && familyName.trim()) || (nickname && nickname.trim()) || `המשפחה של ${username}`;
-    // generate a simple inviteCode placeholder (not used now)
     const inviteCode = Math.random().toString(36).slice(2, 10).toUpperCase();
     const created = await prisma.family.create({ data: { name, inviteCode } });
     family = { id: created.id };
@@ -53,7 +52,7 @@ export async function POST(req: Request) {
         email: email.toLowerCase(),
         passwordHash,
         role: isFirst ? 'admin' : 'member',
-        familyId: family.id,
+        familyId: family?.id ?? null,
         groupId: finalGroupId,
       },
     });
@@ -63,7 +62,7 @@ export async function POST(req: Request) {
         await (prisma as any).user.update({ where: { id: user.id }, data: { approved: true, role: 'admin' } });
       } catch {}
     }
-    if (isFirst && familyName && familyName.trim()) {
+    if (isFirst && family && familyName && familyName.trim()) {
       await prisma.family.update({ where: { id: family.id }, data: { name: familyName.trim() } });
     }
     return NextResponse.json({ ok: true, userId: user.id, pending: !isFirst });
