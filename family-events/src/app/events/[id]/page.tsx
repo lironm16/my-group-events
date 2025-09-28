@@ -5,7 +5,7 @@ import DeleteEventButton from '@/components/DeleteEventButton';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import CopyTools from '@/components/CopyTools';
+import PendingWhatsApp from '@/components/PendingWhatsApp';
 
 type EventDetail = {
   id: string;
@@ -67,9 +67,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const shareUrl = `${base}/events/${event.id}`;
   const dateText = new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
   const locText = event.location ? `במקום: ${event.location} ` : '';
-  const perUserMsg = (name?: string | null) => `היי${name ? ' ' + name : ''}! 🙌\nמזכירים לאשר הגעה ל"${event.title}"\n🗓️ ${dateText} ${locText}\nלאישור: ${shareUrl}`;
-  const bulkMsg = `🙌 תזכורת לאישור הגעה ל"${event.title}"\n🗓️ ${dateText} ${locText}\nלאישור: ${shareUrl}`;
-  const pendingNumbers = pending.map(p => p.phone!) as string[];
+  const pendForClient = pending.map(p => ({ id: p.id, name: p.name || null, phone: p.phone!, groupId: null, groupName: null }));
   return (
     <main className="container-page space-y-4">
       <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} />
@@ -123,18 +121,10 @@ export default async function EventDetailPage({ params }: { params: { id: string
         )}
       </section>
       {isHost && pending.length > 0 && (
-        <section className="space-y-2">
+        <>
           <h2 className="font-semibold">תזכורות לוואטסאפ (טרם אישרו)</h2>
-          <CopyTools numbers={pendingNumbers} message={bulkMsg} />
-          <ul className="space-y-2">
-            {pending.map((p) => (
-              <li key={p.id} className="flex items-center justify-between rounded border border-gray-200 dark:border-gray-800 p-2 bg-white dark:bg-gray-900">
-                <span>{p.name || p.phone}</span>
-                <a className="px-3 py-1 bg-green-600 text-white rounded" href={`https://wa.me/${encodeURIComponent(p.phone!)}?text=${encodeURIComponent(perUserMsg(p.name))}`} target="_blank" rel="noreferrer">תזכורת</a>
-              </li>
-            ))}
-          </ul>
-        </section>
+          <PendingWhatsApp title={event.title} dateText={dateText} locText={locText} shareUrl={shareUrl} pending={pendForClient} />
+        </>
       )}
     </main>
   );
