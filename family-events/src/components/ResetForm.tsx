@@ -17,7 +17,7 @@ export default function ResetForm({ token }: { token: string }) {
     <main className="container-page max-w-md mx-auto space-y-4">
       <h1 className="text-2xl font-bold">איפוס סיסמה</h1>
       <form onSubmit={submit} className="space-y-2">
-        <input className="w-full border p-2 rounded" placeholder="סיסמה חדשה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+        <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="סיסמה חדשה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
         <button disabled={saving} className="w-full px-3 py-2 bg-blue-600 text-white rounded">{saving?'שומר…':'איפוס'}</button>
       </form>
     </main>

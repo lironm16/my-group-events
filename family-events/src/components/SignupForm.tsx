@@ -63,11 +63,11 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       {step === 1 && (
         <div className="space-y-3">
           {isFirst && (
-            <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
+            <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
           )}
-          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="שם משתמש" value={username} onChange={e=>setUsername(e.target.value)} />
-          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
+          <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="שם משתמש" value={username} onChange={e=>setUsername(e.target.value)} />
+          <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+          <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
           <div className="flex gap-2 justify-between">
             <span />
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async ()=>{
@@ -92,7 +92,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       )}
       {step === 2 && (
         <div className="space-y-3">
-          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="כינוי" value={nickname} onChange={e=>setNickname(e.target.value)} />
+          <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="כינוי" value={nickname} onChange={e=>setNickname(e.target.value)} />
           <div className="space-y-2">
             <div className="text-sm text-gray-600">בחרו אייקון</div>
             <div className="grid grid-cols-3 gap-3">
@@ -116,7 +116,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(rnd)}`;
                 setImageUrl(u);
               }}>אקראי</button>
-              <input className="border rounded p-2 flex-1 min-w-[160px]" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ const v = e.target.value; setCustomSeed(v); setIcon('custom'); const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(v)}`; setImageUrl(u); }} />
+              <input className="border rounded p-2 flex-1 min-w-[160px] bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ const v = e.target.value; setCustomSeed(v); setIcon('custom'); const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(v)}`; setImageUrl(u); }} />
               <a className="text-sm text-blue-600 underline" href="https://www.dicebear.com/playground?style=adventurer" target="_blank" rel="noreferrer">עיון בגלריה</a>
             </div>
           </div>
@@ -158,12 +158,12 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 ))}
               </div>
               <div className="text-sm text-gray-500 pt-2">או צרו קבוצה חדשה:</div>
-              <input className="w-full border p-2 rounded" placeholder="שם קבוצה (ייחודי)" value={newGroup} onChange={e=>{ setNewGroup(e.target.value); setGroupId(''); }} />
+              <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="שם קבוצה (ייחודי)" value={newGroup} onChange={e=>{ setNewGroup(e.target.value); setGroupId(''); }} />
             </>
           ) : (
             <>
               <div className="text-sm text-gray-500">אין קבוצות קיימות. צרו קבוצה חדשה:</div>
-              <input className="w-full border p-2 rounded" placeholder="שם קבוצה (ייחודי)" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
+              <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="שם קבוצה (ייחודי)" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
             </>
           )}
           <div className="flex gap-2 justify-between">

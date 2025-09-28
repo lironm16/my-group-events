@@ -26,6 +26,8 @@ export default function SignInPage() {
     } catch (e) {
       alert('אירעה שגיאה בתהליך הכניסה');
       setLoading(null);
+    } finally {
+      setLoading(null);
     }
   }
 
