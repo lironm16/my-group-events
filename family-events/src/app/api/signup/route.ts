@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { code, username, password, nickname, icon, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; username?: string; password: string; nickname?: string; icon?: 'mom' | 'dad' | 'boy' | 'girl' | undefined; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
+  const { code, username, password, nickname, icon, groupId, email, imageUrl, newGroup, familyName, phone } = body as { code: string; username?: string; password: string; nickname?: string; icon?: 'mom' | 'dad' | 'boy' | 'girl' | undefined; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string; phone?: string };
   const missing: string[] = [];
   // Invite code should come from the link; do not require manual entry
   const rawUsername = (username ?? '').trim();
@@ -15,6 +15,7 @@ export async function POST(req: Request) {
   if (!password) missing.push('סיסמה');
   if (!icon) missing.push('אייקון');
   if (!nickname || !nickname.trim()) missing.push('כינוי');
+  if (!phone || !phone.trim()) missing.push('טלפון');
   if (missing.length) return NextResponse.json({ error: `שדות חסרים: ${missing.join(', ')}` }, { status: 400 });
   let family = null as null | { id: string };
   if (code) {
@@ -49,12 +50,17 @@ export async function POST(req: Request) {
     }
   }
   try {
+    // require verified phone
+    const pv = await prisma.phoneVerification.findUnique({ where: { phone: phone!.trim() } });
+    if (!pv || !pv.used || pv.expiresAt < new Date()) return NextResponse.json({ error: 'יש לאמת מספר טלפון' }, { status: 400 });
     const user = await prisma.user.create({
       data: {
         username: usernameLower,
         name: rawNickname || finalUsername,
         image: imageUrl || (icon ? `icon:${icon}` : null),
         email: email.toLowerCase(),
+        phone: phone!.trim(),
+        phoneVerified: true,
         passwordHash,
         role: isFirst ? 'admin' : 'member',
         familyId: family.id,

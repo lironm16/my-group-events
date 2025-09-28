@@ -10,6 +10,10 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [phoneCode, setPhoneCode] = useState('');
+  const [phoneSent, setPhoneSent] = useState<string>('');
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [icon, setIcon] = useState<'mom' | 'dad' | 'custom' | ''>('');
   const [customSeed, setCustomSeed] = useState<string>('custom');
@@ -45,7 +49,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, username, password, nickname, icon, groupId: groupId || null, email, imageUrl: imageUrl || null, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
+      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, username, password, nickname, icon, groupId: groupId || null, email, phone, imageUrl: imageUrl || null, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
       if (res.ok) {
         // Try automatic login, then redirect to events
         const login = await signIn('credentials', { username: (username || nickname).trim(), password, redirect: false });
@@ -75,6 +79,32 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="שם משתמש" value={username} onChange={e=>setUsername(e.target.value)} />
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
+          <div className="flex gap-2">
+            <input className="flex-1 border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="טלפון" value={phone} onChange={e=>setPhone(e.target.value)} />
+            <button type="button" className="px-3 py-2 border rounded" onClick={async()=>{
+              setError('');
+              try {
+                const r = await fetch('/api/auth/phone/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone }) });
+                const j = await r.json();
+                if (!r.ok) { setError(j.error || 'שגיאה בשליחת קוד'); return; }
+                setPhoneSent(j.devCode || '');
+              } catch { setError('שגיאה בשליחת קוד'); }
+            }}>שלח קוד</button>
+          </div>
+          <div className="flex items-center gap-2">
+            <input className="flex-1 border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="קוד אימות" value={phoneCode} onChange={e=>setPhoneCode(e.target.value)} />
+            <button type="button" className="px-3 py-2 border rounded" onClick={async()=>{
+              setError('');
+              try {
+                const r = await fetch('/api/auth/phone/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, code: phoneCode }) });
+                const j = await r.json();
+                if (!r.ok) { setError(j.error || 'קוד לא תקף'); return; }
+                setPhoneVerified(true);
+              } catch { setError('קוד לא תקף'); }
+            }}>אימות</button>
+            {phoneVerified && <span className="text-green-600 text-sm">מאומת</span>}
+          </div>
+          {phoneSent && <div className="text-xs text-gray-500">קוד (dev): {phoneSent}</div>}
           <div className="flex gap-2 justify-between">
             <span />
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async ()=>{
@@ -91,6 +121,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
               } catch {
                 setError('תקלה בבדיקת שם המשתמש'); return;
               }
+              if (!phoneVerified) { setError('יש לאמת מספר טלפון'); return; }
               setError('');
               setStep(2);
             }}>הבא</button>
