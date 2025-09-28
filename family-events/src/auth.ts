@@ -53,7 +53,30 @@ export const authOptions: NextAuthOptions = {
         return true;
       }
       if (role === 'admin') return true;
-      if (approved === false) return false;
+      if (approved === false) {
+        // Notify admins on pending login attempt
+        try {
+          const admins = await prisma.user.findMany({ where: { role: 'admin' }, select: { email: true } });
+          const targets = admins.map(a => a.email).filter(Boolean) as string[];
+          if (targets.length) {
+            const nodemailer = await import('nodemailer');
+            const tx = nodemailer.createTransport({
+              host: process.env.SMTP_HOST,
+              port: Number(process.env.SMTP_PORT || 587),
+              secure: false,
+              auth: process.env.SMTP_USER && process.env.SMTP_PASS ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+            });
+            const approveUrl = `${process.env.NEXTAUTH_URL ?? ''}/settings`;
+            await tx.sendMail({
+              from: process.env.SMTP_FROM || 'no-reply@example.com',
+              to: targets.join(','),
+              subject: 'בקשת משתמש ממתינה לאישור',
+              text: `משתמש חדש ניסה להתחבר וממתין לאישור. לאישור/דחייה: ${approveUrl}`,
+            });
+          }
+        } catch {}
+        return false;
+      }
       return true;
     },
   },
