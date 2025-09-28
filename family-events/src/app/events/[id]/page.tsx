@@ -14,12 +14,14 @@ type EventDetail = {
   startAt: string;
   endAt: string | null;
   externalLink: string | null;
+  holidayKey?: string | null;
   host: { id?: string; name: string | null };
-  rsvps: { id: string; status: string; user: { id: string; name: string | null } }[];
+  rsvps: { id: string; status: string; user: { id: string; name: string | null; phone?: string | null } }[];
+  familyMembers?: { id: string; name: string | null; phone: string | null }[];
 };
 
 async function fetchEvent(id: string): Promise<EventDetail | null> {
-  const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: true } }, host: true } });
+  const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: true } }, host: true, family: { include: { members: true } } } });
   if (!row) return null;
   return {
     id: row.id,
@@ -29,8 +31,10 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
     startAt: row.startAt.toISOString(),
     endAt: row.endAt ? row.endAt.toISOString() : null,
     externalLink: row.externalLink,
+    holidayKey: row.holidayKey ?? null,
     host: { id: row.hostId, name: row.host?.name ?? null },
-    rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, user: { id: r.userId, name: r.user?.name ?? null } })),
+    rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, user: { id: r.userId, name: r.user?.name ?? null, phone: (r.user as any)?.phone ?? null } })),
+    familyMembers: (row.family?.members || []).map(m => ({ id: m.id, name: m.name ?? null, phone: (m as any).phone ?? null })),
   };
 }
 
@@ -56,6 +60,13 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const toRSVPStatus = (s: string | null): 'APPROVED' | 'DECLINED' | 'MAYBE' | null => {
     return s === 'APPROVED' || s === 'DECLINED' || s === 'MAYBE' ? s : null;
   };
+  const userStatus = new Map<string, string>();
+  for (const r of event.rsvps) userStatus.set(r.user.id, r.status);
+  const pending = (event.familyMembers || []).filter(m => m.phone && (!userStatus.has(m.id) || userStatus.get(m.id) !== 'APPROVED'));
+  const shareUrl = `${base}/events/${event.id}`;
+  const dateText = new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+  const locText = event.location ? `במקום: ${event.location} ` : '';
+  const perUserMsg = (name?: string | null) => `היי${name ? ' ' + name : ''}! 🙌\nמזכירים לאשר הגעה ל"${event.title}"\n🗓️ ${dateText} ${locText}\nלאישור: ${shareUrl}`;
   return (
     <main className="container-page space-y-4">
       <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} />
@@ -108,6 +119,19 @@ export default async function EventDetailPage({ params }: { params: { id: string
           </ul>
         )}
       </section>
+      {isHost && pending.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="font-semibold">תזכורות לוואטסאפ (טרם אישרו)</h2>
+          <ul className="space-y-2">
+            {pending.map((p) => (
+              <li key={p.id} className="flex items-center justify-between rounded border border-gray-200 dark:border-gray-800 p-2 bg-white dark:bg-gray-900">
+                <span>{p.name || p.phone}</span>
+                <a className="px-3 py-1 bg-green-600 text-white rounded" href={`https://wa.me/${encodeURIComponent(p.phone!)}?text=${encodeURIComponent(perUserMsg(p.name))}`} target="_blank" rel="noreferrer">תזכורת</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </main>
   );
 }
