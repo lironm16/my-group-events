@@ -30,6 +30,17 @@ export default function Nav() {
           {status === 'authenticated' && <Link href="/settings" className={linkCls('/settings')}>הגדרות</Link>}
         </div>
         <div className="flex items-center gap-2">
+          {status === 'authenticated' && (
+            <span className="hidden sm:inline text-sm text-gray-700 dark:text-gray-200 mr-2">
+              {(() => {
+                const name = (session?.user as any)?.name || (session?.user as any)?.username || '';
+                const first = String(name).trim().split(' ')[0] || '';
+                const h = new Date().getHours();
+                const g = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+                return `${g}${first ? ', ' + first : ''}`;
+              })()}
+            </span>
+          )}
           <button onClick={toggle} className="px-2 py-1 rounded border text-sm dark:border-gray-700">
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
