@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
+import crypto from 'crypto';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -26,7 +27,13 @@ export async function POST(req: Request) {
   const target = await prisma.user.findUnique({ where: { id: userId } });
   if (!target || target.familyId !== me.familyId) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (action === 'approve') {
+    // Mark approved but do not assign group; send activation token
     await prisma.user.update({ where: { id: userId }, data: { approved: true, familyId: me.familyId } });
+    const token = crypto.randomBytes(24).toString('hex');
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
+    await prisma.activationToken.create({ data: { token, userId, expiresAt } });
+    // TODO: send email to user with activation link
+    // e.g., `${process.env.NEXTAUTH_URL ?? ''}/activate?token=${token}`
   }
   if (action === 'deny') await prisma.user.delete({ where: { id: userId } });
   return NextResponse.json({ ok: true });
