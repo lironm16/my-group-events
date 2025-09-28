@@ -14,3 +14,47 @@ body {
   background-color: #f8fafc;
 }
 
+/* Form field text colors for better readability */
+input, select, textarea {
+  color: #000000 !important; /* black */
+  caret-color: #000000;
+}
+.dark input, .dark select, .dark textarea {
+  color: #000000 !important; /* black as requested */
+  caret-color: #000000;
+}
+input:disabled, select:disabled, textarea:disabled {
+  color: #1f2937; /* gray-800 */
+}
+.dark input:disabled, .dark select:disabled, .dark textarea:disabled {
+  color: #d1d5db; /* gray-300 */
+}
+
+/* Ensure placeholder stays lighter than filled text */
+::placeholder { color: #9ca3af; /* gray-400 */ opacity: 1; }
+.dark ::placeholder { color: #a3a3a3; /* slightly darker placeholder for dark mode */ }
+
+/* Improve autofill readability */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #000000 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #000000 !important;
+}
+
+/* Dark mode base */
+.dark body {
+  background-color: #0b1220;
+  color: #e5e7eb;
+}
+
+/* Containers */
+.container-page {
+  @apply py-6;
+}
+

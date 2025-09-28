@@ -13,6 +13,7 @@ model Family {
   name       String
   inviteCode String   @unique
   members    User[]
+  groups     Group[]
   events     Event[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -22,14 +23,30 @@ model User {
   id        String   @id @default(cuid())
   name      String?
   email     String?  @unique
+  username  String?  @unique
   image     String?
   role      String   @default("member")
+  passwordHash String?
+  approved  Boolean  @default(false)
   family    Family?  @relation(fields: [familyId], references: [id])
   familyId  String?
+  group     Group?   @relation(fields: [groupId], references: [id])
+  groupId   String?
   accounts  Account[]
   sessions  Session[]
   rsvps     RSVP[]
   hosted    Event[]  @relation("EventHost")
+  passwordResetTokens PasswordResetToken[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Group {
+  id        String   @id @default(cuid())
+  nickname  String
+  family    Family   @relation(fields: [familyId], references: [id])
+  familyId  String
+  members   User[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -98,5 +115,14 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
