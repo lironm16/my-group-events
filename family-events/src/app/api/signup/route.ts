@@ -37,16 +37,12 @@ export async function POST(req: Request) {
     const created = await prisma.family.create({ data: { name, inviteCode } });
     family = { id: created.id };
   }
-  if (!finalGroupId) {
-    if (newGroup && newGroup.trim()) {
-      // ייחודיות שם קבוצה בתוך המשפחה
-      const existsGroup = await prisma.group.findFirst({ where: { familyId: family.id, nickname: newGroup.trim() } });
-      if (existsGroup) return NextResponse.json({ error: 'שם הקבוצה כבר קיים' }, { status: 400 });
-      const g = await prisma.group.create({ data: { nickname: newGroup.trim(), familyId: family.id } });
-      finalGroupId = g.id;
-    } else {
-      return NextResponse.json({ error: 'חובה לבחור קבוצה קיימת או ליצור קבוצה חדשה' }, { status: 400 });
-    }
+  // If invite-code flow is not used, allow skipping group creation
+  if (!finalGroupId && newGroup && newGroup.trim()) {
+    const existsGroup = await prisma.group.findFirst({ where: { familyId: family.id, nickname: newGroup.trim() } });
+    if (existsGroup) return NextResponse.json({ error: 'שם הקבוצה כבר קיים' }, { status: 400 });
+    const g = await prisma.group.create({ data: { nickname: newGroup.trim(), familyId: family.id } });
+    finalGroupId = g.id;
   }
   try {
     const user = await prisma.user.create({
@@ -70,7 +66,7 @@ export async function POST(req: Request) {
     if (isFirst && familyName && familyName.trim()) {
       await prisma.family.update({ where: { id: family.id }, data: { name: familyName.trim() } });
     }
-    return NextResponse.json({ ok: true, userId: user.id });
+    return NextResponse.json({ ok: true, userId: user.id, pending: !isFirst });
   } catch (err: any) {
     // Prisma unique constraint (P2002) - target may be array of fields or constraint name string
     try { console.error('signup_error', { code: err?.code, meta: err?.meta }); } catch {}

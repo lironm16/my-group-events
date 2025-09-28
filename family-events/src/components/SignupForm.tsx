@@ -129,10 +129,16 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           </div>
           <div className="flex gap-2 justify-between">
             <button className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
-            <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{ 
+            <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async()=>{ 
               if (!nickname.trim()) { setError('יש להזין כינוי'); return; }
               if (!icon) { setError('יש לבחור אייקון'); return; }
               setError('');
+              // If no invite code provided, finish signup here (pending approval flow)
+              if (!code) {
+                const fakeEvent = { preventDefault: () => {} } as any;
+                await submit(fakeEvent);
+                return;
+              }
               setStep(3); 
             }}>הבא</button>
           </div>
