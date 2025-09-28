@@ -70,11 +70,21 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ ok: true, userId: user.id });
   } catch (err: any) {
-    // Prisma unique constraint
+    // Prisma unique constraint (P2002) - target may be array of fields or constraint name string
+    try { console.error('signup_error', { code: err?.code, meta: err?.meta }); } catch {}
     if (err?.code === 'P2002') {
-      const target = (err?.meta?.target || []) as string[];
-      if (target.includes('username')) return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
-      if (target.includes('email')) return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
+      const rawTarget = err?.meta?.target;
+      const targetStr = Array.isArray(rawTarget)
+        ? String(rawTarget.join(',')).toLowerCase()
+        : String(rawTarget || '').toLowerCase();
+      if (targetStr.includes('username')) {
+        return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
+      }
+      if (targetStr.includes('email')) {
+        return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
+      }
+      // Fallback when field not parsed
+      return NextResponse.json({ error: 'שם המשתמש או האימייל כבר קיימים' }, { status: 400 });
     }
     return NextResponse.json({ error: 'אירעה שגיאה בהרשמה' }, { status: 500 });
   }
