@@ -113,8 +113,9 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
             <div className="text-sm text-gray-600">בחרו אייקון</div>
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
               {(['mom','dad','boy','girl'] as const).map((k) => {
-                const seed = k === 'boy' ? 'girl' : k === 'girl' ? 'boy' : k;
-                const url = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(seed)}&radius=50&backgroundType=gradientLinear&backgroundColor=ffdfbf,ffd5dc`;
+                const url = k === 'boy'
+                  ? 'https://api.dicebear.com/9.x/adventurer/svg?seed=Emery'
+                  : `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(k)}&radius=50&backgroundType=gradientLinear&backgroundColor=ffdfbf,ffd5dc`;
                 return (
                   <label key={k} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===k?'ring-2 ring-blue-500':''}`}>
                     <input className="hidden" type="radio" name="icon" value={k} onChange={()=>setIcon(k)} />
