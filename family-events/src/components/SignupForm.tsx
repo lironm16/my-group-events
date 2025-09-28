@@ -119,13 +119,13 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           <div className="space-y-2">
             <div className="text-sm text-gray-600">בחרו אייקון (אופציונלי)</div>
             <div className="grid grid-cols-3 gap-3">
-              {([
+              {([ 
                 { key: 'mom', label: 'אישה', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Maria' },
                 { key: 'dad', label: 'גבר', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=la86p9t0' },
                 { key: 'custom', label: 'מותאם', url: `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(customSeed)}` },
               ] as const).map((opt) => (
                 <label key={opt.key} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===opt.key?'ring-2 ring-blue-500':''}`}>
-                  <input className="hidden" type="radio" name="icon" value={opt.key} onChange={()=>setIcon(opt.key)} />
+                  <input className="hidden" type="radio" name="icon" value={opt.key} onChange={()=>{ setIcon(opt.key); setImageUrl(opt.url); }} />
                   <img src={opt.url} alt={opt.label} className="w-16 h-16" />
                   <span className="text-xs text-gray-700">{opt.label}</span>
                 </label>
@@ -136,8 +136,10 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 const rnd = Math.random().toString(36).slice(2,10);
                 setCustomSeed(rnd);
                 setIcon('custom');
+                const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(rnd)}`;
+                setImageUrl(u);
               }}>אקראי</button>
-              <input className="border rounded p-2 flex-1 min-w-[160px]" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ setCustomSeed(e.target.value); setIcon('custom'); }} />
+              <input className="border rounded p-2 flex-1 min-w-[160px]" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ const v = e.target.value; setCustomSeed(v); setIcon('custom'); const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(v)}`; setImageUrl(u); }} />
               <a className="text-sm text-blue-600 underline" href="https://www.dicebear.com/styles/adventurer" target="_blank" rel="noreferrer">עיון בגלריה</a>
             </div>
           </div>
