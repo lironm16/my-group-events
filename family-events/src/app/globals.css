@@ -38,13 +38,13 @@ input:disabled, select:disabled, textarea:disabled {
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #0f172a !important;
+  -webkit-text-fill-color: #000000 !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 .dark input:-webkit-autofill,
 .dark input:-webkit-autofill:hover,
 .dark input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #f9fafb !important;
+  -webkit-text-fill-color: #000000 !important;
 }
 
 /* Dark mode base */
