@@ -19,10 +19,12 @@ input, select, textarea {
   color: inherit;
   caret-color: currentColor;
   background-color: transparent;
+  -webkit-text-fill-color: currentColor; /* ensure mobile keyboards use current text color */
 }
 .dark input, .dark select, .dark textarea {
   color: inherit;
   caret-color: currentColor;
+  -webkit-text-fill-color: currentColor; /* force light text in dark mode even without autofill selector */
 }
 input:disabled, select:disabled, textarea:disabled {
   color: #1f2937; /* gray-800 */
