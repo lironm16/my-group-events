@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import WhatsAppShare from '@/components/WhatsAppShare';
 import RSVPButtons from '@/components/RSVPButtons';
 import DeleteEventButton from '@/components/DeleteEventButton';
 import { getServerSession } from 'next-auth';
@@ -57,7 +58,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
   };
   return (
     <main className="container-page space-y-4">
-      <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} />
+      <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
         <dl className="grid md:grid-cols-2 gap-4">
           <div>
@@ -111,12 +112,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
   );
 }
 
-function HeaderActions({ id, wa, ics, isHost }: { id: string; wa: string; ics: string; isHost: boolean }) {
+function HeaderActions({ id, wa, ics, isHost, event, shareUrl }: { id: string; wa: string; ics: string; isHost: boolean; event: any; shareUrl: string }) {
   return (
     <div className="flex items-center justify-between">
       <h1 className="text-2xl font-bold">פרטי אירוע</h1>
       <div className="flex gap-2">
-        <Link className="px-3 py-2 bg-green-600 text-white rounded" href={wa}>שיתוף בוואטסאפ</Link>
+        <WhatsAppShare eventId={id} title={event.title} startAtISO={event.startAt} location={event.location} typeKey={event.holidayKey ?? null} shareUrl={shareUrl} />
         <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
         {isHost && <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
         {isHost && <DeleteEventButton id={id} />}

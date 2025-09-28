@@ -21,6 +21,13 @@ export default function NewEventPage() {
     const res = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     setSaving(false);
     if (res.ok) {
+      const { event } = await res.json();
+      try {
+        const base = (process.env.NEXT_PUBLIC_APP_URL || window.location.origin);
+        const shareUrl = `${base}/events/${event.id}`;
+        const text = `🎉 נוצר אירוע חדש: ${form.title}\nאישור הגעה: ${shareUrl}`;
+        if (navigator.share) await navigator.share({ text });
+      } catch {}
       window.location.href = '/events';
     }
   }
