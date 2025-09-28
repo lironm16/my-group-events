@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from 'react';
+import EventTypeIcon from '@/components/EventTypeIcon';
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
@@ -96,11 +97,11 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   // Use DiceBear shapes as an avatar-like background, overlay a relevant emoji icon
   const bg = (seed: string) => `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
   const random = () => Math.random().toString(36).slice(2,6);
-  const tpls: { label: string; emoji: string; bgUrl: string; tpl: Template }[] = [
-    { label: 'ערב שישי', emoji: '🕯️', bgUrl: bg(`Shabbat-${random()}`), tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
-    { label: 'ערב חג', emoji: '✨', bgUrl: bg(`HolidayEve-${random()}`), tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
-    { label: 'חג', emoji: '🌟', bgUrl: bg(`Holiday-${random()}`), tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { label: 'מותאם אישית', emoji: '🎯', bgUrl: bg(`Custom-${random()}`), tpl: { title: '', description: '', startAt: '' } },
+  const tpls: { label: string; type: 'shabat_eve' | 'holiday_eve' | 'holiday' | 'custom'; bgUrl: string; tpl: Template }[] = [
+    { label: 'ערב שישי', type: 'shabat_eve', bgUrl: bg(`Shabbat-${random()}`), tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
+    { label: 'ערב חג', type: 'holiday_eve', bgUrl: bg(`HolidayEve-${random()}`), tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
+    { label: 'חג', type: 'holiday', bgUrl: bg(`Holiday-${random()}`), tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { label: 'מותאם אישית', type: 'custom', bgUrl: bg(`Custom-${random()}`), tpl: { title: '', description: '', startAt: '' } },
   ];
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
@@ -109,7 +110,9 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
           <div className="relative w-32 h-32">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={t.bgUrl} alt="" className="absolute inset-0 w-full h-full rounded-xl" />
-            <div className="absolute inset-0 flex items-center justify-center text-5xl select-none">{t.emoji}</div>
+            <div className="absolute inset-0 flex items-center justify-center text-gray-800 dark:text-gray-100">
+              <EventTypeIcon type={t.type} size={84} />
+            </div>
           </div>
           <div className="font-medium mt-3 text-sm md:text-base">{t.label}</div>
         </button>
