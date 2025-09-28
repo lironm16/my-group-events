@@ -4,6 +4,11 @@ const nextConfig = {
     locales: ['he'],
     defaultLocale: 'he',
   },
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'api.dicebear.com' },
+    ],
+  },
 };
 
 module.exports = nextConfig;
