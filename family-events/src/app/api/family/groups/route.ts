@@ -10,14 +10,22 @@ export async function GET(req: Request) {
     // Unauthenticated listing by invite code for signup step
     const family = await prisma.family.findUnique({ where: { inviteCode: code } });
     if (!family) return NextResponse.json({ groups: [] });
-    const groups = await prisma.group.findMany({ where: { familyId: family.id }, orderBy: { createdAt: 'asc' } });
+    const groups = await prisma.group.findMany({
+      where: { familyId: family.id },
+      include: { members: { select: { id: true, name: true, image: true, username: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
     return NextResponse.json({ groups });
   }
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = await prisma.user.findUnique({ where: { email: session.user.email } });
   if (!user?.familyId) return NextResponse.json({ groups: [] });
-  const groups = await prisma.group.findMany({ where: { familyId: user.familyId }, orderBy: { createdAt: 'asc' } });
+  const groups = await prisma.group.findMany({
+    where: { familyId: user.familyId },
+    include: { members: { select: { id: true, name: true, image: true, username: true } } },
+    orderBy: { createdAt: 'asc' },
+  });
   return NextResponse.json({ groups });
 }
 

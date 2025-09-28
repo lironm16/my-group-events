@@ -14,7 +14,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   const [customSeed, setCustomSeed] = useState<string>('custom');
   const [groupId, setGroupId] = useState<string>('');
   const [newGroup, setNewGroup] = useState('');
-  const [groups, setGroups] = useState<{ id: string; nickname: string }[]>([]);
+  const [groups, setGroups] = useState<{ id: string; nickname: string; members?: { id: string; name: string | null; image: string | null; username: string | null }[] }[]>([]);
   const [loading, setLoading] = useState(false);
   const [isFirst, setIsFirst] = useState(false);
   const [familyName, setFamilyName] = useState('');
@@ -134,12 +134,26 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
         <form onSubmit={submit} className="space-y-3">
           {groups.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 {groups.map(g => (
-                  <label key={g.id} className={`border rounded p-3 cursor-pointer flex items-center gap-3 ${groupId===g.id?'ring-2 ring-blue-500':''}`}>
+                  <label key={g.id} className={`border rounded p-3 cursor-pointer flex flex-col gap-2 ${groupId===g.id?'ring-2 ring-blue-500':''}`}>
                     <input type="radio" className="hidden" name="group" value={g.id} onChange={()=>setGroupId(g.id)} />
-                    <img src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(g.nickname)}`} alt={g.nickname} className="w-10 h-10" />
-                    <span className="text-sm">{g.nickname}</span>
+                    <div className="flex items-center gap-3">
+                      <img src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(g.nickname)}`} alt={g.nickname} className="w-8 h-8" />
+                      <span className="text-sm font-medium">{g.nickname}</span>
+                    </div>
+                    {g.members && g.members.length > 0 ? (
+                      <div className="flex flex-wrap gap-2 pl-11">
+                        {g.members.map(m => (
+                          <span key={m.id} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs">
+                            <img src={m.image && m.image.startsWith('http') ? m.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(m.username || m.name || 'user')}`} alt={m.name || m.username || ''} className="w-4 h-4" />
+                            <span>{m.name || m.username}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-500 pl-11">אין חברים עדיין</div>
+                    )}
                   </label>
                 ))}
               </div>
