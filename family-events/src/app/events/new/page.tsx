@@ -6,6 +6,9 @@ import DateTimePicker from '@/components/DateTimePicker';
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
   const [step, setStep] = useState<1 | 2>(1);
+  const [repeatWeekly, setRepeatWeekly] = useState(false);
+  const [repeatUntil, setRepeatUntil] = useState('');
+  const [skipHolidays, setSkipHolidays] = useState(true);
   const [saving, setSaving] = useState(false);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
@@ -20,7 +23,10 @@ export default function NewEventPage() {
     e.preventDefault();
     if (Object.keys(errors).length > 0) return;
     setSaving(true);
-    const body = { ...form, holidayKey: (window as any).__holidayKey ?? null } as any;
+    const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null };
+    if (repeatWeekly && repeatUntil) {
+      body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
+    }
     const res = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     setSaving(false);
     if (res.ok) {
@@ -68,6 +74,21 @@ export default function NewEventPage() {
         <div>
           <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} />
           {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
+        </div>
+        <div className="mt-4 space-y-2">
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={repeatWeekly} onChange={(e)=>setRepeatWeekly(e.target.checked)} />
+            <span>חזרה כל שבוע</span>
+          </label>
+          {repeatWeekly && (
+            <div className="space-y-2">
+              <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} />
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={skipHolidays} onChange={(e)=>setSkipHolidays(e.target.checked)} />
+                <span>דלג על חגים</span>
+              </label>
+            </div>
+          )}
         </div>
         <div>
           <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
