@@ -17,6 +17,7 @@ export default async function SettingsPage() {
     <main className="container-page space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">הגדרות</h1>
       <Approvals familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
+      <ThemeForm currentTheme={(user as any)?.theme as string | undefined} />
       <ProfileForm userId={user!.id} current={{ name: user?.name ?? '', email: user?.email ?? '', image: user?.image ?? '' }} />
       <PasswordForm userId={user!.id} />
       <FamilyNameForm familyId={user?.family?.id ?? null} name={user?.family?.name ?? ''} isAdmin={user?.role === 'admin'} />
@@ -166,6 +167,23 @@ async function AdminMembers({ familyId, isAdmin }: { familyId: string | null; is
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function ThemeForm({ currentTheme }: { currentTheme?: string }) {
+  'use client';
+  const { theme, setTheme } = require('@/components/ThemeProvider') as any;
+  // Fallback to currentTheme from server if available
+  const mode = (theme?.theme ?? currentTheme ?? 'light') as 'light' | 'dark';
+  return (
+    <div className="space-y-2">
+      <h2 className="font-semibold">מצב תצוגה</h2>
+      <div className="flex gap-2">
+        <button type="button" className={`px-3 py-2 border rounded ${mode==='light'?'bg-gray-100 dark:bg-gray-800':''}`} onClick={()=> (theme?.setTheme ?? setTheme)('light')}>בהיר</button>
+        <button type="button" className={`px-3 py-2 border rounded ${mode==='dark'?'bg-gray-100 dark:bg-gray-800':''}`} onClick={()=> (theme?.setTheme ?? setTheme)('dark')}>כהה</button>
+      </div>
+      <p className="text-sm text-gray-500">נשמר אוטומטית בהעדפות.</p>
     </div>
   );
 }

@@ -39,6 +39,8 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     setThemeState(mode);
     if (typeof window !== "undefined") {
       localStorage.setItem("theme", mode);
+      // fire-and-forget save to server
+      fetch('/api/users/theme', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme: mode }) }).catch(()=>{});
     }
     updateDom(mode);
   }, []);
