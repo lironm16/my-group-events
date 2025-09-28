@@ -65,12 +65,20 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
           <div className="flex gap-2 justify-between">
             <span />
-            <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{
+            <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async ()=>{
               const missing: string[] = [];
               if (!username.trim()) missing.push('שם משתמש');
               if (!password.trim()) missing.push('סיסמה');
               if (!email.trim()) missing.push('אימייל');
               if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
+              // Check username availability before proceeding
+              try {
+                const res = await fetch(`/api/users/check-username?u=${encodeURIComponent(username.trim())}`);
+                const j = await res.json();
+                if (!j.available) { setError('שם המשתמש כבר תפוס'); return; }
+              } catch {
+                setError('תקלה בבדיקת שם המשתמש'); return;
+              }
               setError('');
               setStep(2);
             }}>הבא</button>
