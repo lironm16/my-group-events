@@ -123,6 +123,8 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                   ? 'https://api.dicebear.com/9.x/adventurer/svg?seed=Emery'
                   : k === 'mom'
                   ? 'https://api.dicebear.com/9.x/adventurer/svg?seed=Maria'
+                  : k === 'girl'
+                  ? 'https://api.dicebear.com/9.x/adventurer/svg?seed=sjd7uzub'
                   : `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(k)}&radius=50&backgroundType=gradientLinear&backgroundColor=ffdfbf,ffd5dc`;
                 return (
                   <label key={k} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===k?'ring-2 ring-blue-500':''}`}>
