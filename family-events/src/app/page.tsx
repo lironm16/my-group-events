@@ -41,7 +41,10 @@ export default async function HomePage() {
         <p className="mt-3 text-gray-600 dark:text-gray-300">ניהול אירועים, הזמנות ואישורי הגעה במקום אחד.</p>
         <div className="mt-6 flex items-center justify-center gap-3">
           {signedIn ? (
-            <Link href="/events" className="px-5 py-3 bg-blue-600 text-white rounded">לעבור לאירועים</Link>
+            <>
+              <Link href="/events" className="px-5 py-3 bg-blue-600 text-white rounded">לעבור לאירועים</Link>
+              <Link href="/events/new" className="px-5 py-3 bg-green-600 text-white rounded">יצירת אירוע</Link>
+            </>
           ) : (
             <Link href="/signin" className="px-5 py-3 bg-blue-600 text-white rounded">התחברות / הרשמה</Link>
           )}

@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
+  const [step, setStep] = useState<1 | 2>(1);
   const [saving, setSaving] = useState(false);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
@@ -38,7 +39,7 @@ export default function NewEventPage() {
   return (
     <main className="container-page space-y-4">
       <h1 className="text-2xl font-bold">אירוע חדש</h1>
-      <Templates onPick={(tpl)=>{
+      <TemplatesTiles onPick={(tpl)=>{
         setForm({
           title: tpl.title,
           description: tpl.description ?? '',
@@ -48,7 +49,9 @@ export default function NewEventPage() {
           externalLink: ''
         });
         (window as any).__holidayKey = tpl.holidayKey ?? null;
+        setStep(2);
       }} />
+      {step === 2 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
         <div>
           <input className={inputCls} placeholder="כותרת" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
@@ -70,13 +73,14 @@ export default function NewEventPage() {
         </div>
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
+      )}
     </main>
   );
 }
 
 type Template = { title: string; description?: string; location?: string; startAt?: string; endAt?: string; holidayKey?: string };
 
-function Templates({ onPick }: { onPick: (tpl: Template) => void }) {
+function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   const now = new Date();
   const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
   const nextFriday = (() => {
@@ -89,19 +93,20 @@ function Templates({ onPick }: { onPick: (tpl: Template) => void }) {
   })();
   const tonight = (()=>{ const d=new Date(now); d.setHours(19,0,0,0); return d; })();
   const nextWeek = (()=>{ const d=new Date(now); d.setDate(d.getDate()+7); d.setHours(12,0,0,0); return d; })();
-  const tpls: { label: string; tpl: Template }[] = [
-    { label: 'ערב שישי', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
-    { label: 'ערב חג', tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
-    { label: 'חג', tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+  const tpls: { label: string; icon: string; tpl: Template }[] = [
+    { label: 'ערב שישי', icon: '🕯️', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
+    { label: 'ערב חג', icon: '✨', tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
+    { label: 'חג', icon: '🌟', tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { label: 'מותאם אישית', icon: '🎯', tpl: { title: '', description: '', startAt: '' } },
   ];
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-xl">
       {tpls.map((t)=> (
-        <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="px-3 py-1 rounded border">
-          {t.label}
+        <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow">
+          <div className="text-3xl mb-2">{t.icon}</div>
+          <div className="font-medium">{t.label}</div>
         </button>
       ))}
-      <button type="button" onClick={()=>onPick({ title: '', description: '', startAt: '' })} className="px-3 py-1 rounded border">מותאם אישית</button>
     </div>
   );
 }
