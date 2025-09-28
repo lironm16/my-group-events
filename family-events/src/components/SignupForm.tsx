@@ -90,7 +90,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
         <div className="space-y-3">
           <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="כינוי (לא חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
           <div className="space-y-2">
-            <div className="text-sm text-gray-600">בחרו אייקון (חובה)</div>
+            <div className="text-sm text-gray-600">בחרו אייקון</div>
             <div className="grid grid-cols-3 gap-3">
               {([ 
                 { key: 'mom', label: 'אישה', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Maria' },
@@ -103,17 +103,6 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                   <span className="text-xs text-gray-700">{opt.label}</span>
                 </label>
               ))}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button type="button" className="px-3 py-2 border rounded" onClick={()=>{
-                const rnd = Math.random().toString(36).slice(2,10);
-                setCustomSeed(rnd);
-                setIcon('custom');
-                const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(rnd)}`;
-                setImageUrl(u);
-              }}>אקראי</button>
-              <input className="border rounded p-2 flex-1 min-w-[160px]" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ const v = e.target.value; setCustomSeed(v); setIcon('custom'); const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(v)}`; setImageUrl(u); }} />
-              <a className="text-sm text-blue-600 underline" href="https://www.dicebear.com/playground?style=adventurer" target="_blank" rel="noreferrer">עיון בגלריה</a>
             </div>
           </div>
           <div className="pt-2">
