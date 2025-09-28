@@ -4,14 +4,17 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { code, username, password, nickname, icon, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; username?: string; password: string; nickname: string; icon?: 'mom' | 'dad' | 'boy' | 'girl' | undefined; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
+  const { code, username, password, nickname, icon, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; username?: string; password: string; nickname?: string; icon?: 'mom' | 'dad' | 'boy' | 'girl' | undefined; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
   const missing: string[] = [];
   // Invite code should come from the link; do not require manual entry
-  const finalUsername = (username && username.trim()) || (nickname && nickname.trim());
+  const rawUsername = (username ?? '').trim();
+  const rawNickname = (nickname ?? '').trim();
+  const finalUsername = rawUsername || rawNickname;
   if (!finalUsername) missing.push('שם משתמש');
   if (!email) missing.push('אימייל');
   if (!password) missing.push('סיסמה');
   if (!icon) missing.push('אייקון');
+  if (!nickname || !nickname.trim()) missing.push('כינוי');
   if (missing.length) return NextResponse.json({ error: `שדות חסרים: ${missing.join(', ')}` }, { status: 400 });
   let family = null as null | { id: string };
   if (code) {
@@ -19,7 +22,8 @@ export async function POST(req: Request) {
     if (f) family = { id: f.id };
   }
   // וידוא ייחודיות שם משתמש בלבד (אימייל אינו ייחודי)
-  const existing = await prisma.user.findFirst({ where: { username: finalUsername.toLowerCase() } });
+  const usernameLower = finalUsername.toLowerCase();
+  const existing = await prisma.user.findFirst({ where: { username: usernameLower } });
   if (existing) return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
   const passwordHash = await bcrypt.hash(password, 10);
   const isFirst = (await prisma.user.count()) === 0;
@@ -45,13 +49,12 @@ export async function POST(req: Request) {
   }
   const user = await prisma.user.create({
     data: {
-      username: finalUsername.toLowerCase(),
-      name: nickname || finalUsername,
+      username: usernameLower,
+      name: rawNickname || finalUsername,
       image: imageUrl || (icon ? `icon:${icon}` : null),
       email: email.toLowerCase(),
       passwordHash,
       role: isFirst ? 'admin' : 'member',
-      approved: isFirst ? true : false,
       familyId: family.id,
       groupId: finalGroupId,
     },

@@ -92,7 +92,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       )}
       {step === 2 && (
         <div className="space-y-3">
-          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="כינוי (לא חובה)" value={nickname} onChange={e=>setNickname(e.target.value)} />
+          <input className="w-full border p-2 rounded text-gray-900 dark:text-gray-100 placeholder-gray-400" placeholder="כינוי" value={nickname} onChange={e=>setNickname(e.target.value)} />
           <div className="space-y-2">
             <div className="text-sm text-gray-600">בחרו אייקון</div>
             <div className="grid grid-cols-3 gap-3">
@@ -123,6 +123,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           <div className="flex gap-2 justify-between">
             <button className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={()=>{ 
+              if (!nickname.trim()) { setError('יש להזין כינוי'); return; }
               if (!icon) { setError('יש לבחור אייקון'); return; }
               setError('');
               setStep(3); 

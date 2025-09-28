@@ -6,9 +6,9 @@ import { authOptions } from '@/auth';
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
-  if (code) {
+  if (code || process.env.VERCEL_ENV === 'preview') {
     // Unauthenticated listing by invite code for signup step
-    const family = await prisma.family.findUnique({ where: { inviteCode: code } });
+    const family = code ? await prisma.family.findUnique({ where: { inviteCode: code } }) : null;
     if (!family) {
       // Preview fallback: return mock groups for UI demos on Vercel preview
       if (process.env.VERCEL_ENV === 'preview') {
