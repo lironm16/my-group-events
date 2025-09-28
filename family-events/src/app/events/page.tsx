@@ -22,9 +22,11 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
   const pageSize = 12;
   let events: EventCard[] = [];
   let total = 0;
+  let needsOnboarding = false;
   if (authorized) {
     const user = await prisma.user.findFirst({ where: { email: session!.user!.email as string } });
     if (user) {
+      if (user.approved && user.familyId && !user.groupId) needsOnboarding = true;
       const where = { OR: [{ hostId: user.id }, { familyId: user.familyId ?? undefined }] } as any;
       total = await prisma.event.count({ where });
       const rows = await prisma.event.findMany({
@@ -48,6 +50,11 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
   }
   return (
     <main className="container-page space-y-4">
+      {needsOnboarding && (
+        <div className="p-3 rounded border border-yellow-300 bg-yellow-50 text-yellow-900">
+          לא בחרתם קבוצה עדיין. <Link className="underline" href="/onboarding/group">בחירת קבוצה</Link>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">אירועים</h1>
         {authorized ? (
