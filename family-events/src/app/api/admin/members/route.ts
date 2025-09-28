@@ -6,7 +6,7 @@ import { authOptions } from '@/auth';
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return null;
-  const me = await prisma.user.findUnique({ where: { email: session.user.email } });
+  const me = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!me || me.role !== 'admin' || !me.familyId) return null;
   return me;
 }

@@ -11,7 +11,7 @@ export default async function SettingsPage() {
       </main>
     );
   }
-  const user = await prisma.user.findUnique({ where: { email: session.user.email }, include: { family: true, group: true } });
+  const user = await prisma.user.findFirst({ where: { email: session.user.email }, include: { family: true, group: true } });
   const groups = user?.familyId ? await prisma.group.findMany({ where: { familyId: user.familyId }, orderBy: { createdAt: 'asc' } }) : [];
   return (
     <main className="container-page space-y-6 max-w-xl">

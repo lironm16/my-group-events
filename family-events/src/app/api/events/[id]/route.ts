@@ -14,7 +14,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  const user = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const existing = await prisma.event.findUnique({ where: { id: params.id } });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -39,7 +39,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  const user = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const existing = await prisma.event.findUnique({ where: { id: params.id } });
   if (!existing) return new NextResponse(null, { status: 204 });

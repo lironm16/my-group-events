@@ -35,7 +35,7 @@ export async function GET(req: Request) {
   }
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  const user = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!user?.familyId) return NextResponse.json({ groups: [] });
   const groups = await prisma.group.findMany({
     where: { familyId: user.familyId },
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  const user = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!user?.familyId) return NextResponse.json({ error: 'No family' }, { status: 400 });
   const body = await req.json();
   const nickname: string | undefined = body?.nickname;

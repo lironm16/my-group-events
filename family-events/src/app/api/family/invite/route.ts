@@ -13,7 +13,7 @@ function generateCode(length = 8) {
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  const user = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   let family = user.familyId ? await prisma.family.findUnique({ where: { id: user.familyId } }) : null;
@@ -40,7 +40,7 @@ export async function GET() {
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  const user = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!user?.familyId || user.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   let code: string = generateCode();
   while (await prisma.family.findUnique({ where: { inviteCode: code } })) {

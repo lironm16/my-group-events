@@ -13,7 +13,7 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
       </main>
     );
   }
-  let user = await prisma.user.findUnique({ where: { email: session.user.email }, include: { family: { include: { members: true, groups: true } }, group: true } });
+  let user = await prisma.user.findFirst({ where: { email: session.user.email }, include: { family: { include: { members: true, groups: true } }, group: true } });
   const code = searchParams?.code;
   const groupId = searchParams?.groupId;
   if (!user?.family && code) {

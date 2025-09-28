@@ -23,7 +23,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
   let events: EventCard[] = [];
   let total = 0;
   if (authorized) {
-    const user = await prisma.user.findUnique({ where: { email: session!.user!.email as string } });
+    const user = await prisma.user.findFirst({ where: { email: session!.user!.email as string } });
     if (user) {
       const where = { OR: [{ hostId: user.id }, { familyId: user.familyId ?? undefined }] } as any;
       total = await prisma.event.count({ where });
