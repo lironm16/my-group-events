@@ -44,6 +44,14 @@ export const authOptions: NextAuthOptions = {
       // Allow only approved users to sign in; admins can always sign in
       const role = (user as any).role;
       const approved = (user as any).approved;
+      // Bootstrap: if there are no admins yet, promote this user and approve
+      const admins = await prisma.user.count({ where: { role: 'admin' } });
+      if (admins === 0) {
+        try {
+          await (prisma as any).user.update({ where: { id: (user as any).id }, data: { role: 'admin', approved: true } });
+        } catch {}
+        return true;
+      }
       if (role === 'admin') return true;
       if (approved === false) return false;
       return true;
