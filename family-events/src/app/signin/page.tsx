@@ -1,9 +1,13 @@
 "use client";
-import { signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { signIn, useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function SignInPage() {
+  const router = useRouter();
+  const { status } = useSession();
   const [username, setUsername] = useState('');
+  const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<'login' | null>(null);
 
   // Google removed per request
@@ -13,16 +17,26 @@ export default function SignInPage() {
     try {
       setLoading('login');
       const pwd = (e.target as HTMLFormElement).password.value as string;
-      await signIn('credentials', { username, password: pwd, callbackUrl: '/events' });
+      const res = await signIn('credentials', { username, password: pwd, redirect: false });
+      if (res?.ok) {
+        router.replace('/events');
+        return;
+      }
+      setError('שם משתמש/כינוי או סיסמה שגויים');
     } catch (e) {
       alert('אירעה שגיאה בתהליך הכניסה');
       setLoading(null);
     }
   }
 
+  useEffect(() => {
+    if (status === 'authenticated') router.replace('/events');
+  }, [status, router]);
+
   return (
     <main className="container-page max-w-md mx-auto space-y-4">
       <h1 className="text-2xl font-bold">התחברות</h1>
+      {error && <div className="text-sm text-red-600">{error}</div>}
       <div className="flex items-center justify-between text-sm">
         <a href="/signup" className="text-blue-600">אין לכם משתמש? הרשמה</a>
         <a href="/forgot" className="text-blue-600">שכחת סיסמה?</a>

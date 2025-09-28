@@ -40,9 +40,11 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async signIn({ user }) {
-      // Allow only approved users to sign in
-      // First user (admin) will be approved at creation time
-      if ((user as any).approved === false) return false;
+      // Allow only approved users to sign in; admins can always sign in
+      const role = (user as any).role;
+      const approved = (user as any).approved;
+      if (role === 'admin') return true;
+      if (approved === false) return false;
       return true;
     },
   },
