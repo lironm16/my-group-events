@@ -21,10 +21,15 @@ export async function POST(req: Request) {
     const f = await prisma.family.findUnique({ where: { inviteCode: code } });
     if (f) family = { id: f.id };
   }
-  // וידוא ייחודיות שם משתמש בלבד (אימייל אינו ייחודי)
+  // בדיקת ייחודיות שם משתמש
   const usernameLower = finalUsername.toLowerCase();
   const existing = await prisma.user.findFirst({ where: { username: usernameLower } });
   if (existing) return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
+  // אם האימייל ייחודי בסכמה – נבדוק גם אותו כדי להחזיר שגיאה ידידותית
+  if (email && email.trim()) {
+    const existingEmail = await prisma.user.findFirst({ where: { email: email.toLowerCase() } });
+    if (existingEmail) return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
+  }
   const passwordHash = await bcrypt.hash(password, 10);
   const isFirst = (await prisma.user.count()) === 0;
   let finalGroupId = groupId ?? undefined;
@@ -47,21 +52,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'חובה לבחור קבוצה קיימת או ליצור קבוצה חדשה' }, { status: 400 });
     }
   }
-  const user = await prisma.user.create({
-    data: {
-      username: usernameLower,
-      name: rawNickname || finalUsername,
-      image: imageUrl || (icon ? `icon:${icon}` : null),
-      email: email.toLowerCase(),
-      passwordHash,
-      role: isFirst ? 'admin' : 'member',
-      familyId: family.id,
-      groupId: finalGroupId,
-    },
-  });
-  if (isFirst && familyName && familyName.trim()) {
-    await prisma.family.update({ where: { id: family.id }, data: { name: familyName.trim() } });
+  try {
+    const user = await prisma.user.create({
+      data: {
+        username: usernameLower,
+        name: rawNickname || finalUsername,
+        image: imageUrl || (icon ? `icon:${icon}` : null),
+        email: email.toLowerCase(),
+        passwordHash,
+        role: isFirst ? 'admin' : 'member',
+        familyId: family.id,
+        groupId: finalGroupId,
+      },
+    });
+    if (isFirst && familyName && familyName.trim()) {
+      await prisma.family.update({ where: { id: family.id }, data: { name: familyName.trim() } });
+    }
+    return NextResponse.json({ ok: true, userId: user.id });
+  } catch (err: any) {
+    // Prisma unique constraint
+    if (err?.code === 'P2002') {
+      const target = (err?.meta?.target || []) as string[];
+      if (target.includes('username')) return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
+      if (target.includes('email')) return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'אירעה שגיאה בהרשמה' }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, userId: user.id });
 }
 
