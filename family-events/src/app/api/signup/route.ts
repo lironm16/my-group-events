@@ -25,11 +25,7 @@ export async function POST(req: Request) {
   const usernameLower = finalUsername.toLowerCase();
   const existing = await prisma.user.findFirst({ where: { username: usernameLower } });
   if (existing) return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
-  // אם האימייל ייחודי בסכמה – נבדוק גם אותו כדי להחזיר שגיאה ידידותית
-  if (email && email.trim()) {
-    const existingEmail = await prisma.user.findFirst({ where: { email: email.toLowerCase() } });
-    if (existingEmail) return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
-  }
+  // אין בדיקת ייחודיות אימייל (אימייל אינו ייחודי במערכת)
   const passwordHash = await bcrypt.hash(password, 10);
   const isFirst = (await prisma.user.count()) === 0;
   let finalGroupId = groupId ?? undefined;
@@ -80,9 +76,7 @@ export async function POST(req: Request) {
       if (targetStr.includes('username')) {
         return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
       }
-      if (targetStr.includes('email')) {
-        return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
-      }
+      // לא מחזירים שגיאה על אימייל בשימוש כי האימייל אינו ייחודי
       // Fallback when field not parsed
       return NextResponse.json({ error: 'שם המשתמש או האימייל כבר קיימים' }, { status: 400 });
     }
