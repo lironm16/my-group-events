@@ -66,22 +66,14 @@ export default async function OnboardingGroupPage() {
                 <input type="hidden" name="groupId" value={g.id} />
                 <div className="flex flex-col items-center text-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(g.nickname)}`}
-                    alt={g.nickname}
-                    className="w-24 h-24"
-                  />
+                  <img src={resolveGroupAvatar(g.nickname)} alt={g.nickname} className="w-24 h-24" />
                   <div className="font-medium">{g.nickname}</div>
                   {g.members.length > 0 ? (
                     <div className="flex flex-wrap justify-center gap-2">
                       {g.members.slice(0, 6).map((m) => (
                         <span key={m.id} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={m.image && m.image.startsWith('http') ? m.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(m.username || m.name || 'user')}`}
-                            alt={m.name || m.username || ''}
-                            className="w-4 h-4"
-                          />
+                          <img src={resolveUserAvatar(m.image, m.username, m.name)} alt={m.name || m.username || ''} className="w-4 h-4" />
                           <span>{m.name || m.username}</span>
                         </span>
                       ))}
@@ -108,5 +100,15 @@ export default async function OnboardingGroupPage() {
       </div>
     </main>
   );
+}
+
+function resolveUserAvatar(image: string | null | undefined, username?: string | null, name?: string | null) {
+  if (image && image.startsWith('http')) return image;
+  const seed = username || name || 'user';
+  return `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(seed)}`;
+}
+
+function resolveGroupAvatar(nickname: string) {
+  return `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(nickname)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
 }
 
