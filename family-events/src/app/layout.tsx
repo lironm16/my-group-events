@@ -3,6 +3,7 @@ import './globals.css';
 import Nav from '@/components/Nav';
 import ThemeProvider from '@/components/ThemeProvider';
 import AuthProvider from '@/components/AuthProvider';
+import AuthLoading from '@/components/AuthLoading';
 
 export const metadata: Metadata = {
   title: 'אירועי משפחת מתתיהו',
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           <ThemeProvider>
+            <AuthLoading />
             <Nav />
             <div className="max-w-6xl mx-auto px-4">
               {children}
