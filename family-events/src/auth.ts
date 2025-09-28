@@ -14,11 +14,12 @@ export const authOptions: NextAuthOptions = {
       name: 'Credentials',
       credentials: { username: { label: 'Username', type: 'text' }, password: { label: 'Password', type: 'password' } },
       async authorize(credentials) {
-        const username = (credentials?.username as string | undefined)?.trim().toLowerCase();
+        const rawId = (credentials?.username as string | undefined)?.trim();
+        const username = rawId?.toLowerCase();
         const password = credentials?.password as string | undefined;
-        if (!username || !password) return null;
-        // Allow login by username or nickname only (no email)
-        const user = await prisma.user.findFirst({ where: { OR: [ { username }, { name: username } ] } });
+        if (!rawId || !password) return null;
+        // Allow login by username, nickname, or phone (no email)
+        const user = await prisma.user.findFirst({ where: { OR: [ { username }, { name: username }, { phone: rawId as any } ] } as any });
         if (!user?.passwordHash) return null;
         const ok = await bcrypt.compare(password, user.passwordHash);
         return ok ? user : null;
