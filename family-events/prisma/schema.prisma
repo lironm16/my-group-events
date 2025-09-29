@@ -31,6 +31,7 @@ model User {
   phone     String?
   phoneVerified Boolean @default(false)
   theme     String?
+  notifyRsvpEmails Boolean @default(true)
   family    Family?  @relation(fields: [familyId], references: [id])
   familyId  String?
   group     Group?   @relation(fields: [groupId], references: [id])
