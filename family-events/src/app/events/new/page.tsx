@@ -75,6 +75,7 @@ export default function NewEventPage() {
           {errors.title && <p className={errorCls}>{errors.title}</p>}
         </div>
         <input className={inputCls} placeholder="תיאור" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
+        <DefaultLocationHydrator onLocation={(loc)=>{ if (!form.location) setForm(f=>({ ...f, location: loc || '' })); }} />
         <input className={inputCls} placeholder="מיקום" value={form.location} onChange={e=>setForm({...form, location:e.target.value})} />
         <div>
           <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly />
@@ -337,6 +338,20 @@ function ShareWhatsAppToggle({ title }: { title: string }) {
       </label>
     </div>
   );
+}
+
+function DefaultLocationHydrator({ onLocation }: { onLocation: (loc: string | null) => void }) {
+  'use client';
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/api/users/me');
+        const j = await r.json();
+        onLocation(j?.user?.defaultLocation ?? null);
+      } catch {}
+    })();
+  }, [onLocation]);
+  return null;
 }
 
 function SuccessModal({ title, eventId, onClose }: { title: string; eventId: string; onClose: () => void }) {
