@@ -17,12 +17,13 @@ type EventDetail = {
   externalLink: string | null;
   holidayKey?: string | null;
   host: { id?: string; name: string | null };
+  coHosts?: { id: string; name: string | null }[];
   rsvps: { id: string; status: string; note: string | null; user: { id: string; name: string | null; phone?: string | null } }[];
   familyMembers?: { id: string; name: string | null; phone: string | null }[];
 };
 
 async function fetchEvent(id: string): Promise<EventDetail | null> {
-  const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: true } }, host: true, family: { include: { members: true } } } });
+  const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: true } }, host: true, family: { include: { members: true } }, coHosts: { include: { user: true } } } });
   if (!row) return null;
   return {
     id: row.id,
@@ -34,6 +35,7 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
     externalLink: row.externalLink,
     holidayKey: row.holidayKey ?? null,
     host: { id: row.hostId, name: row.host?.name ?? null },
+    coHosts: (row.coHosts || []).map(h => ({ id: h.userId, name: h.user?.name ?? null })),
     rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null, phone: (r.user as any)?.phone ?? null } })),
     familyMembers: (row.family?.members || []).map(m => ({ id: m.id, name: m.name ?? null, phone: (m as any).phone ?? null })),
   };
@@ -89,6 +91,14 @@ export default async function EventDetailPage({ params }: { params: { id: string
             <dt className="text-sm text-gray-500">מארח</dt>
             <dd>{event.host?.name ?? '—'}</dd>
           </div>
+          {event.coHosts && event.coHosts.length > 0 && (
+            <div className="md:col-span-2">
+              <dt className="text-sm text-gray-500">מארחים נוספים</dt>
+              <dd className="flex flex-wrap gap-2 mt-1 text-sm">
+                {event.coHosts.map(h => (<span key={h.id} className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800">{h.name ?? h.id.slice(0,6)}</span>))}
+              </dd>
+            </div>
+          )}
           {event.externalLink && (
             <div className="md:col-span-2">
               <dt className="text-sm text-gray-500">קישור</dt>

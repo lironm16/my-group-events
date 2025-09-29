@@ -4,6 +4,7 @@ import DateTimePicker from '@/components/DateTimePicker';
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
+  const [coHostIds, setCoHostIds] = useState<string[]>([]);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [category, setCategory] = useState<'weekend' | 'holiday' | 'other' | 'custom' | null>(null);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
@@ -24,7 +25,7 @@ export default function NewEventPage() {
     e.preventDefault();
     if (Object.keys(errors).length > 0) return;
     setSaving(true);
-    const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null };
+    const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null, coHostIds };
     if (repeatWeekly && repeatUntil) {
       body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
     }
@@ -105,6 +106,7 @@ export default function NewEventPage() {
           {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
         </div>
         <GuestSelector />
+        <CoHostsSelector onChange={setCoHostIds} />
         <ShareWhatsAppToggle title={form.title} />
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
@@ -316,6 +318,44 @@ function GuestSelector() {
               ))}
             </div>
           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CoHostsSelector({ onChange }: { onChange: (ids: string[]) => void }) {
+  'use client';
+  const [users, setUsers] = useState<{ id: string; name: string | null }[]>([]);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/api/users/me');
+        const me = await r.json();
+        if (!me?.user?.familyId) return;
+        const res = await fetch('/api/family/groups');
+        const j = await res.json();
+        const uniq: Record<string, { id: string; name: string | null }> = {};
+        (j.groups || []).forEach((g: any) => (g.members || []).forEach((m: any) => { uniq[m.id] = { id: m.id, name: m.name || m.username || null }; }));
+        setUsers(Object.values(uniq));
+      } catch {}
+    })();
+  }, []);
+  useEffect(() => {
+    const ids = Object.entries(selected).filter(([, v]) => v).map(([k]) => k);
+    onChange(ids);
+  }, [selected, onChange]);
+  if (!users.length) return null;
+  return (
+    <div className="space-y-2">
+      <h3 className="font-semibold">מארחים נוספים</h3>
+      <div className="flex flex-wrap gap-2">
+        {users.map(u => (
+          <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
+            <span>{u.name ?? u.id.slice(0,6)}</span>
+            <input type="checkbox" className="ml-1" checked={!!selected[u.id]} onChange={() => setSelected(s=>({ ...s, [u.id]: !s[u.id] }))} />
+          </label>
         ))}
       </div>
     </div>
