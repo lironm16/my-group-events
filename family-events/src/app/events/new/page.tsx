@@ -190,6 +190,7 @@ function TemplatesTiles({ category, onPick, onBack }: { category: 'weekend' | 'h
     { label: 'פיקניק', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'פיקניק', description: 'פיקניק משפחתי בפארק', startAt: toLocal(nextWeek), holidayKey: 'picnic' } },
     { label: 'חופשת הקיץ', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'חופשת הקיץ', description: 'עדכון/מפגש', startAt: toLocal(nextWeek), holidayKey: 'summer_break' } },
     { label: 'ים', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'ים', description: 'מפגש חוף/ים', startAt: toLocal(nextWeek), holidayKey: 'beach' } },
+    { label: 'על האש (BBQ)', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'על האש', description: 'על האש משפחתי', startAt: toLocal(nextWeek), holidayKey: 'bbq' } },
   ];
 
   let tpls: { label: string; bgUrl: string; tpl: Template }[] = [];
