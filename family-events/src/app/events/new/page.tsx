@@ -10,6 +10,7 @@ export default function NewEventPage() {
   const [repeatUntil, setRepeatUntil] = useState('');
   const [skipHolidays, setSkipHolidays] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
     if (!form.title.trim()) errs.title = 'יש להזין כותרת';
@@ -31,13 +32,7 @@ export default function NewEventPage() {
     setSaving(false);
     if (res.ok) {
       const { event } = await res.json();
-      try {
-        const base = (process.env.NEXT_PUBLIC_APP_URL || window.location.origin);
-        const shareUrl = `${base}/events/${event.id}`;
-        const text = `🎉 נוצר אירוע חדש: ${form.title}\nאישור הגעה: ${shareUrl}`;
-        if (navigator.share) await navigator.share({ text });
-      } catch {}
-      window.location.href = '/events';
+      setCreated({ id: event.id, title: form.title || event.title });
     }
   }
 
@@ -118,6 +113,13 @@ export default function NewEventPage() {
         <GenerateHolidays />
       </section>
     </main>
+    {created && (
+      <SuccessModal
+        title={created.title}
+        eventId={created.id}
+        onClose={() => { window.location.href = `/events/${created.id}`; }}
+      />
+    )}
   );
 }
 
@@ -333,6 +335,35 @@ function ShareWhatsAppToggle({ title }: { title: string }) {
         <input type="checkbox" checked={enabled} onChange={(e)=>setEnabled(e.target.checked)} />
         <span>שלח קישור בוואטסאפ אחרי יצירה</span>
       </label>
+    </div>
+  );
+}
+
+function SuccessModal({ title, eventId, onClose }: { title: string; eventId: string; onClose: () => void }) {
+  'use client';
+  const base = (typeof window !== 'undefined') ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin) : '';
+  const shareUrl = `${base}/events/${eventId}`;
+  const text = `🎉 נוצר אירוע חדש: ${title}\nאישור הגעה: ${shareUrl}`;
+  const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 space-y-3">
+        <h3 className="text-lg font-semibold">האירוע נוצר בהצלחה</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-300">רוצים לשתף עכשיו את האירוע?</p>
+        <div className="flex gap-2 justify-end">
+          <button className="px-3 py-2 rounded bg-gray-200 dark:bg-gray-800 dark:text-gray-100" onClick={onClose}>לא עכשיו</button>
+          <button
+            className="px-3 py-2 rounded bg-green-600 text-white"
+            onClick={async ()=>{
+              if (navigator.share) {
+                try { await navigator.share({ text }); onClose(); return; } catch {}
+              }
+              window.open(wa, '_blank');
+              onClose();
+            }}
+          >שיתוף בוואטסאפ</button>
+        </div>
+      </div>
     </div>
   );
 }
