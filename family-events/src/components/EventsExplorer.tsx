@@ -11,7 +11,8 @@ type EventCard = {
   startAt: string;
   endAt: string | null;
   host: { name: string | null };
-  rsvps: { status: string }[];
+  hostId?: string | null;
+  rsvps: { status: string; userId?: string }[];
 };
 
 type TabKey = 'today' | 'week' | 'month' | 'all';
@@ -66,11 +67,6 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         onFilter={(f) => {
           const ids = new Set(f.map((x) => x.id));
           let next = base.filter((e) => ids.has(e.id));
-          if (groupId) {
-            // naive client-side filter: if title or description mentions group nickname, keep it; otherwise leave as-is
-            // (server can add proper group assignment filtering later)
-            next = next.filter((e) => true);
-          }
           setFiltered(next);
         }}
       />
@@ -164,9 +160,7 @@ function filterByTab(events: EventCard[], tab: TabKey): EventCard[] {
 
 function filterByScope(events: EventCard[], scope: ScopeKey, myUserId: string): EventCard[] {
   if (scope === 'all' || !myUserId) return events;
-  // mine: events I host or I have an RSVP for
-  // Since list does not include hostId/userIds, this is a placeholder until API includes them
-  return events;
+  return events.filter((e) => e.hostId === myUserId || e.rsvps.some((r) => r.userId === myUserId));
 }
 
 function Cards({ list }: { list: EventCard[] }) {
