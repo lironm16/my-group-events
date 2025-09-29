@@ -39,6 +39,7 @@ model User {
   rsvps     RSVP[]
   hosted    Event[]  @relation("EventHost")
   passwordResetTokens PasswordResetToken[]
+  activationTokens    ActivationToken[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
