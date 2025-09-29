@@ -36,15 +36,12 @@ export async function POST(req: Request) {
     const created = await prisma.family.create({ data: { name, inviteCode } });
     family = { id: created.id };
   }
-  // If invite-code flow is not used, allow skipping group creation; require an existing family to create group
-  const trimmedNewGroup = (newGroup ?? '').trim();
-  if (!finalGroupId && trimmedNewGroup) {
-    if (!family) {
-      return NextResponse.json({ error: 'אין משפחה מוגדרת. יש להשתמש בקישור הזמנה או ליצור משפחה למשתמש הראשון.' }, { status: 400 });
-    }
-    const existsGroup = await prisma.group.findFirst({ where: { familyId: family.id, nickname: trimmedNewGroup } });
+  // If invite-code flow is not used, allow skipping group creation (only when a family exists)
+  if (!finalGroupId && newGroup && newGroup.trim() && family) {
+    const famId = family.id;
+    const existsGroup = await prisma.group.findFirst({ where: { familyId: famId, nickname: newGroup.trim() } });
     if (existsGroup) return NextResponse.json({ error: 'שם הקבוצה כבר קיים' }, { status: 400 });
-    const g = await prisma.group.create({ data: { nickname: trimmedNewGroup, familyId: family.id } });
+    const g = await prisma.group.create({ data: { nickname: newGroup.trim(), familyId: famId } });
     finalGroupId = g.id;
   }
   try {
