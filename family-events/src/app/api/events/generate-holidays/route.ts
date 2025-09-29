@@ -16,35 +16,53 @@ export async function POST(req: Request) {
   // Fetch Israeli holidays from Hebcal
   const items = await fetchIsraelHolidays(year, tz);
   // We include Purim and Shushan Purim; items already contain both in Israel mode
-  // Map items to events
-  const data = items.map((it) => {
-    const startAt = toLocalDate(it.date, '19:00');
-    const holidayKey = normalizeKey(it.title);
-    return {
-      title: it.title,
-      description: null as string | null,
-      location: null as string | null,
-      startAt,
-      endAt: null as Date | null,
-      externalLink: null as string | null,
-      isHolidayGenerated: true,
-      holidayKey,
-      hostId: user.id,
-      familyId: user.familyId!,
-    };
-  });
+  // Map items to events and skip holidays in the past
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const data = items
+    .map((it) => {
+      const startAt = toLocalDate(it.date, '19:00');
+      const holidayKey = normalizeKey(it.title);
+      return {
+        title: it.title,
+        description: null as string | null,
+        location: null as string | null,
+        startAt,
+        endAt: null as Date | null,
+        externalLink: null as string | null,
+        isHolidayGenerated: true,
+        holidayKey,
+        hostId: user.id,
+        familyId: user.familyId!,
+      };
+    })
+    .filter((e) => e.startAt >= startOfToday);
 
-  // Optional: prevent obvious duplicates by title+date within this family
+  // Prevent duplicates by title/date or holidayKey/date within this family (includes manual entries)
   const existing = await prisma.event.findMany({
     where: {
       familyId: user.familyId,
-      isHolidayGenerated: true,
       startAt: { gte: new Date(`${year}-01-01T00:00:00Z`), lte: new Date(`${year}-12-31T23:59:59Z`) },
     },
-    select: { startAt: true, title: true },
+    select: { startAt: true, title: true, holidayKey: true },
   });
-  const seen = new Set(existing.map((e) => `${e.title}|${e.startAt.toISOString().slice(0, 10)}`));
-  const toCreate = data.filter((e) => !seen.has(`${e.title}|${e.startAt.toISOString().slice(0, 10)}`));
+  const indexByDate = new Map<string, { titles: Set<string>; keys: Set<string> }>();
+  for (const e of existing) {
+    const dateKey = e.startAt.toISOString().slice(0, 10);
+    const entry = indexByDate.get(dateKey) || { titles: new Set<string>(), keys: new Set<string>() };
+    entry.titles.add(normalizeKey(e.title || ''));
+    if (e.holidayKey) entry.keys.add(String(e.holidayKey));
+    indexByDate.set(dateKey, entry);
+  }
+  const toCreate = data.filter((e) => {
+    const dateKey = e.startAt.toISOString().slice(0, 10);
+    const entry = indexByDate.get(dateKey);
+    if (!entry) return true;
+    const titleKey = normalizeKey(e.title);
+    if (entry.titles.has(titleKey)) return false;
+    if (e.holidayKey && entry.keys.has(e.holidayKey)) return false;
+    return true;
+  });
 
   if (toCreate.length) await prisma.event.createMany({ data: toCreate });
 

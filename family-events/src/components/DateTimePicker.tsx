@@ -6,13 +6,14 @@ type Props = {
   value: string; // ISO-like string ("YYYY-MM-DDTHH:mm") or empty
   onChange: (next: string) => void;
   required?: boolean;
+  allowDateOnly?: boolean; // when true, user can leave time empty
 };
 
-export default function DateTimePicker({ label, value, onChange, required }: Props) {
+export default function DateTimePicker({ label, value, onChange, required, allowDateOnly }: Props) {
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState<number>(() => (value ? new Date(value).getMonth() : new Date().getMonth()));
   const [year, setYear] = useState<number>(() => (value ? new Date(value).getFullYear() : new Date().getFullYear()));
-  const [time, setTime] = useState<string>(() => formatTime(value ? new Date(value) : new Date()));
+  const [time, setTime] = useState<string>(() => (value.includes('T') ? formatTime(new Date(value)) : ''));
   const selected = value ? new Date(value) : undefined;
   const ref = useRef<HTMLDivElement>(null);
 
@@ -26,10 +27,16 @@ export default function DateTimePicker({ label, value, onChange, required }: Pro
   }, []);
 
   const days = useMemo(() => buildMonthGrid(year, month), [year, month]);
-  const display = selected ? formatDisplay(selected) : '';
+  const display = selected ? formatDisplay(selected, !!time) : '';
 
   function selectDay(d: number) {
-    const [hh, mm] = time.split(':').map(Number);
+    if (allowDateOnly && !time) {
+      const dt = new Date(year, month, d, 0, 0, 0, 0);
+      onChange(toLocalDateISO(dt));
+      setOpen(false);
+      return;
+    }
+    const [hh, mm] = (time || '00:00').split(':').map(Number);
     const dt = new Date(year, month, d, hh, mm, 0, 0);
     onChange(toLocalISO(dt));
     setOpen(false);
@@ -53,6 +60,12 @@ export default function DateTimePicker({ label, value, onChange, required }: Pro
 
   function onTimeChange(v: string) {
     setTime(v);
+    if (!v) {
+      if (allowDateOnly && selected) {
+        onChange(toLocalDateISO(selected));
+      }
+      return;
+    }
     const [hh, mm] = v.split(':').map(Number);
     const base = selected ?? new Date(year, month, new Date().getDate());
     const dt = new Date(base);
@@ -91,6 +104,7 @@ export default function DateTimePicker({ label, value, onChange, required }: Pro
           </div>
           <div className="mt-3">
             <select className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700" value={time} onChange={(e) => onTimeChange(e.target.value)}>
+              {allowDateOnly && <option value="">ללא שעה</option>}
               {buildTimes().map((t) => (<option key={t} value={t}>{t}</option>))}
             </select>
           </div>
@@ -118,8 +132,10 @@ function formatTime(d: Date) {
   return `${hh}:${mm}`;
 }
 
-function formatDisplay(d: Date) {
-  return d.toLocaleString('he-IL', { dateStyle: 'medium', timeStyle: 'short' });
+function formatDisplay(d: Date, withTime: boolean) {
+  return withTime
+    ? d.toLocaleString('he-IL', { dateStyle: 'medium', timeStyle: 'short' })
+    : d.toLocaleDateString('he-IL', { dateStyle: 'medium' });
 }
 
 function toLocalISO(d: Date) {
@@ -129,6 +145,13 @@ function toLocalISO(d: Date) {
   const hh = String(d.getHours()).padStart(2, '0');
   const mi = String(d.getMinutes()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+
+function toLocalDateISO(d: Date) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function sameDate(a: Date, y: number, m: number, d: number) {

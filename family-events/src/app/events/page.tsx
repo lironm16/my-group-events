@@ -32,7 +32,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
       const rows = await prisma.event.findMany({
         where,
         orderBy: { startAt: 'asc' },
-        include: { rsvps: true, host: true },
+        include: { rsvps: { select: { status: true, userId: true } }, host: { select: { name: true, id: true } } },
         skip: (page - 1) * pageSize,
         take: pageSize,
       });
