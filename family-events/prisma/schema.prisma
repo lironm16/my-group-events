@@ -71,6 +71,8 @@ model Event {
   externalLink       String?
   isHolidayGenerated Boolean  @default(false)
   holidayKey         String?
+  visibleToAll       Boolean  @default(true)
+  rsvpOpenToAll      Boolean  @default(false)
   host               User     @relation("EventHost", fields: [hostId], references: [id])
   hostId             String
   family             Family?  @relation(fields: [familyId], references: [id])

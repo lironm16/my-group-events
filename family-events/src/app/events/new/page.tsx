@@ -26,6 +26,10 @@ export default function NewEventPage() {
     if (Object.keys(errors).length > 0) return;
     setSaving(true);
     const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null, coHostIds };
+    const vis = document.getElementById('visibleToAll') as HTMLInputElement | null;
+    const ropen = document.getElementById('rsvpOpenToAll') as HTMLInputElement | null;
+    if (vis) body.visibleToAll = vis.checked;
+    if (ropen) body.rsvpOpenToAll = ropen.checked;
     if (repeatWeekly && repeatUntil) {
       body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
     }
@@ -108,6 +112,16 @@ export default function NewEventPage() {
         <GuestSelector />
         <CoHostsSelector onChange={setCoHostIds} />
         <ShareWhatsAppToggle title={form.title} />
+        <div className="space-y-2 border-t pt-3">
+          <label className="inline-flex items-center gap-2">
+            <input id="visibleToAll" type="checkbox" defaultChecked />
+            <span>ניתן לצפייה לכל בני המשפחה (גם לא מוזמנים)</span>
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input id="rsvpOpenToAll" type="checkbox" />
+            <span>אפשר לכל אחד לאשר הגעה (גם ללא הזמנה)</span>
+          </label>
+        </div>
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
       )}
