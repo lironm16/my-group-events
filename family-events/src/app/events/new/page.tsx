@@ -121,22 +121,39 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   })();
   const tonight = (()=>{ const d=new Date(now); d.setHours(19,0,0,0); return d; })();
   const nextWeek = (()=>{ const d=new Date(now); d.setDate(d.getDate()+7); d.setHours(12,0,0,0); return d; })();
-  // Use DiceBear shapes as an avatar-like background, overlay a relevant emoji icon
-  const bg = (seed: string) => `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
+  // Default templates (icons)
   const random = () => Math.random().toString(36).slice(2,6);
-  const tpls: { label: string; type: 'shabat_eve' | 'holiday_eve' | 'holiday' | 'custom'; bgUrl: string; tpl: Template }[] = [
-    { label: 'ערב שישי', type: 'shabat_eve', bgUrl: bg(`Shabbat-${random()}`), tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
-    { label: 'ערב חג', type: 'holiday_eve', bgUrl: bg(`HolidayEve-${random()}`), tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
-    { label: 'חג', type: 'holiday', bgUrl: bg(`Holiday-${random()}`), tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { label: 'מותאם אישית', type: 'custom', bgUrl: bg(`Custom-${random()}`), tpl: { title: '', description: '', startAt: '' } },
+  const baseTpls: { label: string; type: 'shabat_eve' | 'holiday_eve' | 'holiday' | 'custom'; bgUrl: string; tpl: Template }[] = [
+    { label: 'ערב שישי', type: 'shabat_eve', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
+    { label: 'ערב חג', type: 'holiday_eve', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
+    { label: 'מותאם אישית', type: 'custom', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: '', description: '', startAt: '' } },
   ];
+
+  // Holiday-specific templates using uploaded images under public/templates
+  const holidayImages: { key: string; label: string; file: string }[] = [
+    { key: 'rosh_hashanah', label: 'ראש השנה', file: '/templates/rosh-hashanah.jpg' },
+    { key: 'kippur', label: 'יום כיפור', file: '/templates/kippur.jpg' },
+    { key: 'sukkot', label: 'סוכות', file: '/templates/sukkot.jpg' },
+    { key: 'hanukkah', label: 'חנוכה', file: '/templates/hanukkah.jpg' },
+    { key: 'passover', label: 'פסח', file: '/templates/passover.jpg' },
+    { key: 'shavuot', label: 'שבועות', file: '/templates/shavout.jpg' },
+  ];
+
+  const holidayTpls = holidayImages.map(h => ({
+    label: h.label,
+    type: 'holiday' as const,
+    bgUrl: h.file,
+    tpl: { title: h.label, description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: h.key },
+  }));
+
+  const tpls = [...baseTpls, ...holidayTpls];
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
       {tpls.map((t)=> (
         <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
           <div className="relative w-32 h-32">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={t.bgUrl} alt="" className="absolute inset-0 w-full h-full rounded-xl" />
+            <img src={t.bgUrl} alt="" className="absolute inset-0 w-full h-full rounded-xl object-cover" />
             <div className="absolute inset-0 flex items-center justify-center text-gray-800 dark:text-gray-100">
               <EventTypeIcon type={t.type} size={84} />
             </div>
