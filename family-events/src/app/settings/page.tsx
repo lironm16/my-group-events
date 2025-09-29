@@ -18,6 +18,7 @@ export default async function SettingsPage() {
       <h1 className="text-2xl font-bold">הגדרות</h1>
       <Approvals familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
       <ThemeForm currentTheme={(user as any)?.theme as string | undefined} />
+      <NotifyRsvpForm userId={user!.id} current={Boolean((user as any)?.notifyRsvpEmails)} />
       <ProfileForm userId={user!.id} current={{ name: user?.name ?? '', email: user?.email ?? '', image: user?.image ?? '' }} />
       <PasswordForm userId={user!.id} />
       <FamilyNameForm familyId={user?.family?.id ?? null} name={user?.family?.name ?? ''} isAdmin={user?.role === 'admin'} />
@@ -185,6 +186,28 @@ function ThemeForm({ currentTheme }: { currentTheme?: string }) {
       </div>
       <p className="text-sm text-gray-500">נשמר אוטומטית בהעדפות.</p>
     </div>
+  );
+}
+
+function NotifyRsvpForm({ userId, current }: { userId: string; current: boolean }) {
+  return (
+    <form
+      className="space-y-2"
+      action={async (fd: FormData) => {
+        'use server';
+        const on = String(fd.get('on') ?? 'off') === 'on';
+        await prisma.user.update({ where: { id: userId }, data: { notifyRsvpEmails: on } });
+      }}
+    >
+      <h2 className="font-semibold">התראות אימייל על שינויים באישורי הגעה</h2>
+      <label className="inline-flex items-center gap-2">
+        <input name="on" type="checkbox" defaultChecked={current} />
+        <span>קבל מייל כשיש שינוי באישורי הגעה לאירועים שלי</span>
+      </label>
+      <div>
+        <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
+      </div>
+    </form>
   );
 }
 

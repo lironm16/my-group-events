@@ -17,7 +17,7 @@ type EventDetail = {
   externalLink: string | null;
   holidayKey?: string | null;
   host: { id?: string; name: string | null };
-  rsvps: { id: string; status: string; user: { id: string; name: string | null; phone?: string | null } }[];
+  rsvps: { id: string; status: string; note: string | null; user: { id: string; name: string | null; phone?: string | null } }[];
   familyMembers?: { id: string; name: string | null; phone: string | null }[];
 };
 
@@ -34,7 +34,7 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
     externalLink: row.externalLink,
     holidayKey: row.holidayKey ?? null,
     host: { id: row.hostId, name: row.host?.name ?? null },
-    rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, user: { id: r.userId, name: r.user?.name ?? null, phone: (r.user as any)?.phone ?? null } })),
+    rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null, phone: (r.user as any)?.phone ?? null } })),
     familyMembers: (row.family?.members || []).map(m => ({ id: m.id, name: m.name ?? null, phone: (m as any).phone ?? null })),
   };
 }
@@ -102,7 +102,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
         <div className="mt-4">
           <h3 className="font-semibold mb-2">אישור הגעה</h3>
           {/* Initial status is the first RSVP (for the current user) if present; server API restricts data to family/users */}
-          <RSVPButtons eventId={event.id} initial={toRSVPStatus(myRsvp)} />
+          <RSVPButtons eventId={event.id} initial={toRSVPStatus(myRsvp)} canGroup={true} canAll={isHost || (session?.user as any)?.role === 'admin'} />
         </div>
       </div>
       <section>
@@ -114,7 +114,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
             {event.rsvps.map((r) => (
               <li key={r.id} className="flex items-center justify-between rounded border border-gray-200 dark:border-gray-800 p-2 bg-white dark:bg-gray-900">
                 <span>{r.user?.name ?? '—'}</span>
-                <span className="text-sm text-gray-600 dark:text-gray-400">{r.status}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{r.status}{r.note ? ` · ${r.note}` : ''}</span>
               </li>
             ))}
           </ul>
