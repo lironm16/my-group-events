@@ -1,11 +1,11 @@
 "use client";
 import { useMemo, useState, useEffect } from 'react';
-import EventTypeIcon from '@/components/EventTypeIcon';
 import DateTimePicker from '@/components/DateTimePicker';
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [category, setCategory] = useState<'weekend' | 'holiday' | 'other' | 'custom' | null>(null);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
   const [skipHolidays, setSkipHolidays] = useState(true);
@@ -47,19 +47,33 @@ export default function NewEventPage() {
   return (
     <main className="container-page space-y-4">
       <h1 className="text-2xl font-bold">אירוע חדש</h1>
-      <TemplatesTiles onPick={(tpl)=>{
-        setForm({
-          title: tpl.title,
-          description: tpl.description ?? '',
-          location: tpl.location ?? '',
-          startAt: tpl.startAt ?? '',
-          endAt: tpl.endAt ?? '',
-          externalLink: ''
-        });
-        (window as any).__holidayKey = tpl.holidayKey ?? null;
-        setStep(2);
-      }} />
+      {step === 1 && (
+        <CategoryTiles onPick={(cat)=>{
+          setCategory(cat);
+          if (cat === 'custom') {
+            setForm({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
+            (window as any).__holidayKey = null;
+            setStep(3);
+          } else {
+            setStep(2);
+          }
+        }} />
+      )}
       {step === 2 && (
+        <TemplatesTiles category={category} onBack={()=>setStep(1)} onPick={(tpl)=>{
+          setForm({
+            title: tpl.title,
+            description: tpl.description ?? '',
+            location: tpl.location ?? '',
+            startAt: tpl.startAt ?? '',
+            endAt: tpl.endAt ?? '',
+            externalLink: ''
+          });
+          (window as any).__holidayKey = tpl.holidayKey ?? null;
+          setStep(3);
+        }} />
+      )}
+      {step === 3 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
         <div>
           <input className={inputCls} placeholder="כותרת" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
@@ -109,7 +123,25 @@ export default function NewEventPage() {
 
 type Template = { title: string; description?: string; location?: string; startAt?: string; endAt?: string; holidayKey?: string };
 
-function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
+function CategoryTiles({ onPick }: { onPick: (c: 'weekend' | 'holiday' | 'other' | 'custom') => void }) {
+  const items = [
+    { key: 'weekend', label: 'סופ"ש' },
+    { key: 'holiday', label: 'חג' },
+    { key: 'other', label: 'אחר' },
+    { key: 'custom', label: 'מותאם אישית' },
+  ] as const;
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
+      {items.map(it => (
+        <button type="button" key={it.key} onClick={()=>onPick(it.key)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-gray-900 hover:shadow flex items-center justify-center font-medium">
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function TemplatesTiles({ category, onPick, onBack }: { category: 'weekend' | 'holiday' | 'other' | null; onPick: (tpl: Template) => void; onBack: () => void }) {
   const now = new Date();
   const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
   const nextFriday = (() => {
@@ -120,14 +152,20 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
     d.setHours(19,0,0,0);
     return d;
   })();
+  const nextSaturday = (() => {
+    const d = new Date(now);
+    const day = d.getDay();
+    const diff = (6 - day + 7) % 7 || 7; // next Saturday
+    d.setDate(d.getDate() + diff);
+    d.setHours(12,0,0,0);
+    return d;
+  })();
   const tonight = (()=>{ const d=new Date(now); d.setHours(19,0,0,0); return d; })();
   const nextWeek = (()=>{ const d=new Date(now); d.setDate(d.getDate()+7); d.setHours(12,0,0,0); return d; })();
-  // Default templates (icons)
-  const random = () => Math.random().toString(36).slice(2,6);
-  const baseTpls: { label: string; type: 'shabat_eve' | 'holiday_eve' | 'holiday' | 'custom'; bgUrl: string; tpl: Template }[] = [
-    { label: 'ערב שישי', type: 'shabat_eve', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
-    { label: 'ערב חג', type: 'holiday_eve', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
-    { label: 'מותאם אישית', type: 'custom', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: '', description: '', startAt: '' } },
+  // Weekend templates
+  const weekendTpls = [
+    { label: 'ערב שישי', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
+    { label: 'שבת', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'שבת', description: 'מפגש שבת', startAt: toLocal(nextSaturday), holidayKey: 'shabat' } },
   ];
 
   // Holiday-specific templates using uploaded images under public/templates
@@ -142,26 +180,34 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
 
   const holidayTpls = holidayImages.map(h => ({
     label: h.label,
-    type: 'holiday' as const,
     bgUrl: h.file,
     tpl: { title: h.label, description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: h.key },
   }));
 
-  const tpls = [...baseTpls, ...holidayTpls];
+  // Other templates (for now: summer break)
+  const otherTpls = [
+    { label: 'חופשת הקיץ', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'חופשת הקיץ', description: 'עדכון/מפגש', startAt: toLocal(nextWeek) } },
+  ];
+
+  let tpls: { label: string; bgUrl: string; tpl: Template }[] = [];
+  if (category === 'weekend') tpls = weekendTpls;
+  else if (category === 'holiday') tpls = holidayTpls;
+  else if (category === 'other') tpls = otherTpls;
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
-      {tpls.map((t)=> (
-        <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
-          <div className="relative w-32 h-32">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={t.bgUrl} alt="" className="absolute inset-0 w-full h-full rounded-xl object-cover" />
-            <div className="absolute inset-0 flex items-center justify-center text-gray-800 dark:text-gray-100">
-              <EventTypeIcon type={t.type} size={84} />
+    <div className="space-y-3">
+      <button type="button" className="px-3 py-2 border rounded" onClick={onBack}>חזרה</button>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
+        {tpls.map((t)=> (
+          <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
+            <div className="relative w-32 h-32">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={t.bgUrl} alt="" className="absolute inset-0 w-full h-full rounded-xl object-cover" />
             </div>
-          </div>
-          <div className="font-medium mt-3 text-sm md:text-base">{t.label}</div>
-        </button>
-      ))}
+            <div className="font-medium mt-3 text-sm md:text-base">{t.label}</div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
