@@ -44,6 +44,14 @@ export async function POST(req: Request) {
       familyId: user.familyId ?? null,
     },
   });
+  // Save co-hosts if provided
+  try {
+    const coHostIds: string[] = Array.isArray(body.coHostIds) ? body.coHostIds : [];
+    const unique = Array.from(new Set(coHostIds.filter((id) => id && id !== user.id)));
+    if (unique.length) {
+      await prisma.eventHost.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid })) });
+    }
+  } catch {}
   // Create RSVPs for selected guests
   try {
     const guestIds: string[] = JSON.parse(String(body?.guestSelection || '[]'));
