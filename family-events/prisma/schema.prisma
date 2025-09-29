@@ -53,6 +53,9 @@ model Group {
   nickname  String
   family    Family   @relation(fields: [familyId], references: [id])
   familyId  String
+  parent    Group?   @relation("GroupToChildren", fields: [parentId], references: [id])
+  parentId  String?
+  children  Group[]  @relation("GroupToChildren")
   members   User[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

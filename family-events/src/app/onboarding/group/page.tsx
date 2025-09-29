@@ -30,7 +30,7 @@ export default async function OnboardingGroupPage() {
   const groups = await prisma.group.findMany({
     where: { familyId: me.familyId },
     orderBy: { createdAt: 'asc' },
-    include: { members: { select: { id: true, name: true, username: true, image: true } } },
+    include: { members: { select: { id: true, name: true, username: true, image: true } }, parent: { select: { id: true, nickname: true } } },
   });
 
   async function setGroup(formData: FormData) {
@@ -45,10 +45,11 @@ export default async function OnboardingGroupPage() {
     'use server';
     if (!me?.familyId) return;
     const nickname = String(formData.get('nickname') || '').trim();
+    const parentId = String(formData.get('parentId') || '') || null;
     if (!nickname) return;
     const exists = await prisma.group.findFirst({ where: { familyId: me.familyId, nickname } });
     if (exists) return;
-    const g = await prisma.group.create({ data: { nickname, familyId: me.familyId } });
+    const g = await prisma.group.create({ data: { nickname, familyId: me.familyId, parentId: parentId || undefined } });
     await prisma.user.update({ where: { id: me.id }, data: { groupId: g.id } });
   }
 
@@ -93,8 +94,14 @@ export default async function OnboardingGroupPage() {
       </div>
       <div className="space-y-2">
         <h2 className="font-semibold">או יצירת קבוצה חדשה</h2>
-        <form action={createGroup} className="flex items-center gap-2">
+        <form action={createGroup} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-start">
           <input name="nickname" placeholder="שם קבוצה" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" />
+          <select name="parentId" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+            <option value="">רמת על (עליון)</option>
+            {groups.map((g)=> (
+              <option key={g.id} value={g.id}>{g.nickname}</option>
+            ))}
+          </select>
           <button className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">יצירה ושיוך</button>
         </form>
       </div>
