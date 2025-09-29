@@ -35,8 +35,8 @@ export async function POST(req: Request) {
       title: body.title,
       description: body.description ?? null,
       location: body.location ?? null,
-      startAt: new Date(body.startAt),
-      endAt: body.endAt ? new Date(body.endAt) : null,
+      startAt: body.startAt.includes('T') ? new Date(body.startAt) : new Date(body.startAt + 'T00:00'),
+      endAt: body.endAt ? (body.endAt.includes('T') ? new Date(body.endAt) : new Date(body.endAt + 'T00:00')) : null,
       externalLink: body.externalLink ?? null,
       isHolidayGenerated: body.holidayKey ? true : false,
       holidayKey: body.holidayKey ?? null,
@@ -50,6 +50,15 @@ export async function POST(req: Request) {
     if (Array.isArray(guestIds) && guestIds.length) {
       const unique = Array.from(new Set(guestIds));
       await prisma.rSVP.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid, status: RSVPStatus.MAYBE })) });
+    }
+  } catch {}
+  // Optionally share via WhatsApp
+  try {
+    if (String(body?.shareWhatsApp || '0') === '1') {
+      const base = process.env.NEXT_PUBLIC_APP_URL || (new URL(req.url).origin);
+      const shareUrl = `${base}/events/${created.id}`;
+      // no server-side send; return link so client can open wa.me
+      // (UI builds wa.me link on redirect)
     }
   } catch {}
   // Handle weekly recurrence

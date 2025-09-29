@@ -68,11 +68,11 @@ export default function NewEventPage() {
         <input className={inputCls} placeholder="תיאור" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
         <input className={inputCls} placeholder="מיקום" value={form.location} onChange={e=>setForm({...form, location:e.target.value})} />
         <div>
-          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} />
+          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly />
           {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
         </div>
         <div>
-          <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} />
+          <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly />
           {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
         </div>
         <div className="mt-4 space-y-2">
@@ -95,6 +95,7 @@ export default function NewEventPage() {
           {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
         </div>
         <GuestSelector />
+        <ShareWhatsAppToggle title={form.title} />
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
       )}
@@ -264,6 +265,24 @@ function GuestSelector() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ShareWhatsAppToggle({ title }: { title: string }) {
+  'use client';
+  const [enabled, setEnabled] = useState(true);
+  useEffect(() => {
+    const input = document.getElementById('shareWhatsApp') as HTMLInputElement | null;
+    if (input) input.value = enabled ? '1' : '0';
+  }, [enabled]);
+  return (
+    <div className="mt-3 flex items-center gap-2">
+      <input type="hidden" id="shareWhatsApp" name="shareWhatsApp" defaultValue="1" />
+      <label className="inline-flex items-center gap-2">
+        <input type="checkbox" checked={enabled} onChange={(e)=>setEnabled(e.target.checked)} />
+        <span>שלח קישור בוואטסאפ אחרי יצירה</span>
+      </label>
     </div>
   );
 }
