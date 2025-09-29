@@ -28,7 +28,10 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
     const user = await prisma.user.findFirst({ where: { email: session!.user!.email as string } });
     if (user) {
       if (user.approved && user.familyId && !user.groupId) needsOnboarding = true;
-      const where = { OR: [{ hostId: user.id }, { familyId: user.familyId ?? undefined }] } as any;
+      const where = { OR: [
+        { hostId: user.id },
+        { familyId: user.familyId ?? undefined, visibleToAll: true }
+      ] } as any;
       total = await prisma.event.count({ where });
       const rows = await prisma.event.findMany({
         where,

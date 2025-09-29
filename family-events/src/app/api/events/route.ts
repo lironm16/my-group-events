@@ -40,6 +40,8 @@ export async function POST(req: Request) {
       externalLink: body.externalLink ?? null,
       isHolidayGenerated: body.holidayKey ? true : false,
       holidayKey: body.holidayKey ?? null,
+      visibleToAll: body.visibleToAll !== false,
+      rsvpOpenToAll: body.rsvpOpenToAll === true,
       hostId: user.id,
       familyId: user.familyId ?? null,
     },
