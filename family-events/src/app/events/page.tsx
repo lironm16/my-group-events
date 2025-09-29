@@ -12,7 +12,8 @@ type EventCard = {
   startAt: string;
   endAt: string | null;
   host: { name: string | null };
-  rsvps: { status: string }[];
+  hostId: string | null;
+  rsvps: { status: string; userId?: string }[];
 };
 
 export default async function EventsPage({ searchParams }: { searchParams?: { page?: string } }) {
@@ -44,7 +45,8 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
         startAt: r.startAt.toISOString(),
         endAt: r.endAt ? r.endAt.toISOString() : null,
         host: { name: r.host?.name ?? null },
-        rsvps: r.rsvps.map(x => ({ status: x.status })),
+        hostId: r.host?.id ?? null,
+        rsvps: r.rsvps.map(x => ({ status: x.status, userId: x.userId })),
       }));
     }
   }
