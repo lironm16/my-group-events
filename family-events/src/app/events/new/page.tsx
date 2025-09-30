@@ -5,7 +5,7 @@ import DateTimePicker from '@/components/DateTimePicker';
 const CATEGORY_BG: Record<'weekend'|'holiday'|'other'|'custom', string> = {
   weekend: '/templates/dinner.jpg',
   holiday: '/templates/rosh-hashanah.jpg',
-  other: '/templates/party.jpg',
+  other: '/templates/birthday.jpg',
   custom: '/templates/beach.jpg',
 };
 
