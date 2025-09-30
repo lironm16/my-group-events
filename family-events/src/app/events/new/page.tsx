@@ -348,7 +348,7 @@ function GuestSelector() {
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
               {g.members.map((u) => (
-                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
+                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-100' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.username || u.name || 'user')}`} alt={u.name || u.username || ''} className="w-5 h-5" />
                   <span>{u.name || u.username}</span>
@@ -391,7 +391,7 @@ function CoHostsSelector({ onChange }: { onChange: (ids: string[]) => void }) {
       <h3 className="font-semibold">מארחים נוספים</h3>
       <div className="flex flex-wrap gap-2">
         {users.map(u => (
-          <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
+          <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-100' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
             <span>{u.name ?? u.id.slice(0,6)}</span>
             <input type="checkbox" className="ml-1" checked={!!selected[u.id]} onChange={() => setSelected(s=>({ ...s, [u.id]: !s[u.id] }))} />
           </label>
