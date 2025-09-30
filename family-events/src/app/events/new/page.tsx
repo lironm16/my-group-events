@@ -83,7 +83,11 @@ export default function NewEventPage() {
       )}
       {step === 3 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
-        <button type="button" className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
+        <button
+          type="button"
+          className="px-3 py-2 border rounded"
+          onClick={()=> setStep(category === 'custom' ? 1 : 2)}
+        >חזרה</button>
         <div>
           <input className={inputCls} placeholder="כותרת" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
           {errors.title && <p className={errorCls}>{errors.title}</p>}
