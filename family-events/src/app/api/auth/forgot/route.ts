@@ -3,20 +3,30 @@ import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 
 export async function POST(req: Request) {
-  const { identifier } = await req.json();
-  if (!identifier) return NextResponse.json({ ok: true });
+  const body = await req.json().catch(() => ({}));
+  const username: string | undefined = (body?.username ?? '').trim() || undefined;
+  const email: string | undefined = (body?.email ?? '').trim() || undefined;
+  const name: string | undefined = (body?.name ?? '').trim() || undefined;
 
-  const raw = String(identifier).trim();
-  const idLower = raw.toLowerCase();
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        { username: idLower },
-        { email: idLower },
-        { name: raw },
-      ],
-    } as any,
-  });
+  // Username path (unique)
+  let user = null as null | { id: string; email: string | null };
+  if (username) {
+    const u = await prisma.user.findFirst({ where: { username: username.toLowerCase() } as any, select: { id: true, email: true } });
+    user = u ?? null;
+  } else if (email && name) {
+    // Name + email path (disambiguate duplicates)
+    const found = await prisma.user.findMany({
+      where: {
+        email: { equals: email.toLowerCase(), mode: 'insensitive' },
+        name: { equals: name, mode: 'insensitive' },
+      } as any,
+      select: { id: true, email: true },
+    });
+    user = found.length === 1 ? found[0] : null;
+  } else {
+    // Insufficient info; respond OK without revealing
+    return NextResponse.json({ ok: true });
+  }
 
   // Always return ok to avoid user enumeration
   if (!user) return NextResponse.json({ ok: true });
