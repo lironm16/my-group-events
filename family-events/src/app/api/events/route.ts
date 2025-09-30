@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     const guestIds: string[] = JSON.parse(String(body?.guestSelection || '[]'));
     if (Array.isArray(guestIds) && guestIds.length) {
       const unique = Array.from(new Set(guestIds));
-      await prisma.rsvp.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid, status: 'MAYBE' })) });
+      await prisma.rSVP.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid, status: 'MAYBE' })) });
     }
   } catch {}
   // Handle weekly recurrence

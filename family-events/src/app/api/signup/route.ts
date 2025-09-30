@@ -38,6 +38,9 @@ export async function POST(req: Request) {
   }
   // If invite-code flow is not used, allow skipping group creation
   if (!finalGroupId && newGroup && newGroup.trim()) {
+    if (!family) {
+      return NextResponse.json({ error: 'נדרש קוד הזמנה למשפחה כדי ליצור קבוצה חדשה' }, { status: 400 });
+    }
     const existsGroup = await prisma.group.findFirst({ where: { familyId: family.id, nickname: newGroup.trim() } });
     if (existsGroup) return NextResponse.json({ error: 'שם הקבוצה כבר קיים' }, { status: 400 });
     const g = await prisma.group.create({ data: { nickname: newGroup.trim(), familyId: family.id } });
