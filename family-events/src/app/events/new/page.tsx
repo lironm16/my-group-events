@@ -201,16 +201,17 @@ function TemplatesTiles({ category, onPick, onBack }: { category: 'weekend' | 'h
   ];
 
   // Holiday-specific templates using uploaded images under public/templates
+  // Ordered by Jewish year starting at Rosh Hashanah
   const holidayImages: { key: string; label: string; file: string }[] = [
     { key: 'rosh_hashanah', label: 'ראש השנה', file: '/templates/rosh-hashanah.jpg' },
     { key: 'kippur', label: 'יום כיפור', file: '/templates/kippur.jpg' },
     { key: 'sukkot', label: 'סוכות', file: '/templates/sukkot.jpg' },
     { key: 'hanukkah', label: 'חנוכה', file: '/templates/hanukkah.jpg' },
-    { key: 'passover', label: 'פסח', file: '/templates/passover.jpg' },
-    { key: 'shavuot', label: 'שבועות', file: '/templates/shavout.jpg' },
-    { key: 'purim', label: 'פורים', file: '/templates/purim.jpg' },
-    { key: 'lag_baomer', label: 'ל"ג בעומר', file: '/templates/lag-baomer.jpg' },
     { key: 'tu_bishvat', label: 'ט"ו בשבט', file: '/templates/tu-bishvat.jpg' },
+    { key: 'purim', label: 'פורים', file: '/templates/purim.jpg' },
+    { key: 'passover', label: 'פסח', file: '/templates/passover.jpg' },
+    { key: 'lag_baomer', label: 'ל"ג בעומר', file: '/templates/lag-baomer.jpg' },
+    { key: 'shavuot', label: 'שבועות', file: '/templates/shavout.jpg' },
     { key: 'tu_beav', label: 'ט"ו באב', file: '/templates/tu-beav.jpg' },
   ];
 
