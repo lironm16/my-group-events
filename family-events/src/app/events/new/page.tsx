@@ -162,7 +162,7 @@ function CategoryTiles({ onPick }: { onPick: (c: 'weekend' | 'holiday' | 'other'
   );
 }
 
-function TemplatesTiles({ category, onPick, onBack }: { category: 'weekend' | 'holiday' | 'other' | null; onPick: (tpl: Template) => void; onBack: () => void }) {
+function TemplatesTiles({ category, onPick, onBack }: { category: 'weekend' | 'holiday' | 'other' | 'custom' | null; onPick: (tpl: Template) => void; onBack: () => void }) {
   const now = new Date();
   const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
   const nextFriday = (() => {
