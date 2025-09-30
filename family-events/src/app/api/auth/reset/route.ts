@@ -8,7 +8,8 @@ export async function POST(req: Request) {
   const rec = await prisma.passwordResetToken.findUnique({ where: { token } });
   if (!rec || rec.expiresAt < new Date()) return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
   const hash = await bcrypt.hash(password, 10);
-  await prisma.user.update({ where: { id: rec.userId }, data: { passwordHash: hash }, select: { id: true } });
+  // Use raw query to avoid any schema-column drift on User
+  await prisma.$executeRawUnsafe('UPDATE "User" SET "passwordHash" = $1 WHERE "id" = $2', hash, rec.userId);
   await prisma.passwordResetToken.delete({ where: { token } });
   return NextResponse.json({ ok: true });
 }
