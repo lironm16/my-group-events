@@ -45,6 +45,7 @@ export default function NewEventPage() {
   const errorCls = "text-xs text-red-600";
 
   return (
+    <>
     <main className="container-page space-y-4">
       <h1 className="text-2xl font-bold">אירוע חדש</h1>
       {step === 1 && (
@@ -137,6 +138,7 @@ export default function NewEventPage() {
         onClose={() => { window.location.href = `/events/${created.id}`; }}
       />
     )}
+    </>
   );
 }
 
