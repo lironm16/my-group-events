@@ -74,9 +74,9 @@ export default function DateTimePicker({ label, value, onChange, required, allow
   }
 
   return (
-    <div className="w-full" ref={ref}>
+    <div className="w-full" ref={ref} dir="rtl">
       {label && <label className="block text-sm text-gray-600 mb-1">{label}{required ? ' *' : ''}</label>}
-      <button type="button" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-left" onClick={() => setOpen((o) => !o)}>
+      <button type="button" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-right" onClick={() => setOpen((o) => !o)}>
         {display || 'בחר תאריך ושעה'}
       </button>
       {open && (
@@ -103,7 +103,7 @@ export default function DateTimePicker({ label, value, onChange, required, allow
             ))}
           </div>
           <div className="mt-3">
-            <select className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700" value={time} onChange={(e) => onTimeChange(e.target.value)}>
+            <select dir="rtl" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-right" value={time} onChange={(e) => onTimeChange(e.target.value)}>
               {allowDateOnly && <option value="">ללא שעה</option>}
               {buildTimes().map((t) => (<option key={t} value={t}>{t}</option>))}
             </select>
