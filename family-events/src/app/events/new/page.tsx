@@ -154,10 +154,7 @@ export default function NewEventPage() {
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
       )}
-      <section className="space-y-2 max-w-xl">
-        <h2 className="font-semibold">יצירת חגים (ישראל)</h2>
-        <GenerateHolidays />
-      </section>
+      {/* Holiday generator UI removed for now */}
     </main>
     {created && (
       <SuccessModal
