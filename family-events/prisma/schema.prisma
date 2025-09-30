@@ -199,6 +199,7 @@ model Message {
   replyToId  String?
   createdAt  DateTime @default(now())
   reads      MessageRead[]
+  replies    Message[] @relation("MessageReply")
 
   @@index([groupId, createdAt])
 }
