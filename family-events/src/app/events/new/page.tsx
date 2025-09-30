@@ -20,6 +20,8 @@ export default function NewEventPage() {
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
   const [hasEnd, setHasEnd] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [showErrors, setShowErrors] = useState(false);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
     if (!form.title.trim()) errs.title = 'יש להזין כותרת';
@@ -31,7 +33,7 @@ export default function NewEventPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) { setShowErrors(true); return; }
     setSaving(true);
     const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null, coHostIds };
     const vis = document.getElementById('visibleToAll') as HTMLInputElement | null;
@@ -90,15 +92,21 @@ export default function NewEventPage() {
           onClick={()=> setStep(category === 'custom' ? 1 : 2)}
         >חזרה</button>
         <div>
-          <input className={inputCls} placeholder="כותרת" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
-          {errors.title && <p className={errorCls}>{errors.title}</p>}
+          <input
+            className={inputCls}
+            placeholder="כותרת"
+            value={form.title}
+            onChange={e=>setForm({...form, title:e.target.value})}
+            onBlur={()=>setTouched(t=>({...t, title:true}))}
+          />
+          {(showErrors || touched.title) && errors.title && <p className={errorCls}>{errors.title}</p>}
         </div>
         <input className={inputCls} placeholder="תיאור" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
         <DefaultLocationHydrator onLocation={(loc)=>{ if (!form.location) setForm(f=>({ ...f, location: loc || '' })); }} />
         <input className={inputCls} placeholder="מיקום" value={form.location} onChange={e=>setForm({...form, location:e.target.value})} />
         <div>
-          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly />
-          {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
+          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>{ setForm({...form, startAt:v}); setTouched(t=>({...t, startAt:true})); }} allowDateOnly />
+          {(showErrors || touched.startAt) && errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
         </div>
         <div className="space-y-2">
           <label className="inline-flex items-center gap-2">
@@ -115,8 +123,8 @@ export default function NewEventPage() {
           </label>
           {hasEnd && (
             <div>
-              <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly />
-              {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
+              <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>{ setForm({...form, endAt:v}); setTouched(t=>({...t, endAt:true})); }} allowDateOnly />
+              {(showErrors || touched.endAt) && errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
             </div>
           )}
         </div>
@@ -136,8 +144,14 @@ export default function NewEventPage() {
           )}
         </div>
         <div>
-          <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
-          {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
+          <input
+            className={inputCls}
+            placeholder="קישור חיצוני (אופציונלי)"
+            value={form.externalLink}
+            onChange={e=>setForm({...form, externalLink:e.target.value})}
+            onBlur={()=>setTouched(t=>({...t, externalLink:true}))}
+          />
+          {(showErrors || touched.externalLink) && errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
         </div>
         <GuestSelector />
         <CoHostsSelector onChange={setCoHostIds} />
