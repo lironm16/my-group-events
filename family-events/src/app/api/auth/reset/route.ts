@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   const rec = await prisma.passwordResetToken.findUnique({ where: { token } });
   if (!rec || rec.expiresAt < new Date()) return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
   const hash = await bcrypt.hash(password, 10);
-  await prisma.user.update({ where: { id: rec.userId }, data: { passwordHash: hash } });
+  await prisma.user.update({ where: { id: rec.userId }, data: { passwordHash: hash }, select: { id: true } });
   await prisma.passwordResetToken.delete({ where: { token } });
   return NextResponse.json({ ok: true });
 }
