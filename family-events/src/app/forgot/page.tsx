@@ -2,7 +2,9 @@
 import { useState } from 'react';
 
 export default function ForgotPage() {
-  const [identifier, setIdentifier] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [sent, setSent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string>('');
@@ -11,7 +13,13 @@ export default function ForgotPage() {
     setLoading(true);
     setMessage('');
     try {
-      const res = await fetch('/api/auth/forgot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier }) });
+      const payload: any = {};
+      if (username.trim()) payload.username = username.trim();
+      if (!username.trim()) {
+        payload.email = email.trim();
+        payload.name = name.trim();
+      }
+      const res = await fetch('/api/auth/forgot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const j = await res.json().catch(() => ({ ok: false }));
       setSent(j.link ?? null);
       setMessage('אם החשבון קיים, שלחנו קישור לאיפוס לאימייל.');
@@ -25,8 +33,11 @@ export default function ForgotPage() {
     <main className="container-page max-w-md mx-auto space-y-4">
       <h1 className="text-2xl font-bold">שכחת סיסמה</h1>
       <form onSubmit={submit} className="space-y-2">
-        <input autoComplete="username" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 appearance-none" placeholder="שם משתמש / כינוי" value={identifier} onChange={e=>setIdentifier(e.target.value)} />
-        <button type="submit" disabled={loading || !identifier.trim()} className="w-full px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">{loading ? 'שולח…' : 'שלח קישור לאיפוס'}</button>
+        <input autoComplete="username" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 appearance-none" placeholder="שם משתמש (חלופי)" value={username} onChange={e=>setUsername(e.target.value)} />
+        <div className="text-xs text-gray-500">או הזינו שם + אימייל כדי לזהות משתמש במקרה של אימייל משותף</div>
+        <input autoComplete="email" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 appearance-none" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
+        <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 appearance-none" placeholder="שם מלא" value={name} onChange={e=>setName(e.target.value)} />
+        <button type="submit" disabled={loading || (!username.trim() && (!email.trim() || !name.trim()))} className="w-full px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">{loading ? 'שולח…' : 'שלח קישור לאיפוס'}</button>
       </form>
       {message && <div className="text-sm text-gray-700 dark:text-gray-300">{message}</div>}
       {sent && <div className="text-sm text-gray-600 break-all">קישור (לבדיקות): {sent}</div>}
