@@ -161,14 +161,12 @@ function CategoryTiles({ onPick }: { onPick: (c: 'weekend' | 'holiday' | 'other'
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
       {items.map(it => (
-        <button type="button" key={it.key} onClick={()=>onPick(it.key)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-0 bg-white dark:bg-gray-900 hover:shadow overflow-hidden">
-          <div className="relative w-full pt-[75%]">
+        <button type="button" key={it.key} onClick={()=>onPick(it.key)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
+          <div className="relative w-32 h-32">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={CATEGORY_BG[it.key]} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-              <span className="px-3 py-1 rounded text-white text-sm font-medium bg-black/40">{it.label}</span>
-            </div>
+            <img src={CATEGORY_BG[it.key]} alt="" className="absolute inset-0 w-full h-full rounded-xl object-cover" />
           </div>
+          <div className="font-medium mt-3 text-sm md:text-base">{it.label}</div>
         </button>
       ))}
     </div>
