@@ -32,8 +32,28 @@ export async function POST(req: Request) {
     const token = crypto.randomBytes(24).toString('hex');
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
     await prisma.activationToken.create({ data: { token, userId, expiresAt } });
-    // TODO: send email to user with activation link
-    // e.g., `${process.env.NEXTAUTH_URL ?? ''}/activate?token=${token}`
+    const link = `${process.env.NEXTAUTH_URL ?? ''}/activate?token=${token}`;
+    // Send activation email if SMTP is configured and user has an email
+    if (target?.email && process.env.SMTP_HOST && process.env.SMTP_FROM) {
+      try {
+        const nodemailer = await import('nodemailer');
+        const tx = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT || 587),
+          secure: String(process.env.SMTP_PORT || '587') === '465',
+          auth: process.env.SMTP_USER && process.env.SMTP_PASS ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+        });
+        await tx.sendMail({
+          from: process.env.SMTP_FROM || 'no-reply@example.com',
+          to: target.email,
+          replyTo: process.env.SMTP_REPLY_TO || process.env.SMTP_FROM,
+          subject: 'אישור הרשמה - My Group Events',
+          text: `שלום${target.name ? ' ' + target.name : ''},\n\nחשבונך אושר. נא להפעיל את החשבון באמצעות הקישור:\n${link}\n\nהקישור תקף ל-24 שעות.`,
+        });
+      } catch {
+        // ignore send errors; admin action remains successful
+      }
+    }
   }
   if (action === 'deny') await prisma.user.delete({ where: { id: userId } });
   return NextResponse.json({ ok: true });
