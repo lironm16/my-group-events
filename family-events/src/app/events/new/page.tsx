@@ -3,10 +3,10 @@ import { useMemo, useState, useEffect } from 'react';
 import DateTimePicker from '@/components/DateTimePicker';
 
 const CATEGORY_BG: Record<'weekend'|'holiday'|'other'|'custom', string> = {
-  weekend: '/templates/rosh-hashanah.jpg',
+  weekend: '/templates/dinner.jpg',
   holiday: '/templates/rosh-hashanah.jpg',
-  other: '/templates/rosh-hashanah.jpg',
-  custom: '/templates/rosh-hashanah.jpg',
+  other: '/templates/party.jpg',
+  custom: '/templates/beach.jpg',
 };
 
 export default function NewEventPage() {
@@ -83,6 +83,7 @@ export default function NewEventPage() {
       )}
       {step === 3 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
+        <button type="button" className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
         <div>
           <input className={inputCls} placeholder="כותרת" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
           {errors.title && <p className={errorCls}>{errors.title}</p>}
@@ -119,7 +120,6 @@ export default function NewEventPage() {
         </div>
         <GuestSelector />
         <CoHostsSelector onChange={setCoHostIds} />
-        <ShareWhatsAppToggle title={form.title} />
         <div className="space-y-2 border-t pt-3">
           <label className="inline-flex items-center gap-2">
             <input id="visibleToAll" type="checkbox" defaultChecked />
@@ -210,6 +210,10 @@ function TemplatesTiles({ category, onPick, onBack }: { category: 'weekend' | 'h
     { key: 'hanukkah', label: 'חנוכה', file: '/templates/hanukkah.jpg' },
     { key: 'passover', label: 'פסח', file: '/templates/passover.jpg' },
     { key: 'shavuot', label: 'שבועות', file: '/templates/shavout.jpg' },
+    { key: 'purim', label: 'פורים', file: '/templates/purim.jpg' },
+    { key: 'lag_baomer', label: 'ל"ג בעומר', file: '/templates/lag-baomer.jpg' },
+    { key: 'tu_bishvat', label: 'ט"ו בשבט', file: '/templates/tu-bishvat.jpg' },
+    { key: 'tu_beav', label: 'ט"ו באב', file: '/templates/tu-beav.jpg' },
   ];
 
   const holidayTpls = holidayImages.map(h => ({
@@ -220,11 +224,14 @@ function TemplatesTiles({ category, onPick, onBack }: { category: 'weekend' | 'h
 
   // Other templates
   const otherTpls = [
-    { label: 'יום הולדת', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'יום הולדת', description: 'חגיגת יום הולדת משפחתית', startAt: toLocal(nextWeek), holidayKey: 'birthday' } },
-    { label: 'פיקניק', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'פיקניק', description: 'פיקניק משפחתי בפארק', startAt: toLocal(nextWeek), holidayKey: 'picnic' } },
-    { label: 'חופשת הקיץ', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'חופשת הקיץ', description: 'עדכון/מפגש', startAt: toLocal(nextWeek), holidayKey: 'summer_break' } },
-    { label: 'ים', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'ים', description: 'מפגש חוף/ים', startAt: toLocal(nextWeek), holidayKey: 'beach' } },
-    { label: 'על האש (BBQ)', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'על האש', description: 'על האש משפחתי', startAt: toLocal(nextWeek), holidayKey: 'bbq' } },
+    { label: 'יום הולדת', bgUrl: '/templates/birthday.jpg', tpl: { title: 'יום הולדת', description: 'חגיגת יום הולדת משפחתית', startAt: toLocal(nextWeek), holidayKey: 'birthday' } },
+    { label: 'פיקניק', bgUrl: '/templates/picnic.jpg', tpl: { title: 'פיקניק', description: 'פיקניק משפחתי בפארק', startAt: toLocal(nextWeek), holidayKey: 'picnic' } },
+    { label: 'חופשת הקיץ', bgUrl: '/templates/beach.jpg', tpl: { title: 'חופשת הקיץ', description: 'עדכון/מפגש', startAt: toLocal(nextWeek), holidayKey: 'summer_break' } },
+    { label: 'ים', bgUrl: '/templates/beach.jpg', tpl: { title: 'ים', description: 'מפגש חוף/ים', startAt: toLocal(nextWeek), holidayKey: 'beach' } },
+    { label: 'על האש (BBQ)', bgUrl: '/templates/bbq.jpg', tpl: { title: 'על האש', description: 'על האש משפחתי', startAt: toLocal(nextWeek), holidayKey: 'bbq' } },
+    { label: 'מסיבה', bgUrl: '/templates/party.jpg', tpl: { title: 'מסיבה', description: 'מסיבת משפחה', startAt: toLocal(nextWeek), holidayKey: 'party' } },
+    { label: 'ארוחת בוקר', bgUrl: '/templates/brekfast.jpg', tpl: { title: 'ארוחת בוקר', description: 'מפגש לארוחת בוקר', startAt: toLocal(nextWeek), holidayKey: 'breakfast' } },
+    { label: 'ארוחת ערב', bgUrl: '/templates/dinner.jpg', tpl: { title: 'ארוחת ערב', description: 'מפגש לארוחת ערב', startAt: toLocal(nextWeek), holidayKey: 'dinner' } },
   ];
 
   let tpls: { label: string; bgUrl: string; tpl: Template }[] = [];
