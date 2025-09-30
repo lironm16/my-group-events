@@ -2,6 +2,13 @@
 import { useMemo, useState, useEffect } from 'react';
 import DateTimePicker from '@/components/DateTimePicker';
 
+const CATEGORY_BG: Record<'weekend'|'holiday'|'other'|'custom', string> = {
+  weekend: '/templates/rosh-hashanah.jpg',
+  holiday: '/templates/rosh-hashanah.jpg',
+  other: '/templates/rosh-hashanah.jpg',
+  custom: '/templates/rosh-hashanah.jpg',
+};
+
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
   const [coHostIds, setCoHostIds] = useState<string[]>([]);
@@ -146,16 +153,22 @@ type Template = { title: string; description?: string; location?: string; startA
 
 function CategoryTiles({ onPick }: { onPick: (c: 'weekend' | 'holiday' | 'other' | 'custom') => void }) {
   const items = [
-    { key: 'weekend', label: 'סופ"ש' },
-    { key: 'holiday', label: 'חג' },
-    { key: 'other', label: 'אחר' },
-    { key: 'custom', label: 'מותאם אישית' },
-  ] as const;
+    { key: 'weekend', label: 'סופ"ש' as const },
+    { key: 'holiday', label: 'חג' as const },
+    { key: 'other', label: 'אחר' as const },
+    { key: 'custom', label: 'מותאם אישית' as const },
+  ];
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
       {items.map(it => (
-        <button type="button" key={it.key} onClick={()=>onPick(it.key)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-6 bg-white dark:bg-gray-900 hover:shadow flex items-center justify-center font-medium">
-          {it.label}
+        <button type="button" key={it.key} onClick={()=>onPick(it.key)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-0 bg-white dark:bg-gray-900 hover:shadow overflow-hidden">
+          <div className="relative w-full pt-[75%]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={CATEGORY_BG[it.key]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+              <span className="px-3 py-1 rounded text-white text-sm font-medium bg-black/40">{it.label}</span>
+            </div>
+          </div>
         </button>
       ))}
     </div>
