@@ -14,7 +14,6 @@ export async function POST(req: Request) {
         { username: idLower },
         { email: idLower },
         { name: raw },
-        { phone: raw as any },
       ],
     } as any,
   });
