@@ -152,11 +152,11 @@ export default function NewEventPage() {
 type Template = { title: string; description?: string; location?: string; startAt?: string; endAt?: string; holidayKey?: string };
 
 function CategoryTiles({ onPick }: { onPick: (c: 'weekend' | 'holiday' | 'other' | 'custom') => void }) {
-  const items = [
-    { key: 'weekend', label: 'סופ"ש' as const },
-    { key: 'holiday', label: 'חג' as const },
-    { key: 'other', label: 'אחר' as const },
-    { key: 'custom', label: 'מותאם אישית' as const },
+  const items: { key: 'weekend' | 'holiday' | 'other' | 'custom'; label: string }[] = [
+    { key: 'weekend', label: 'סופ"ש' },
+    { key: 'holiday', label: 'חג' },
+    { key: 'other', label: 'אחר' },
+    { key: 'custom', label: 'מותאם אישית' },
   ];
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
