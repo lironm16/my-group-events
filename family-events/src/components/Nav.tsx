@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
 import { useSession, signOut } from 'next-auth/react';
+import GroupMenu from '@/components/GroupMenu';
 
 export default function Nav() {
   const { data: session, status } = useSession();
@@ -41,6 +42,7 @@ export default function Nav() {
               })()}
             </span>
           )}
+          {status === 'authenticated' && <GroupMenu />}
           <button onClick={toggle} className="px-2 py-1 rounded border text-sm dark:border-gray-700">
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>

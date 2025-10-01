@@ -44,7 +44,7 @@ export default function SignInPage() {
         <a href="/forgot" className="text-blue-600">שכחת סיסמה?</a>
       </div>
       <form onSubmit={signInEmail} className="space-y-2">
-        <input autoComplete="username" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 appearance-none dark:[-webkit-text-fill-color:#e5e7eb]" name="username" placeholder="שם משתמש / כינוי / טלפון" value={username} onChange={(e)=>setUsername(e.target.value)} />
+        <input autoComplete="username" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 appearance-none dark:[-webkit-text-fill-color:#e5e7eb]" name="username" placeholder="שם משתמש / כינוי" value={username} onChange={(e)=>setUsername(e.target.value)} />
         <input autoComplete="current-password" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 appearance-none dark:[-webkit-text-fill-color:#e5e7eb]" name="password" type="password" placeholder="סיסמה" />
         <button disabled={!username || loading === 'login'} className="w-full px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">
           {loading === 'login' ? 'שולח…' : 'כניסה'}
