@@ -18,8 +18,8 @@ export const authOptions: NextAuthOptions = {
         const username = rawId?.toLowerCase();
         const password = credentials?.password as string | undefined;
         if (!rawId || !password) return null;
-        // Allow login by username, nickname, or phone (no email)
-        const user = await prisma.user.findFirst({ where: { OR: [ { username }, { name: username }, { phone: rawId as any } ] } as any });
+        // Allow login by username or nickname (no email)
+        const user = await prisma.user.findFirst({ where: { OR: [ { username }, { name: username } ] } });
         if (!user?.passwordHash) return null;
         const ok = await bcrypt.compare(password, user.passwordHash);
         return ok ? user : null;
