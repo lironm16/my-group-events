@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const family = await prisma.family.findUnique({ where: { inviteCode: code } });
   if (!family) return NextResponse.json({ error: 'Invalid code' }, { status: 404 });
 
-  await prisma.user.update({ where: { id: user.id }, data: { familyId: family.id, groupId: groupId ?? undefined } });
+  await prisma.user.update({ where: { id: user.id }, data: { familyId: family.id, groupId: groupId ?? undefined }, select: { id: true } });
   return NextResponse.json({ ok: true, familyId: family.id });
 }
 

@@ -20,9 +20,9 @@ export async function POST(req: Request) {
   if (userId === me.id) return NextResponse.json({ error: 'Cannot modify self' }, { status: 400 });
   const target = await prisma.user.findUnique({ where: { id: userId } });
   if (!target || target.familyId !== me.familyId) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  if (action === 'promote') await prisma.user.update({ where: { id: userId }, data: { role: 'admin' } });
-  if (action === 'demote') await prisma.user.update({ where: { id: userId }, data: { role: 'member' } });
-  if (action === 'remove') await prisma.user.update({ where: { id: userId }, data: { familyId: null, groupId: null, role: 'member' } });
+  if (action === 'promote') await prisma.user.update({ where: { id: userId }, data: { role: 'admin' }, select: { id: true } });
+  if (action === 'demote') await prisma.user.update({ where: { id: userId }, data: { role: 'member' }, select: { id: true } });
+  if (action === 'remove') await prisma.user.update({ where: { id: userId }, data: { familyId: null, groupId: null, role: 'member' }, select: { id: true } });
   return NextResponse.json({ ok: true });
 }
 

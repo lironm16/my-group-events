@@ -31,7 +31,7 @@ export async function GET() {
         members: { connect: { id: user.id } },
       },
     });
-    await prisma.user.update({ where: { id: user.id }, data: { familyId: family.id } });
+    await prisma.user.update({ where: { id: user.id }, data: { familyId: family.id }, select: { id: true } });
   }
 
   return NextResponse.json({ inviteCode: family.inviteCode, familyId: family.id });

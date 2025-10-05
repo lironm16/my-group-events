@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   if (!target || target.familyId !== me.familyId) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (action === 'approve') {
     // Mark approved only; do NOT attach to any family here
-    await prisma.user.update({ where: { id: userId }, data: { approved: true } });
+    await prisma.user.update({ where: { id: userId }, data: { approved: true }, select: { id: true } });
     const token = crypto.randomBytes(24).toString('hex');
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
     await prisma.activationToken.create({ data: { token, userId, expiresAt } });

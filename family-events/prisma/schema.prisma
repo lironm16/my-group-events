@@ -28,8 +28,6 @@ model User {
   role      String   @default("member")
   passwordHash String?
   approved  Boolean  @default(false)
-  phone     String?
-  phoneVerified Boolean @default(false)
   theme     String?
   notifyRsvpEmails Boolean @default(true)
   defaultLocation  String?
@@ -158,13 +156,5 @@ model ActivationToken {
   createdAt DateTime @default(now())
 }
 
-model PhoneVerification {
-  id        String   @id @default(cuid())
-  phone     String   @unique
-  code      String
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+// Phone verification removed
 
