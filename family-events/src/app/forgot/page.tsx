@@ -35,7 +35,7 @@ export default function ForgotPage() {
         <input autoComplete="username" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 appearance-none" placeholder="שם משתמש / כינוי" value={identifier} onChange={e=>setIdentifier(e.target.value)} />
         {error && <div className="text-sm text-red-600">{error}</div>}
         {sent && (
-          <div className="text-sm text-green-700">אם קיים מייל למשתמש, נשלח קישור לאיפוס.</div>
+          <div className="text-sm text-green-700">נשלח קישור לאיפוס אל כתובת האימייל של המשתמש.</div>
         )}
         <button type="submit" disabled={saving || !identifier.trim()} aria-busy={saving} className={`w-full px-3 py-2 rounded text-white ${saving || !identifier.trim() ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600'}`}>
           {saving ? 'שולח…' : 'שלח קישור לאימייל לאיפוס'}
