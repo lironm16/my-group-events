@@ -11,8 +11,27 @@ export async function POST(req: Request) {
   const token = crypto.randomBytes(24).toString('hex');
   const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
   await prisma.passwordResetToken.create({ data: { token, userId: user.id, expiresAt } });
-  // TODO: send email. For now, just log or return link (dev only)
   const link = `${process.env.NEXTAUTH_URL ?? ''}/reset?token=${token}`;
+  try {
+    const nodemailer = await import('nodemailer');
+    const tx = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: String(process.env.SMTP_PORT || '587') === '465',
+      auth: process.env.SMTP_USER && process.env.SMTP_PASS ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+    });
+    if (user.email) {
+      await tx.sendMail({
+        from: process.env.SMTP_FROM || 'no-reply@example.com',
+        to: user.email,
+        replyTo: process.env.SMTP_REPLY_TO || process.env.SMTP_FROM,
+        subject: 'איפוס סיסמה - My Group Events',
+        text: `שלום${user.name ? ' ' + user.name : ''},\n\nלקבלת סיסמה חדשה, היכנס לקישור הבא:\n${link}\n\nאם לא ביקשת איפוס, ניתן להתעלם מהודעה זו.`,
+      });
+    }
+  } catch (e) {
+    console.error('[auth/forgot] Email send failed', e);
+  }
   return NextResponse.json({ ok: true, link });
 }
 
