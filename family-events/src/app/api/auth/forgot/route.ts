@@ -11,7 +11,10 @@ export async function POST(req: Request) {
   const token = crypto.randomBytes(24).toString('hex');
   const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
   await prisma.passwordResetToken.create({ data: { token, userId: user.id, expiresAt } });
-  const link = `${process.env.NEXTAUTH_URL ?? ''}/reset?token=${token}`;
+  const reqUrl = new URL(req.url);
+  const originEnv = process.env.NEXTAUTH_URL;
+  const base = originEnv && originEnv.startsWith('http') ? originEnv : `${reqUrl.protocol}//${reqUrl.host}`;
+  const link = `${base.replace(/\/$/, '')}/reset?token=${token}`;
   try {
     const nodemailer = await import('nodemailer');
     const tx = nodemailer.createTransport({
@@ -27,6 +30,7 @@ export async function POST(req: Request) {
         replyTo: process.env.SMTP_REPLY_TO || process.env.SMTP_FROM,
         subject: 'איפוס סיסמה - My Group Events',
         text: `שלום${user.name ? ' ' + user.name : ''},\n\nלקבלת סיסמה חדשה, היכנס לקישור הבא:\n${link}\n\nאם לא ביקשת איפוס, ניתן להתעלם מהודעה זו.`,
+        html: `שלום${user.name ? ' ' + user.name : ''},<br/><br/>לקבלת סיסמה חדשה, לחץ על הקישור:<br/><a href="${link}">איפוס סיסמה</a><br/><br/>אם לא ביקשת איפוס, ניתן להתעלם מהודעה זו.`,
       });
     }
   } catch (e) {

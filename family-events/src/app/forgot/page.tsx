@@ -42,7 +42,7 @@ export default function ForgotPage() {
         </button>
       </form>
       {sent && (
-        <div className="text-sm text-gray-600 break-all">קישור (לבדיקות): {sent}</div>
+        <div className="text-sm text-gray-600 break-all">קישור (לבדיקות): <a className="text-blue-600 underline" href={sent} target="_blank" rel="noreferrer">פתיחה</a></div>
       )}
     </main>
   );
