@@ -19,7 +19,7 @@ export const authOptions: NextAuthOptions = {
         const password = credentials?.password as string | undefined;
         if (!rawId || !password) return null;
         // Allow login by username or nickname (no email)
-        const user = await prisma.user.findFirst({ where: { OR: [ { username }, { name: username } ] } });
+        const user = await prisma.user.findFirst({ where: { OR: [ { username }, { name: username } ] }, select: { id: true, role: true, approved: true, passwordHash: true } });
         if (!user?.passwordHash) return null;
         const ok = await bcrypt.compare(password, user.passwordHash);
         return ok ? user : null;
