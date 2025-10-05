@@ -63,14 +63,14 @@ function GroupForm({ userId, currentGroupId, groups }: { userId: string; current
         const kind = String(fd.get('kind') ?? 'select');
         if (kind === 'select') {
           const groupId = String(fd.get('groupId') ?? '');
-          if (groupId) await prisma.user.update({ where: { id: userId }, data: { groupId } });
+          if (groupId) await prisma.user.update({ where: { id: userId }, data: { groupId }, select: { id: true } });
         } else {
           const nickname = String(fd.get('nickname') ?? '').trim();
           if (nickname) {
             const me = await prisma.user.findUnique({ where: { id: userId } });
             if (me?.familyId) {
               const group = await prisma.group.create({ data: { nickname, familyId: me.familyId } });
-              await prisma.user.update({ where: { id: userId }, data: { groupId: group.id } });
+              await prisma.user.update({ where: { id: userId }, data: { groupId: group.id }, select: { id: true } });
             }
           }
         }
@@ -197,7 +197,7 @@ function DefaultLocationForm({ userId, current }: { userId: string; current?: st
       action={async (fd: FormData) => {
         'use server';
         const loc = String(fd.get('loc') ?? '').trim();
-        await prisma.user.update({ where: { id: userId }, data: { defaultLocation: loc || null } });
+        await prisma.user.update({ where: { id: userId }, data: { defaultLocation: loc || null }, select: { id: true } });
       }}
     >
       <h2 className="font-semibold">מיקום ברירת מחדל לאירועים שאני מארח</h2>
@@ -214,7 +214,7 @@ function NotifyRsvpForm({ userId, current }: { userId: string; current: boolean 
       action={async (fd: FormData) => {
         'use server';
         const on = String(fd.get('on') ?? 'off') === 'on';
-        await prisma.user.update({ where: { id: userId }, data: { notifyRsvpEmails: on } });
+        await prisma.user.update({ where: { id: userId }, data: { notifyRsvpEmails: on }, select: { id: true } });
       }}
     >
       <h2 className="font-semibold">התראות אימייל על שינויים באישורי הגעה</h2>
@@ -238,7 +238,7 @@ function ProfileForm({ userId, current }: { userId: string; current: { name: str
         const name = String(fd.get('name') ?? '').trim();
         const email = String(fd.get('email') ?? '').trim().toLowerCase();
         const image = String(fd.get('image') ?? '').trim();
-        await prisma.user.update({ where: { id: userId }, data: { name: name || null, email: email || null, image: image || null } });
+        await prisma.user.update({ where: { id: userId }, data: { name: name || null, email: email || null, image: image || null }, select: { id: true } });
       }}
     >
       <h2 className="font-semibold">פרופיל</h2>
@@ -280,7 +280,7 @@ function PasswordForm({ userId }: { userId: string }) {
         if (!password) return;
         const bcrypt = (await import('bcryptjs')).default;
         const hash = await bcrypt.hash(password, 10);
-        await prisma.user.update({ where: { id: userId }, data: { passwordHash: hash } });
+        await prisma.user.update({ where: { id: userId }, data: { passwordHash: hash }, select: { id: true } });
       }}
     >
       <h2 className="font-semibold">החלפת סיסמה</h2>
