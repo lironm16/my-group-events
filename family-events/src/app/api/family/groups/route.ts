@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     }
     const groups = await prisma.group.findMany({
       where: { familyId: family.id },
-      include: { members: { select: { id: true, name: true, image: true, username: true } } },
+      include: { members: { select: { id: true, name: true, image: true, username: true } }, parent: { select: { id: true, nickname: true } } },
       orderBy: { createdAt: 'asc' },
     });
     return NextResponse.json({ groups });
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
   if (!user?.familyId) return NextResponse.json({ groups: [] });
   const groups = await prisma.group.findMany({
     where: { familyId: user.familyId },
-    include: { members: { select: { id: true, name: true, image: true, username: true } } },
+    include: { members: { select: { id: true, name: true, image: true, username: true } }, parent: { select: { id: true, nickname: true } } },
     orderBy: { createdAt: 'asc' },
   });
   return NextResponse.json({ groups });
