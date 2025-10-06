@@ -238,6 +238,14 @@ function ProfileForm({ userId, current }: { userId: string; current: { name: str
         const name = String(fd.get('name') ?? '').trim();
         const email = String(fd.get('email') ?? '').trim().toLowerCase();
         const image = String(fd.get('image') ?? '').trim();
+        // Ensure email uniqueness if provided
+        if (email) {
+          const conflict = await prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } as any, NOT: { id: userId } as any } as any });
+          if (conflict) {
+            // Abort silently to avoid server error; UI does not handle errors here
+            return;
+          }
+        }
         await prisma.user.update({ where: { id: userId }, data: { name: name || null, email: email || null, image: image || null } });
       }}
     >

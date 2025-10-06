@@ -16,16 +16,19 @@ export async function POST(req: Request) {
   if (!icon) missing.push('אייקון');
   if (!nickname || !nickname.trim()) missing.push('כינוי');
   if (missing.length) return NextResponse.json({ error: `שדות חסרים: ${missing.join(', ')}` }, { status: 400 });
+  const emailLower = (email || '').trim().toLowerCase();
   let family = null as null | { id: string };
   if (code) {
     const f = await prisma.family.findUnique({ where: { inviteCode: code } });
     if (f) family = { id: f.id };
   }
-  // בדיקת ייחודיות שם משתמש
+  // בדיקת ייחודיות דוא"ל ושם משתמש
+  const existingEmail = await prisma.user.findFirst({ where: { email: { equals: emailLower, mode: 'insensitive' } } });
+  if (existingEmail) return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
   const usernameLower = finalUsername.toLowerCase();
   const existing = await prisma.user.findFirst({ where: { username: usernameLower } });
   if (existing) return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
-  // אין בדיקת ייחודיות אימייל (אימייל אינו ייחודי במערכת)
+  // אימייל חייב להיות ייחודי במערכת
   const passwordHash = await bcrypt.hash(password, 10);
   const isFirst = (await prisma.user.count()) === 0;
   let finalGroupId = groupId ?? undefined;
@@ -52,7 +55,7 @@ export async function POST(req: Request) {
         username: usernameLower,
         name: rawNickname || finalUsername,
         image: imageUrl || (icon ? `icon:${icon}` : null),
-        email: email.toLowerCase(),
+        email: emailLower,
         passwordHash,
         role: isFirst ? 'admin' : 'member',
         familyId: family?.id ?? null,
@@ -80,7 +83,9 @@ export async function POST(req: Request) {
       if (targetStr.includes('username')) {
         return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
       }
-      // לא מחזירים שגיאה על אימייל בשימוש כי האימייל אינו ייחודי
+      if (targetStr.includes('email')) {
+        return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
+      }
       // Fallback when field not parsed
       return NextResponse.json({ error: 'שם המשתמש או האימייל כבר קיימים' }, { status: 400 });
     }
