@@ -1,27 +1,15 @@
 "use client";
 import { useMemo, useState, useEffect } from 'react';
+import EventTypeIcon from '@/components/EventTypeIcon';
 import DateTimePicker from '@/components/DateTimePicker';
-
-const CATEGORY_BG: Record<'weekend'|'holiday'|'other'|'custom', string> = {
-  weekend: '/templates/dinner.jpg',
-  holiday: '/templates/rosh-hashanah.jpg',
-  other: '/templates/birthday.jpg',
-  custom: '/templates/beach.jpg',
-};
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
-  const [coHostIds, setCoHostIds] = useState<string[]>([]);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [category, setCategory] = useState<'weekend' | 'holiday' | 'other' | 'custom' | null>(null);
+  const [step, setStep] = useState<1 | 2>(1);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
   const [skipHolidays, setSkipHolidays] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [created, setCreated] = useState<{ id: string; title: string } | null>(null);
-  const [hasEnd, setHasEnd] = useState(false);
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [showErrors, setShowErrors] = useState(false);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
     if (!form.title.trim()) errs.title = 'יש להזין כותרת';
@@ -33,13 +21,9 @@ export default function NewEventPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (Object.keys(errors).length > 0) { setShowErrors(true); return; }
+    if (Object.keys(errors).length > 0) return;
     setSaving(true);
-    const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null, coHostIds };
-    const vis = document.getElementById('visibleToAll') as HTMLInputElement | null;
-    const ropen = document.getElementById('rsvpOpenToAll') as HTMLInputElement | null;
-    if (vis) body.visibleToAll = vis.checked;
-    if (ropen) body.rsvpOpenToAll = ropen.checked;
+    const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null };
     if (repeatWeekly && repeatUntil) {
       body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
     }
@@ -47,7 +31,13 @@ export default function NewEventPage() {
     setSaving(false);
     if (res.ok) {
       const { event } = await res.json();
-      setCreated({ id: event.id, title: form.title || event.title });
+      try {
+        const base = (process.env.NEXT_PUBLIC_APP_URL || window.location.origin);
+        const shareUrl = `${base}/events/${event.id}`;
+        const text = `🎉 נוצר אירוע חדש: ${form.title}\nאישור הגעה: ${shareUrl}`;
+        if (navigator.share) await navigator.share({ text });
+      } catch {}
+      window.location.href = '/events';
     }
   }
 
@@ -55,78 +45,35 @@ export default function NewEventPage() {
   const errorCls = "text-xs text-red-600";
 
   return (
-    <>
     <main className="container-page space-y-4">
       <h1 className="text-2xl font-bold">אירוע חדש</h1>
-      {step === 1 && (
-        <CategoryTiles onPick={(cat)=>{
-          setCategory(cat);
-          if (cat === 'custom') {
-            setForm({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
-            (window as any).__holidayKey = null;
-            setStep(3);
-          } else {
-            setStep(2);
-          }
-        }} />
-      )}
+      <TemplatesTiles onPick={(tpl)=>{
+        setForm({
+          title: tpl.title,
+          description: tpl.description ?? '',
+          location: tpl.location ?? '',
+          startAt: tpl.startAt ?? '',
+          endAt: tpl.endAt ?? '',
+          externalLink: ''
+        });
+        (window as any).__holidayKey = tpl.holidayKey ?? null;
+        setStep(2);
+      }} />
       {step === 2 && (
-        <TemplatesTiles category={category} onBack={()=>setStep(1)} onPick={(tpl)=>{
-          setForm({
-            title: tpl.title,
-            description: tpl.description ?? '',
-            location: tpl.location ?? '',
-            startAt: tpl.startAt ?? '',
-            endAt: tpl.endAt ?? '',
-            externalLink: ''
-          });
-          (window as any).__holidayKey = tpl.holidayKey ?? null;
-          setStep(3);
-        }} />
-      )}
-      {step === 3 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
-        <button
-          type="button"
-          className="px-3 py-2 border rounded"
-          onClick={()=> setStep(category === 'custom' ? 1 : 2)}
-        >חזרה</button>
         <div>
-          <input
-            className={inputCls}
-            placeholder="כותרת"
-            value={form.title}
-            onChange={e=>setForm({...form, title:e.target.value})}
-            onBlur={()=>setTouched(t=>({...t, title:true}))}
-          />
-          {(showErrors || touched.title) && errors.title && <p className={errorCls}>{errors.title}</p>}
+          <input className={inputCls} placeholder="כותרת" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+          {errors.title && <p className={errorCls}>{errors.title}</p>}
         </div>
         <input className={inputCls} placeholder="תיאור" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
-        <DefaultLocationHydrator onLocation={(loc)=>{ if (!form.location) setForm(f=>({ ...f, location: loc || '' })); }} />
         <input className={inputCls} placeholder="מיקום" value={form.location} onChange={e=>setForm({...form, location:e.target.value})} />
         <div>
-          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>{ setForm({...form, startAt:v}); setTouched(t=>({...t, startAt:true})); }} allowDateOnly />
-          {(showErrors || touched.startAt) && errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
+          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} />
+          {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
         </div>
-        <div className="space-y-2">
-          <label className="inline-flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={hasEnd}
-              onChange={(e)=>{
-                const on = e.target.checked;
-                setHasEnd(on);
-                if (!on) setForm(f=>({ ...f, endAt: '' }));
-              }}
-            />
-            <span>להוסיף תאריך סיום</span>
-          </label>
-          {hasEnd && (
-            <div>
-              <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>{ setForm({...form, endAt:v}); setTouched(t=>({...t, endAt:true})); }} allowDateOnly />
-              {(showErrors || touched.endAt) && errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
-            </div>
-          )}
+        <div>
+          <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} />
+          {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
         </div>
         <div className="mt-4 space-y-2">
           <label className="inline-flex items-center gap-2">
@@ -144,68 +91,24 @@ export default function NewEventPage() {
           )}
         </div>
         <div>
-          <input
-            className={inputCls}
-            placeholder="קישור חיצוני (אופציונלי)"
-            value={form.externalLink}
-            onChange={e=>setForm({...form, externalLink:e.target.value})}
-            onBlur={()=>setTouched(t=>({...t, externalLink:true}))}
-          />
-          {(showErrors || touched.externalLink) && errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
+          <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
+          {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
         </div>
         <GuestSelector />
-        <CoHostsSelector onChange={setCoHostIds} />
-        <div className="space-y-2 border-t pt-3">
-          <label className="inline-flex items-center gap-2">
-            <input id="visibleToAll" type="checkbox" defaultChecked />
-            <span>ניתן לצפייה לכל בני המשפחה (גם לא מוזמנים)</span>
-          </label>
-          <label className="inline-flex items-center gap-2">
-            <input id="rsvpOpenToAll" type="checkbox" />
-            <span>אפשר לכל אחד לאשר הגעה (גם ללא הזמנה)</span>
-          </label>
-        </div>
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
       )}
-      {/* Holiday generator UI removed for now */}
+      <section className="space-y-2 max-w-xl">
+        <h2 className="font-semibold">יצירת חגים (ישראל)</h2>
+        <GenerateHolidays />
+      </section>
     </main>
-    {created && (
-      <SuccessModal
-        title={created.title}
-        eventId={created.id}
-        onClose={() => { window.location.href = `/events/${created.id}`; }}
-      />
-    )}
-    </>
   );
 }
 
 type Template = { title: string; description?: string; location?: string; startAt?: string; endAt?: string; holidayKey?: string };
 
-function CategoryTiles({ onPick }: { onPick: (c: 'weekend' | 'holiday' | 'other' | 'custom') => void }) {
-  const items: { key: 'weekend' | 'holiday' | 'other' | 'custom'; label: string }[] = [
-    { key: 'weekend', label: 'סופ"ש' },
-    { key: 'holiday', label: 'חג' },
-    { key: 'other', label: 'אחר' },
-    { key: 'custom', label: 'מותאם אישית' },
-  ];
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
-      {items.map(it => (
-        <button type="button" key={it.key} onClick={()=>onPick(it.key)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
-          <div className="relative w-32 h-32">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={CATEGORY_BG[it.key]} alt="" className="absolute inset-0 w-full h-full rounded-xl object-cover" />
-          </div>
-          <div className="font-medium mt-3 text-sm md:text-base">{it.label}</div>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function TemplatesTiles({ category, onPick, onBack }: { category: 'weekend' | 'holiday' | 'other' | 'custom' | null; onPick: (tpl: Template) => void; onBack: () => void }) {
+function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   const now = new Date();
   const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
   const nextFriday = (() => {
@@ -216,74 +119,31 @@ function TemplatesTiles({ category, onPick, onBack }: { category: 'weekend' | 'h
     d.setHours(19,0,0,0);
     return d;
   })();
-  const nextSaturday = (() => {
-    const d = new Date(now);
-    const day = d.getDay();
-    const diff = (6 - day + 7) % 7 || 7; // next Saturday
-    d.setDate(d.getDate() + diff);
-    d.setHours(12,0,0,0);
-    return d;
-  })();
   const tonight = (()=>{ const d=new Date(now); d.setHours(19,0,0,0); return d; })();
   const nextWeek = (()=>{ const d=new Date(now); d.setDate(d.getDate()+7); d.setHours(12,0,0,0); return d; })();
-  // Weekend templates
-  const weekendTpls = [
-    { label: 'ערב שישי', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
-    { label: 'שבת', bgUrl: '/templates/rosh-hashanah.jpg', tpl: { title: 'שבת', description: 'מפגש שבת', startAt: toLocal(nextSaturday), holidayKey: 'shabat' } },
+  // Use DiceBear shapes as an avatar-like background, overlay a relevant emoji icon
+  const bg = (seed: string) => `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
+  const random = () => Math.random().toString(36).slice(2,6);
+  const tpls: { label: string; type: 'shabat_eve' | 'holiday_eve' | 'holiday' | 'custom'; bgUrl: string; tpl: Template }[] = [
+    { label: 'ערב שישי', type: 'shabat_eve', bgUrl: bg(`Shabbat-${random()}`), tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
+    { label: 'ערב חג', type: 'holiday_eve', bgUrl: bg(`HolidayEve-${random()}`), tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
+    { label: 'חג', type: 'holiday', bgUrl: bg(`Holiday-${random()}`), tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { label: 'מותאם אישית', type: 'custom', bgUrl: bg(`Custom-${random()}`), tpl: { title: '', description: '', startAt: '' } },
   ];
-
-  // Holiday-specific templates using uploaded images under public/templates
-  // Ordered by Jewish year starting at Rosh Hashanah
-  const holidayImages: { key: string; label: string; file: string }[] = [
-    { key: 'rosh_hashanah', label: 'ראש השנה', file: '/templates/rosh-hashanah.jpg' },
-    { key: 'kippur', label: 'יום כיפור', file: '/templates/kippur.jpg' },
-    { key: 'sukkot', label: 'סוכות', file: '/templates/sukkot.jpg' },
-    { key: 'hanukkah', label: 'חנוכה', file: '/templates/hanukkah.jpg' },
-    { key: 'tu_bishvat', label: 'ט"ו בשבט', file: '/templates/tu-bishvat.jpg' },
-    { key: 'purim', label: 'פורים', file: '/templates/purim.jpg' },
-    { key: 'passover', label: 'פסח', file: '/templates/passover.jpg' },
-    { key: 'lag_baomer', label: 'ל"ג בעומר', file: '/templates/lag-baomer.jpg' },
-    { key: 'shavuot', label: 'שבועות', file: '/templates/shavout.jpg' },
-    { key: 'tu_beav', label: 'ט"ו באב', file: '/templates/tu-beav.jpg' },
-  ];
-
-  const holidayTpls = holidayImages.map(h => ({
-    label: h.label,
-    bgUrl: h.file,
-    tpl: { title: h.label, description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: h.key },
-  }));
-
-  // Other templates
-  const otherTpls = [
-    { label: 'יום הולדת', bgUrl: '/templates/birthday.jpg', tpl: { title: 'יום הולדת', description: 'חגיגת יום הולדת משפחתית', startAt: toLocal(nextWeek), holidayKey: 'birthday' } },
-    { label: 'פיקניק', bgUrl: '/templates/picnic.jpg', tpl: { title: 'פיקניק', description: 'פיקניק משפחתי בפארק', startAt: toLocal(nextWeek), holidayKey: 'picnic' } },
-    { label: 'חופשת הקיץ', bgUrl: '/templates/beach.jpg', tpl: { title: 'חופשת הקיץ', description: 'עדכון/מפגש', startAt: toLocal(nextWeek), holidayKey: 'summer_break' } },
-    { label: 'ים', bgUrl: '/templates/beach.jpg', tpl: { title: 'ים', description: 'מפגש חוף/ים', startAt: toLocal(nextWeek), holidayKey: 'beach' } },
-    { label: 'על האש (BBQ)', bgUrl: '/templates/bbq.jpg', tpl: { title: 'על האש', description: 'על האש משפחתי', startAt: toLocal(nextWeek), holidayKey: 'bbq' } },
-    { label: 'מסיבה', bgUrl: '/templates/party.jpg', tpl: { title: 'מסיבה', description: 'מסיבת משפחה', startAt: toLocal(nextWeek), holidayKey: 'party' } },
-    { label: 'ארוחת בוקר', bgUrl: '/templates/brekfast.jpg', tpl: { title: 'ארוחת בוקר', description: 'מפגש לארוחת בוקר', startAt: toLocal(nextWeek), holidayKey: 'breakfast' } },
-    { label: 'ארוחת ערב', bgUrl: '/templates/dinner.jpg', tpl: { title: 'ארוחת ערב', description: 'מפגש לארוחת ערב', startAt: toLocal(nextWeek), holidayKey: 'dinner' } },
-  ];
-
-  let tpls: { label: string; bgUrl: string; tpl: Template }[] = [];
-  if (category === 'weekend') tpls = weekendTpls;
-  else if (category === 'holiday') tpls = holidayTpls;
-  else if (category === 'other') tpls = otherTpls;
-
   return (
-    <div className="space-y-3">
-      <button type="button" className="px-3 py-2 border rounded" onClick={onBack}>חזרה</button>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
-        {tpls.map((t)=> (
-          <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
-            <div className="relative w-32 h-32">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={t.bgUrl} alt="" className="absolute inset-0 w-full h-full rounded-xl object-cover" />
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
+      {tpls.map((t)=> (
+        <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
+          <div className="relative w-32 h-32">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={t.bgUrl} alt="" className="absolute inset-0 w-full h-full rounded-xl" />
+            <div className="absolute inset-0 flex items-center justify-center text-gray-800 dark:text-gray-100">
+              <EventTypeIcon type={t.type} size={84} />
             </div>
-            <div className="font-medium mt-3 text-sm md:text-base">{t.label}</div>
-          </button>
-        ))}
-      </div>
+          </div>
+          <div className="font-medium mt-3 text-sm md:text-base">{t.label}</div>
+        </button>
+      ))}
     </div>
   );
 }
@@ -376,7 +236,7 @@ function GuestSelector() {
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
               {g.members.map((u) => (
-                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-100' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
+                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.username || u.name || 'user')}`} alt={u.name || u.username || ''} className="w-5 h-5" />
                   <span>{u.name || u.username}</span>
@@ -386,105 +246,6 @@ function GuestSelector() {
             </div>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function CoHostsSelector({ onChange }: { onChange: (ids: string[]) => void }) {
-  'use client';
-  const [users, setUsers] = useState<{ id: string; name: string | null }[]>([]);
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch('/api/users/me');
-        const me = await r.json();
-        if (!me?.user?.familyId) return;
-        const res = await fetch('/api/family/groups');
-        const j = await res.json();
-        const uniq: Record<string, { id: string; name: string | null }> = {};
-        (j.groups || []).forEach((g: any) => (g.members || []).forEach((m: any) => { uniq[m.id] = { id: m.id, name: m.name || m.username || null }; }));
-        setUsers(Object.values(uniq));
-      } catch {}
-    })();
-  }, []);
-  useEffect(() => {
-    const ids = Object.entries(selected).filter(([, v]) => v).map(([k]) => k);
-    onChange(ids);
-  }, [selected, onChange]);
-  if (!users.length) return null;
-  return (
-    <div className="space-y-2">
-      <h3 className="font-semibold">מארחים נוספים</h3>
-      <div className="flex flex-wrap gap-2">
-        {users.map(u => (
-          <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-100' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
-            <span>{u.name ?? u.id.slice(0,6)}</span>
-            <input type="checkbox" className="ml-1" checked={!!selected[u.id]} onChange={() => setSelected(s=>({ ...s, [u.id]: !s[u.id] }))} />
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ShareWhatsAppToggle({ title }: { title: string }) {
-  'use client';
-  const [enabled, setEnabled] = useState(true);
-  useEffect(() => {
-    const input = document.getElementById('shareWhatsApp') as HTMLInputElement | null;
-    if (input) input.value = enabled ? '1' : '0';
-  }, [enabled]);
-  return (
-    <div className="mt-3 flex items-center gap-2">
-      <input type="hidden" id="shareWhatsApp" name="shareWhatsApp" defaultValue="1" />
-      <label className="inline-flex items-center gap-2">
-        <input type="checkbox" checked={enabled} onChange={(e)=>setEnabled(e.target.checked)} />
-        <span>שלח קישור בוואטסאפ אחרי יצירה</span>
-      </label>
-    </div>
-  );
-}
-
-function DefaultLocationHydrator({ onLocation }: { onLocation: (loc: string | null) => void }) {
-  'use client';
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch('/api/users/me');
-        const j = await r.json();
-        onLocation(j?.user?.defaultLocation ?? null);
-      } catch {}
-    })();
-  }, [onLocation]);
-  return null;
-}
-
-function SuccessModal({ title, eventId, onClose }: { title: string; eventId: string; onClose: () => void }) {
-  'use client';
-  const base = (typeof window !== 'undefined') ? (process.env.NEXT_PUBLIC_APP_URL || window.location.origin) : '';
-  const shareUrl = `${base}/events/${eventId}`;
-  const text = `🎉 נוצר אירוע חדש: ${title}\nאישור הגעה: ${shareUrl}`;
-  const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 space-y-3">
-        <h3 className="text-lg font-semibold">האירוע נוצר בהצלחה</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300">רוצים לשתף עכשיו את האירוע?</p>
-        <div className="flex gap-2 justify-end">
-          <button className="px-3 py-2 rounded bg-gray-200 dark:bg-gray-800 dark:text-gray-100" onClick={onClose}>לא עכשיו</button>
-          <button
-            className="px-3 py-2 rounded bg-green-600 text-white"
-            onClick={async ()=>{
-              if (navigator.share) {
-                try { await navigator.share({ text }); onClose(); return; } catch {}
-              }
-              window.open(wa, '_blank');
-              onClose();
-            }}
-          >שיתוף בוואטסאפ</button>
-        </div>
       </div>
     </div>
   );
