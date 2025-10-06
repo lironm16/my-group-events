@@ -12,7 +12,8 @@ type EventCard = {
   startAt: string;
   endAt: string | null;
   host: { name: string | null };
-  rsvps: { status: string }[];
+  hostId: string | null;
+  rsvps: { status: string; userId?: string }[];
 };
 
 export default async function EventsPage({ searchParams }: { searchParams?: { page?: string } }) {
@@ -27,12 +28,15 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
     const user = await prisma.user.findFirst({ where: { email: session!.user!.email as string } });
     if (user) {
       if (user.approved && user.familyId && !user.groupId) needsOnboarding = true;
-      const where = { OR: [{ hostId: user.id }, { familyId: user.familyId ?? undefined }] } as any;
+      const where = { OR: [
+        { hostId: user.id },
+        { familyId: user.familyId ?? undefined, visibleToAll: true }
+      ] } as any;
       total = await prisma.event.count({ where });
       const rows = await prisma.event.findMany({
         where,
         orderBy: { startAt: 'asc' },
-        include: { rsvps: true, host: true },
+        include: { rsvps: { select: { status: true, userId: true } }, host: { select: { name: true, id: true } } },
         skip: (page - 1) * pageSize,
         take: pageSize,
       });
@@ -44,7 +48,8 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
         startAt: r.startAt.toISOString(),
         endAt: r.endAt ? r.endAt.toISOString() : null,
         host: { name: r.host?.name ?? null },
-        rsvps: r.rsvps.map(x => ({ status: x.status })),
+        hostId: r.host?.id ?? null,
+        rsvps: r.rsvps.map(x => ({ status: x.status, userId: x.userId })),
       }));
     }
   }
