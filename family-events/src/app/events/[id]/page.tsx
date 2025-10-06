@@ -18,8 +18,8 @@ type EventDetail = {
   holidayKey?: string | null;
   host: { id?: string; name: string | null };
   coHosts?: { id: string; name: string | null }[];
-  rsvps: { id: string; status: string; note: string | null; user: { id: string; name: string | null; phone?: string | null } }[];
-  familyMembers?: { id: string; name: string | null; phone: string | null }[];
+  rsvps: { id: string; status: string; note: string | null; user: { id: string; name: string | null } }[];
+  familyMembers?: { id: string; name: string | null }[];
 };
 
 async function fetchEvent(id: string): Promise<EventDetail | null> {
@@ -36,8 +36,8 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
     holidayKey: row.holidayKey ?? null,
     host: { id: row.hostId, name: row.host?.name ?? null },
     coHosts: (row.coHosts || []).map(h => ({ id: h.userId, name: h.user?.name ?? null })),
-    rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null, phone: (r.user as any)?.phone ?? null } })),
-    familyMembers: (row.family?.members || []).map(m => ({ id: m.id, name: m.name ?? null, phone: (m as any).phone ?? null })),
+    rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null } })),
+    familyMembers: (row.family?.members || []).map(m => ({ id: m.id, name: m.name ?? null })),
   };
 }
 
@@ -65,11 +65,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
   };
   const userStatus = new Map<string, string>();
   for (const r of event.rsvps) userStatus.set(r.user.id, r.status);
-  const pending = (event.familyMembers || []).filter(m => m.phone && (!userStatus.has(m.id) || userStatus.get(m.id) !== 'APPROVED'));
+  const pendingCount = (event.familyMembers || []).filter(m => (!userStatus.has(m.id) || userStatus.get(m.id) !== 'APPROVED')).length;
   const shareUrl = `${base}/events/${event.id}`;
   const dateText = new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
   const locText = event.location ? `במקום: ${event.location} ` : '';
-  const pendForClient = pending.map(p => ({ id: p.id, name: p.name || null, phone: p.phone!, groupId: null, groupName: null }));
+  const pendForClient = (event.familyMembers || []).filter(p => (!userStatus.has(p.id) || userStatus.get(p.id) !== 'APPROVED'));
   return (
     <main className="container-page space-y-4">
       <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} />
@@ -130,10 +130,10 @@ export default async function EventDetailPage({ params }: { params: { id: string
           </ul>
         )}
       </section>
-      {isHost && pending.length > 0 && (
+      {isHost && pendingCount > 0 && (
         <>
-          <h2 className="font-semibold">תזכורות לוואטסאפ (טרם אישרו)</h2>
-          <PendingWhatsApp title={event.title} dateText={dateText} locText={locText} shareUrl={shareUrl} pending={pendForClient} />
+          <h2 className="font-semibold">תזכורות (למי שטרם אישרו)</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-300">יש {pendingCount} חברים שעדיין לא אישרו.</p>
         </>
       )}
     </main>
