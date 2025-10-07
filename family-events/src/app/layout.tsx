@@ -8,6 +8,7 @@ import AuthLoading from '@/components/AuthLoading';
 export const metadata: Metadata = {
   title: 'אירועי משפחת מתתיהו',
   description: 'ניהול אירועים למשפחת מתתיהו',
+  icons: { icon: '/templates/party.jpg' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

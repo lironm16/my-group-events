@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
+import CopyButton from '@/components/CopyButton';
 
 export default async function FamilyPage({ searchParams }: { searchParams?: { code?: string; groupId?: string } }) {
   const session = await getServerSession(authOptions);
@@ -87,21 +88,7 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
   );
 }
 
-function CopyButton({ value }: { value: string }) {
-  return (
-    <button
-      className="px-3 py-2 bg-blue-600 text-white rounded"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(value);
-          alert('הקישור הועתק');
-        } catch {}
-      }}
-    >
-      העתק קישור הזמנה
-    </button>
-  );
-}
+// CopyButton moved to client component
 
 function JoinForm() {
   return (
