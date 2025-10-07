@@ -17,7 +17,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           <ThemeProvider>
-            <AuthLoading />
             <Nav />
             <div className="max-w-6xl mx-auto px-4">
               {children}
