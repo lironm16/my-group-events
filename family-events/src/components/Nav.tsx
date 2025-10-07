@@ -34,7 +34,7 @@ export default function Nav() {
             return <Link href={homeHref} className={cls}>בית</Link>;
           })()}
           {status === 'authenticated' && (
-            <Link href="/events/new" className="px-2 py-1 bg-green-600 text-white rounded">יצירת אירוע</Link>
+            <a href="/events/new" className="px-2 py-1 bg-green-600 text-white rounded">יצירת אירוע</a>
           )}
           <Link href="/family" className={linkCls('/family')}>משפחה</Link>
           {status === 'authenticated' && <Link href="/settings" className={linkCls('/settings')}>הגדרות</Link>}

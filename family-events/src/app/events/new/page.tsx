@@ -47,10 +47,12 @@ export default function NewEventPage() {
 
   return (
     <main className="container-page space-y-4">
-      <Script
-        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}&libraries=places&language=he`}
-        strategy="afterInteractive"
-      />
+      {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && (
+        <Script
+          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&language=he`}
+          strategy="afterInteractive"
+        />
+      )}
       <h1 className="text-2xl font-bold">אירוע חדש</h1>
       <TemplatesTiles onPick={(tpl)=>{
         setForm({
