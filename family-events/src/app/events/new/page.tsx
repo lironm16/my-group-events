@@ -2,10 +2,12 @@
 import { useMemo, useState, useEffect } from 'react';
 import EventTypeIcon from '@/components/EventTypeIcon';
 import DateTimePicker from '@/components/DateTimePicker';
+import Script from 'next/script';
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
   const [step, setStep] = useState<1 | 2>(1);
+  const [activeCat, setActiveCat] = useState<'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'>('holidays');
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
   const [skipHolidays, setSkipHolidays] = useState(true);
@@ -46,6 +48,10 @@ export default function NewEventPage() {
 
   return (
     <main className="container-page space-y-4">
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}&libraries=places&language=he`}
+        strategy="afterInteractive"
+      />
       <h1 className="text-2xl font-bold">אירוע חדש</h1>
       <TemplatesTiles onPick={(tpl)=>{
         setForm({
@@ -66,7 +72,7 @@ export default function NewEventPage() {
           {errors.title && <p className={errorCls}>{errors.title}</p>}
         </div>
         <input className={inputCls} placeholder="תיאור" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
-        <input className={inputCls} placeholder="מיקום" value={form.location} onChange={e=>setForm({...form, location:e.target.value})} />
+        <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
         <div>
           <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} />
           {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
@@ -124,27 +130,74 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   // Use DiceBear shapes as an avatar-like background, overlay a relevant emoji icon
   const bg = (seed: string) => `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
   const random = () => Math.random().toString(36).slice(2,6);
-  const tpls: { label: string; type: 'shabat_eve' | 'holiday_eve' | 'holiday' | 'custom'; bgUrl: string; tpl: Template }[] = [
-    { label: 'ערב שישי', type: 'shabat_eve', bgUrl: bg(`Shabbat-${random()}`), tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
-    { label: 'ערב חג', type: 'holiday_eve', bgUrl: bg(`HolidayEve-${random()}`), tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
-    { label: 'חג', type: 'holiday', bgUrl: bg(`Holiday-${random()}`), tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { label: 'מותאם אישית', type: 'custom', bgUrl: bg(`Custom-${random()}`), tpl: { title: '', description: '', startAt: '' } },
+  const categories: { key: 'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'; label: string }[] = [
+    { key: 'holidays', label: 'חגים' },
+    { key: 'birthdays', label: 'ימי הולדת' },
+    { key: 'dinners', label: 'ארוחות' },
+    { key: 'outdoors', label: 'טיולים/ים' },
+    { key: 'other', label: 'אחר' },
   ];
+  const items: { cat: typeof categories[number]['key']; label: string; img: string; tpl: Template }[] = [
+    { cat: 'holidays', label: 'ראש השנה', img: '/templates/rosh-hashanah.jpg', tpl: { title: 'ראש השנה', description: 'ארוחת חג משפחתית', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'חנוכה', img: '/templates/hanukkah.jpg', tpl: { title: 'חנוכה', description: 'הדלקת נרות', startAt: toLocal(tonight), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'פורים', img: '/templates/purim.jpg', tpl: { title: 'פורים', description: 'מסיבת תחפושות', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'פסח', img: '/templates/passover.jpg', tpl: { title: 'פסח', description: 'ליל הסדר משפחתי', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'שבועות', img: '/templates/shavout.jpg', tpl: { title: 'שבועות', description: 'ארוחת חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'סוכות', img: '/templates/sukkot.jpg', tpl: { title: 'סוכות', description: 'ארוחה בסוכה', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'ל"ג בעומר', img: '/templates/lag-baomer.jpg', tpl: { title: 'ל"ג בעומר', description: 'מדורה משפחתית', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'יום כיפור', img: '/templates/kippur.jpg', tpl: { title: 'מוצאי יום כיפור', description: 'ארוחת מפסקת/נעילת צום', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'dinners', label: 'ערב שישי', img: '/templates/shishi-dinner.jpg', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
+    { cat: 'dinners', label: 'ארוחת ערב', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת ערב', description: 'מפגש משפחתי', startAt: toLocal(tonight) } },
+    { cat: 'dinners', label: 'ארוחת בוקר', img: '/templates/brekfast.jpg', tpl: { title: 'ארוחת בוקר', description: 'מפגש בוקר', startAt: toLocal(tonight) } },
+    { cat: 'birthdays', label: 'יום הולדת', img: '/templates/birthday.jpg', tpl: { title: 'מסיבת יום הולדת', description: 'חוגגים יום הולדת', startAt: toLocal(nextWeek) } },
+    { cat: 'outdoors', label: 'פיקניק', img: '/templates/picnic.jpg', tpl: { title: 'פיקניק משפחתי', description: 'בפארק', startAt: toLocal(nextWeek) } },
+    { cat: 'outdoors', label: 'ים', img: '/templates/beach.jpg', tpl: { title: 'ים', description: 'יום כיף בים', startAt: toLocal(nextWeek) } },
+    { cat: 'outdoors', label: 'טיול', img: '/templates/party.jpg', tpl: { title: 'טיול', description: 'טיול משפחתי', startAt: toLocal(nextWeek) } },
+    { cat: 'other', label: 'מסעדה', img: '/templates/resturant.jpg', tpl: { title: 'מסעדה', description: 'ארוחה במסעדה', startAt: toLocal(nextWeek) } },
+    { cat: 'other', label: 'מותאם אישית', img: '/templates/party.jpg', tpl: { title: '', description: '', startAt: '' } },
+  ];
+
+  const [cat, setCat] = useState<'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'>('holidays');
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
-      {tpls.map((t)=> (
-        <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
-          <div className="relative w-32 h-32">
+    <div className="max-w-3xl space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {categories.map(c => (
+          <button key={c.key} type="button" onClick={()=>setCat(c.key)} className={`px-3 py-1 rounded border text-sm ${cat===c.key?'bg-blue-600 text-white border-blue-600':'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>{c.label}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {items.filter(i=>i.cat===cat).map((t)=> (
+          <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-2 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={t.bgUrl} alt="" className="absolute inset-0 w-full h-full rounded-xl" />
-            <div className="absolute inset-0 flex items-center justify-center text-gray-800 dark:text-gray-100">
-              <EventTypeIcon type={t.type} size={84} />
-            </div>
-          </div>
-          <div className="font-medium mt-3 text-sm md:text-base">{t.label}</div>
-        </button>
-      ))}
+            <img src={t.img} alt="" className="w-32 h-24 object-cover rounded" />
+            <div className="font-medium mt-2 text-sm text-center">{t.label}</div>
+          </button>
+        ))}
+      </div>
     </div>
+  );
+}
+
+function PlacesInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  'use client';
+  const [input, setInput] = useState(value);
+  useEffect(() => { setInput(value); }, [value]);
+  useEffect(() => {
+    if (!(window as any).google || !(window as any).google.maps?.places) return;
+    const el = document.getElementById('places-input') as HTMLInputElement | null;
+    if (!el) return;
+    const ac = new (window as any).google.maps.places.Autocomplete(el, { fields: ['formatted_address', 'name', 'geometry'] });
+    ac.setFields(['formatted_address', 'name', 'geometry']);
+    ac.addListener('place_changed', () => {
+      const place = ac.getPlace();
+      const text = (place?.name && place?.formatted_address) ? `${place.name}, ${place.formatted_address}` : (place?.formatted_address || place?.name || el.value);
+      onChange(text || '');
+      setInput(text || '');
+    });
+  }, [onChange]);
+  return (
+    <input id="places-input" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="מיקום" value={input} onChange={e=>{ setInput(e.target.value); onChange(e.target.value); }} />
   );
 }
 
