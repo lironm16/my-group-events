@@ -176,7 +176,7 @@ function GuestSelector() {
   'use client';
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<{ id: string; groupId: string | null } | null>(null);
-  const [groups, setGroups] = useState<{ id: string; nickname: string; members: { id: string; name: string | null; image: string | null; username: string | null }[] }[]>([]);
+  const [groups, setGroups] = useState<{ id: string; nickname: string; members: { id: string; name: string | null; image: string | null }[] }[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
 
@@ -238,8 +238,8 @@ function GuestSelector() {
               {g.members.map((u) => (
                 <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.username || u.name || 'user')}`} alt={u.name || u.username || ''} className="w-5 h-5" />
-                  <span>{u.name || u.username}</span>
+                  <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
+                  <span>{u.name || ''}</span>
                   <input type="checkbox" className="ml-1" checked={!!selected[u.id]} onChange={() => toggleUser(u.id)} />
                 </label>
               ))}

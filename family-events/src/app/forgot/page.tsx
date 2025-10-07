@@ -39,11 +39,11 @@ export default function ForgotPage() {
 
   return (
     <main className="container-page max-w-md mx-auto space-y-4">
-      <h1 className="text-2ל font-bold">שכחת סיסמה</h1>
+      <h1 className="text-2xl font-bold">שכחת סיסמה</h1>
       {error && <div className="text-sm text-red-600">{error}</div>}
       <form onSubmit={submit} className="space-y-2">
         <input
-          autoComplete="username"
+          autoComplete="email"
           className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 appearance-none"
           placeholder="שם משתמש או אימייל"
           value={identifier}

@@ -15,7 +15,7 @@ async function requireAdmin() {
 export async function GET() {
   const me = await requireAdmin();
   if (!me) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const users = await prisma.user.findMany({ where: { familyId: me.familyId, approved: false }, select: { id: true, name: true, email: true, username: true, image: true } });
+  const users = await prisma.user.findMany({ where: { familyId: me.familyId, approved: false }, select: { id: true, name: true, email: true, image: true } });
   return NextResponse.json({ users });
 }
 

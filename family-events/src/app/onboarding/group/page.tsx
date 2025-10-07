@@ -30,7 +30,7 @@ export default async function OnboardingGroupPage() {
   const groups = await prisma.group.findMany({
     where: { familyId: me.familyId },
     orderBy: { createdAt: 'asc' },
-    include: { members: { select: { id: true, name: true, username: true, image: true } }, parent: { select: { id: true, nickname: true } } },
+    include: { members: { select: { id: true, name: true, image: true } }, parent: { select: { id: true, nickname: true } } },
   });
 
   async function setGroup(formData: FormData) {
@@ -74,8 +74,8 @@ export default async function OnboardingGroupPage() {
                       {g.members.slice(0, 6).map((m) => (
                         <span key={m.id} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={resolveUserAvatar(m.image, m.username, m.name)} alt={m.name || m.username || ''} className="w-4 h-4" />
-                          <span>{m.name || m.username}</span>
+                          <img src={resolveUserAvatar(m.image, m.name)} alt={m.name || ''} className="w-4 h-4" />
+                          <span>{m.name || ''}</span>
                         </span>
                       ))}
                       {g.members.length > 6 && (
@@ -109,9 +109,9 @@ export default async function OnboardingGroupPage() {
   );
 }
 
-function resolveUserAvatar(image: string | null | undefined, username?: string | null, name?: string | null) {
+function resolveUserAvatar(image: string | null | undefined, name?: string | null) {
   if (image && image.startsWith('http')) return image;
-  const seed = username || name || 'user';
+  const seed = name || 'user';
   return `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(seed)}`;
 }
 

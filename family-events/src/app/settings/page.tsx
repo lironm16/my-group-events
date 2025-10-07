@@ -112,9 +112,9 @@ async function getMembers(familyId: string) {
 
 async function getApprovals() {
   const res = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/admin/approvals`, { cache: 'no-store' });
-  if (!res.ok) return [] as { id: string; name: string | null; email: string | null; username: string | null; image: string | null }[];
+  if (!res.ok) return [] as { id: string; name: string | null; email: string | null; image: string | null }[];
   const j = await res.json();
-  return j.users as { id: string; name: string | null; email: string | null; username: string | null; image: string | null }[];
+  return j.users as { id: string; name: string | null; email: string | null; image: string | null }[];
 }
 
 async function Approvals({ familyId, isAdmin }: { familyId: string | null; isAdmin: boolean }) {
@@ -131,7 +131,7 @@ async function Approvals({ familyId, isAdmin }: { familyId: string | null; isAdm
       <ul className="space-y-1">
         {users.map(u => (
           <li key={u.id} className="flex items-center justify-between text-sm">
-            <span>{u.name ?? u.username ?? u.email ?? u.id}</span>
+            <span>{u.name ?? u.email ?? u.id}</span>
             <div className="flex gap-2">
               <form action={async ()=>act(u.id,'approve')}><button className="px-2 py-1 border rounded">אישור</button></form>
               <form action={async ()=>act(u.id,'deny')}><button className="px-2 py-1 border rounded">דחייה</button></form>
