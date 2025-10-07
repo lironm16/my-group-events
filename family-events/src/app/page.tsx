@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 import { getServerSession } from 'next-auth';
@@ -8,6 +9,7 @@ import { authOptions } from '@/auth';
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
   const signedIn = !!session?.user;
+  if (signedIn) redirect('/events');
   return (
     <main className="container-page">
       <section className="max-w-3xl mx-auto text-center py-12">

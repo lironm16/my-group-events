@@ -56,43 +56,35 @@ function FamilyNameForm({ familyId, name, isAdmin }: { familyId: string | null; 
 
 function GroupForm({ userId, currentGroupId, groups }: { userId: string; currentGroupId: string | null; groups: { id: string; nickname: string }[] }) {
   return (
-    <form
-      className="space-y-2"
-      action={async (fd: FormData) => {
-        'use server';
-        const kind = String(fd.get('kind') ?? 'select');
-        if (kind === 'select') {
-          const groupId = String(fd.get('groupId') ?? '');
-          if (groupId) await prisma.user.update({ where: { id: userId }, data: { groupId } });
-        } else {
-          const nickname = String(fd.get('nickname') ?? '').trim();
-          if (nickname) {
-            const me = await prisma.user.findUnique({ where: { id: userId } });
-            if (me?.familyId) {
-              const group = await prisma.group.create({ data: { nickname, familyId: me.familyId } });
-              await prisma.user.update({ where: { id: userId }, data: { groupId: group.id } });
-            }
-          }
-        }
-      }}
-    >
+    <div className="space-y-2">
       <label className="block text-sm text-gray-600">קבוצה</label>
-      <div className="flex flex-col gap-2">
+      <form className="space-y-2" action={async (fd: FormData) => {
+        'use server';
+        const groupId = String(fd.get('groupId') ?? '');
+        if (groupId) await prisma.user.update({ where: { id: userId }, data: { groupId } });
+      }}>
         <select name="groupId" defaultValue={currentGroupId ?? ''} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
           <option value="">— לבחור קבוצה —</option>
           {groups.map((g) => (
             <option key={g.id} value={g.id}>{g.nickname}</option>
           ))}
         </select>
-        <div className="text-sm text-gray-500">או צור קבוצה חדשה:</div>
+        <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירת בחירה</button>
+      </form>
+      <div className="text-sm text-gray-500">או צור קבוצה חדשה:</div>
+      <form className="space-y-2" action={async (fd: FormData) => {
+        'use server';
+        const nickname = String(fd.get('nickname') ?? '').trim();
+        if (!nickname) return;
+        const me = await prisma.user.findUnique({ where: { id: userId } });
+        if (!me?.familyId) return;
+        const group = await prisma.group.create({ data: { nickname, familyId: me.familyId } });
+        await prisma.user.update({ where: { id: userId }, data: { groupId: group.id } });
+      }}>
         <input name="nickname" placeholder="כינוי לקבוצה" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" />
-        <div className="flex gap-2">
-          <input type="hidden" name="kind" value="select" />
-          <button className="px-3 py-2 bg-blue-600 text-white rounded" formAction={undefined}>שמירת בחירה</button>
-          <button className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" onClick={(e)=>{(e as any).currentTarget.form.kind.value='create';}} formAction={undefined}>יצירת קבוצה ושיוך</button>
-        </div>
-      </div>
-    </form>
+        <button className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">יצירת קבוצה ושיוך</button>
+      </form>
+    </div>
   );
 }
 
@@ -254,20 +246,6 @@ function ProfileForm({ userId, current }: { userId: string; current: { name: str
       <input name="email" defaultValue={current.email} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="אימייל" />
       <div className="flex items-center gap-2">
         <input name="image" defaultValue={current.image} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="קישור לתמונה" />
-        <label className="px-3 py-2 border rounded cursor-pointer">
-          העלאה
-          <input type="file" accept="image/*" className="hidden" onChange={async (e)=>{
-            const f = (e.target as HTMLInputElement).files?.[0];
-            if (!f) return;
-            const form = new FormData();
-            form.append('file', f);
-            const res = await fetch('/api/upload', { method: 'POST', body: form });
-            const j = await res.json();
-            if (j.url) {
-              (e.currentTarget.form as HTMLFormElement).image.value = j.url;
-            }
-          }} />
-        </label>
       </div>
       <div className="pt-2 border-t">
         <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
