@@ -71,14 +71,14 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           {isFirst && (
             <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
           )}
-          <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
+          <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
           <div className="flex gap-2 justify-between">
             <span />
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async ()=>{
               const missing: string[] = [];
-              if (!password.trim()) missing.push('סיסמה');
               if (!email.trim()) missing.push('אימייל');
+              if (!password.trim()) missing.push('סיסמה');
               if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
               setError('');
               setStep(2);
