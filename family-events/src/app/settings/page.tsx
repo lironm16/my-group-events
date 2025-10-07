@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import ThemeModeSwitcher from '@/components/ThemeModeSwitcher';
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -17,7 +18,7 @@ export default async function SettingsPage() {
     <main className="container-page space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">הגדרות</h1>
       <Approvals familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
-      <ThemeForm currentTheme={(user as any)?.theme as string | undefined} />
+      <ThemeModeSwitcher currentTheme={(user as any)?.theme as string | undefined} />
       <DefaultLocationForm userId={user!.id} current={(user as any)?.defaultLocation as string | undefined} />
       <NotifyRsvpForm userId={user!.id} current={Boolean((user as any)?.notifyRsvpEmails)} />
       <ProfileForm userId={user!.id} current={{ name: user?.name ?? '', email: user?.email ?? '', image: user?.image ?? '' }} />
@@ -165,22 +166,7 @@ async function AdminMembers({ familyId, isAdmin }: { familyId: string | null; is
   );
 }
 
-function ThemeForm({ currentTheme }: { currentTheme?: string }) {
-  'use client';
-  const { theme, setTheme } = require('@/components/ThemeProvider') as any;
-  // Fallback to currentTheme from server if available
-  const mode = (theme?.theme ?? currentTheme ?? 'light') as 'light' | 'dark';
-  return (
-    <div className="space-y-2">
-      <h2 className="font-semibold">מצב תצוגה</h2>
-      <div className="flex gap-2">
-        <button type="button" className={`px-3 py-2 border rounded ${mode==='light'?'bg-gray-100 dark:bg-gray-800':''}`} onClick={()=> (theme?.setTheme ?? setTheme)('light')}>בהיר</button>
-        <button type="button" className={`px-3 py-2 border rounded ${mode==='dark'?'bg-gray-100 dark:bg-gray-800':''}`} onClick={()=> (theme?.setTheme ?? setTheme)('dark')}>כהה</button>
-      </div>
-      <p className="text-sm text-gray-500">נשמר אוטומטית בהעדפות.</p>
-    </div>
-  );
-}
+// Theme toggles moved to client component ThemeModeSwitcher
 
 function DefaultLocationForm({ userId, current }: { userId: string; current?: string }) {
   return (
