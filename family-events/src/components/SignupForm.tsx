@@ -139,7 +139,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
             <>
               <div className="grid grid-cols-1 gap-3">
                 {groups.map(g => (
-                  <label key={g.id} className={`border rounded p-3 cursor-pointer flex flex-col gap-2 ${groupId===g.id?'ring-2 ring-blue-500':''}`}>
+                  <label key={g.id} className={`border rounded p-3 cursor-pointer flex flex-col gap-2 ${groupId===g.id?'ring-2 ring-blue-500 bg-white dark:bg-gray-100 text-gray-900':'bg-white dark:bg-gray-900'} border-gray-200 dark:border-gray-800`}>
                     <input type="radio" className="hidden" name="group" value={g.id} onChange={()=>setGroupId(g.id)} />
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium">{g.nickname}</span>

@@ -7,7 +7,6 @@ import Script from 'next/script';
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
   const [step, setStep] = useState<1 | 2>(1);
-  const [activeCat, setActiveCat] = useState<'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'>('holidays');
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
   const [skipHolidays, setSkipHolidays] = useState(true);
@@ -78,7 +77,7 @@ export default function NewEventPage() {
           {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
         </div>
         <div>
-          <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} />
+          <DateTimePicker label="תאריך סיום (אופציונלי)" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} />
           {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
         </div>
         <div className="mt-4 space-y-2">
@@ -104,10 +103,7 @@ export default function NewEventPage() {
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
       )}
-      <section className="space-y-2 max-w-xl">
-        <h2 className="font-semibold">יצירת חגים (ישראל)</h2>
-        <GenerateHolidays />
-      </section>
+      {/* Holidays generator removed per request */}
     </main>
   );
 }
@@ -130,23 +126,28 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   // Use DiceBear shapes as an avatar-like background, overlay a relevant emoji icon
   const bg = (seed: string) => `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
   const random = () => Math.random().toString(36).slice(2,6);
-  const categories: { key: 'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'; label: string }[] = [
+  const categories: { key: 'dinners' | 'holidays' | 'birthdays' | 'outdoors' | 'other'; label: string }[] = [
+    { key: 'dinners', label: 'ארוחות' },
     { key: 'holidays', label: 'חגים' },
     { key: 'birthdays', label: 'ימי הולדת' },
-    { key: 'dinners', label: 'ארוחות' },
     { key: 'outdoors', label: 'טיולים/ים' },
     { key: 'other', label: 'אחר' },
   ];
   const items: { cat: typeof categories[number]['key']; label: string; img: string; tpl: Template }[] = [
+    // Holidays ordered starting from Rosh Hashanah
     { cat: 'holidays', label: 'ראש השנה', img: '/templates/rosh-hashanah.jpg', tpl: { title: 'ראש השנה', description: 'ארוחת חג משפחתית', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'יום כיפור', img: '/templates/kippur.jpg', tpl: { title: 'מוצאי יום כיפור', description: 'ארוחת מפסקת/נעילת צום', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'סוכות', img: '/templates/sukkot.jpg', tpl: { title: 'סוכות', description: 'ארוחה בסוכה', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
     { cat: 'holidays', label: 'חנוכה', img: '/templates/hanukkah.jpg', tpl: { title: 'חנוכה', description: 'הדלקת נרות', startAt: toLocal(tonight), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'ט"ו בשבט', img: '/templates/tu-bishvat.jpg', tpl: { title: 'ט"ו בשבט', description: 'סדר פירות', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
     { cat: 'holidays', label: 'פורים', img: '/templates/purim.jpg', tpl: { title: 'פורים', description: 'מסיבת תחפושות', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
     { cat: 'holidays', label: 'פסח', img: '/templates/passover.jpg', tpl: { title: 'פסח', description: 'ליל הסדר משפחתי', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
     { cat: 'holidays', label: 'שבועות', img: '/templates/shavout.jpg', tpl: { title: 'שבועות', description: 'ארוחת חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'סוכות', img: '/templates/sukkot.jpg', tpl: { title: 'סוכות', description: 'ארוחה בסוכה', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'ט"ו באב', img: '/templates/tu-beav.jpg', tpl: { title: 'ט"ו באב', description: 'מפגש משפחתי', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
     { cat: 'holidays', label: 'ל"ג בעומר', img: '/templates/lag-baomer.jpg', tpl: { title: 'ל"ג בעומר', description: 'מדורה משפחתית', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'יום כיפור', img: '/templates/kippur.jpg', tpl: { title: 'מוצאי יום כיפור', description: 'ארוחת מפסקת/נעילת צום', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    // Meals first in tabs; include lunch
     { cat: 'dinners', label: 'ערב שישי', img: '/templates/shishi-dinner.jpg', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
+    { cat: 'dinners', label: 'ארוחת צהריים', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת צהריים', description: 'מפגש צהריים', startAt: toLocal(tonight) } },
     { cat: 'dinners', label: 'ארוחת ערב', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת ערב', description: 'מפגש משפחתי', startAt: toLocal(tonight) } },
     { cat: 'dinners', label: 'ארוחת בוקר', img: '/templates/brekfast.jpg', tpl: { title: 'ארוחת בוקר', description: 'מפגש בוקר', startAt: toLocal(tonight) } },
     { cat: 'birthdays', label: 'יום הולדת', img: '/templates/birthday.jpg', tpl: { title: 'מסיבת יום הולדת', description: 'חוגגים יום הולדת', startAt: toLocal(nextWeek) } },
@@ -201,29 +202,7 @@ function PlacesInput({ value, onChange }: { value: string; onChange: (v: string)
   );
 }
 
-function GenerateHolidays() {
-  'use client';
-  const [year, setYear] = useState<number>(new Date().getFullYear());
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string>('');
-  async function run() {
-    setSaving(true); setMsg('');
-    try {
-      const res = await fetch('/api/events/generate-holidays', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ year, tz: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
-      const j = await res.json();
-      if (!res.ok) { setMsg(j.error || 'שגיאה'); return; }
-      setMsg(`נוצרו ${j.created} אירועים לשנת ${j.year}`);
-    } catch { setMsg('שגיאה'); }
-    finally { setSaving(false); }
-  }
-  return (
-    <div className="flex items-center gap-2">
-      <input type="number" value={year} onChange={e=>setYear(Number(e.target.value)||new Date().getFullYear())} className="w-32 border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700" />
-      <button disabled={saving} onClick={run} className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">{saving?'מייצר…':'יצירת חגים'}</button>
-      {msg && <span className="text-sm text-gray-600 dark:text-gray-300">{msg}</span>}
-    </div>
-  );
-}
+// Holidays generator removed per request
 
 function GuestSelector() {
   'use client';
@@ -289,7 +268,7 @@ function GuestSelector() {
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
               {g.members.map((u) => (
-                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
+                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 dark:bg-gray-100 border-blue-300 dark:border-gray-100 text-gray-900' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
                   <span>{u.name || ''}</span>
