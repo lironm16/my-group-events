@@ -51,6 +51,16 @@ export async function POST(req: Request) {
       await prisma.rSVP.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid, status: 'MAYBE' })) });
     }
   } catch {}
+  // Optionally notify creator even if not owner
+  if (body?.notifyCreator && user?.id) {
+    try {
+      await prisma.rSVP.upsert({
+        where: { eventId_userId: { eventId: created.id, userId: user.id } },
+        update: {},
+        create: { eventId: created.id, userId: user.id, status: 'MAYBE' },
+      });
+    } catch {}
+  }
   // Handle weekly recurrence
   if (body?.repeat?.weeklyUntil) {
     const until = new Date(body.repeat.weeklyUntil);

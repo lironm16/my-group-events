@@ -10,6 +10,7 @@ export default function NewEventPage() {
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
   const [skipHolidays, setSkipHolidays] = useState(true);
+  const [notifyCreator, setNotifyCreator] = useState(true);
   const [saving, setSaving] = useState(false);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
@@ -28,6 +29,7 @@ export default function NewEventPage() {
     if (repeatWeekly && repeatUntil) {
       body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
     }
+    body.notifyCreator = !!notifyCreator;
     const res = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     setSaving(false);
     if (res.ok) {
@@ -116,6 +118,12 @@ export default function NewEventPage() {
         <div>
           <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
           {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
+        </div>
+        <div className="mt-2">
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={notifyCreator} onChange={(e)=>setNotifyCreator(e.target.checked)} />
+            <span>שלחו הודעה גם אלי</span>
+          </label>
         </div>
         <GuestSelector />
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
