@@ -69,17 +69,21 @@ export default function NewEventPage() {
       {step === 2 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
         <div>
+          <div className="text-xs text-gray-500 mb-1">הזינו כותרת לאירוע</div>
           <input className={inputCls} placeholder="כותרת" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
           {errors.title && <p className={errorCls}>{errors.title}</p>}
         </div>
-        <input className={inputCls} placeholder="תיאור" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
+        <div>
+          <div className="text-xs text-gray-500 mb-1">כמה מילים על האירוע</div>
+          <textarea rows={3} className={inputCls} placeholder="תיאור" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
+        </div>
         <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
         <div>
-          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} />
+          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly timeToggle />
           {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
         </div>
         <div>
-          <DateTimePicker label="תאריך סיום (אופציונלי)" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} />
+          <DateTimePicker label="תאריך סיום (אופציונלי)" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly timeToggle />
           {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
         </div>
         <div className="mt-4 space-y-2">
@@ -128,10 +132,9 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   // Use DiceBear shapes as an avatar-like background, overlay a relevant emoji icon
   const bg = (seed: string) => `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
   const random = () => Math.random().toString(36).slice(2,6);
-  const categories: { key: 'dinners' | 'holidays' | 'birthdays' | 'outdoors' | 'other'; label: string }[] = [
+  const categories: { key: 'dinners' | 'holidays' | 'outdoors' | 'other'; label: string }[] = [
     { key: 'dinners', label: 'ארוחות' },
     { key: 'holidays', label: 'חגים' },
-    { key: 'birthdays', label: 'ימי הולדת' },
     { key: 'outdoors', label: 'טיולים/ים' },
     { key: 'other', label: 'אחר' },
   ];
@@ -152,7 +155,7 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
     { cat: 'dinners', label: 'ארוחת צהריים', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת צהריים', description: 'מפגש צהריים', startAt: toLocal(tonight) } },
     { cat: 'dinners', label: 'ארוחת ערב', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת ערב', description: 'מפגש משפחתי', startAt: toLocal(tonight) } },
     { cat: 'dinners', label: 'ארוחת בוקר', img: '/templates/brekfast.jpg', tpl: { title: 'ארוחת בוקר', description: 'מפגש בוקר', startAt: toLocal(tonight) } },
-    { cat: 'birthdays', label: 'יום הולדת', img: '/templates/birthday.jpg', tpl: { title: 'מסיבת יום הולדת', description: 'חוגגים יום הולדת', startAt: toLocal(nextWeek) } },
+    { cat: 'other', label: 'יום הולדת', img: '/templates/birthday.jpg', tpl: { title: 'מסיבת יום הולדת', description: 'חוגגים יום הולדת', startAt: toLocal(nextWeek) } },
     { cat: 'outdoors', label: 'פיקניק', img: '/templates/picnic.jpg', tpl: { title: 'פיקניק משפחתי', description: 'בפארק', startAt: toLocal(nextWeek) } },
     { cat: 'outdoors', label: 'ים', img: '/templates/beach.jpg', tpl: { title: 'ים', description: 'יום כיף בים', startAt: toLocal(nextWeek) } },
     { cat: 'outdoors', label: 'טיול', img: '/templates/party.jpg', tpl: { title: 'טיול', description: 'טיול משפחתי', startAt: toLocal(nextWeek) } },
@@ -226,7 +229,11 @@ function GuestSelector() {
         // Default: select everyone (placeholder; apply opt-outs here later)
         const sel: Record<string, boolean> = {};
         (gj.groups || []).forEach((gr: any) => gr.members.forEach((u: any) => { sel[u.id] = true; }));
+        // Also select entire groups by default
+        const sg: Record<string, boolean> = {};
+        (gj.groups || []).forEach((gr: any) => { sg[gr.id] = true; });
         setSelected(sel);
+        setSelectedGroups(sg);
       } finally {
         setLoading(false);
       }
