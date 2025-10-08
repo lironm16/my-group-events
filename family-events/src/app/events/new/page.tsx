@@ -9,6 +9,7 @@ export default function NewEventPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
+  const [repeatHasUntil, setRepeatHasUntil] = useState(false);
   const [skipHolidays, setSkipHolidays] = useState(true);
   const [notifyCreator, setNotifyCreator] = useState(true);
   const [hasEnd, setHasEnd] = useState(false);
@@ -27,7 +28,7 @@ export default function NewEventPage() {
     if (Object.keys(errors).length > 0) return;
     setSaving(true);
     const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null };
-    if (repeatWeekly && repeatUntil) {
+    if (repeatWeekly && repeatHasUntil && repeatUntil) {
       body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
     }
     body.notifyCreator = !!notifyCreator;
@@ -120,7 +121,19 @@ export default function NewEventPage() {
           {repeatWeekly && (
             <div className="space-y-2">
               <div className="text-sm text-gray-600">משך חזרה</div>
-              <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} />
+              <div className="flex flex-col gap-2">
+                <label className="inline-flex items-center gap-2">
+                  <input type="radio" name="repeatDuration" checked={!repeatHasUntil} onChange={()=>{ setRepeatHasUntil(false); setRepeatUntil(''); }} />
+                  <span>ללא תאריך סיום</span>
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input type="radio" name="repeatDuration" checked={repeatHasUntil} onChange={()=>setRepeatHasUntil(true)} />
+                  <span>עד תאריך</span>
+                </label>
+              </div>
+              {repeatHasUntil && (
+                <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} allowDateOnly />
+              )}
               <label className="inline-flex items-center gap-2">
                 <input type="checkbox" checked={skipHolidays} onChange={(e)=>setSkipHolidays(e.target.checked)} />
                 <span>דלג על חגים</span>
