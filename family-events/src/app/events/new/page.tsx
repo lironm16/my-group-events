@@ -277,7 +277,7 @@ function GuestSelector() {
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
               {g.members.map((u) => (
-                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 dark:bg-gray-100 border-blue-300 dark:border-gray-100 text-gray-900' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-700 dark:border-blue-700 dark:text-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
                   <span>{u.name || ''}</span>
