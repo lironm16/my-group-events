@@ -61,18 +61,46 @@ export async function POST(req: Request) {
       });
     } catch {}
   }
-  // Handle weekly recurrence
+  // Handle recurrence (daily/weekly/monthly)
+  let frequency: 'daily' | 'weekly' | 'monthly' | null = null;
+  let until: Date | null = null;
+  let skipHolidays = false;
   if (body?.repeat?.weeklyUntil) {
-    const until = new Date(body.repeat.weeklyUntil);
-    const skipHolidays = !!body.repeat.skipHolidays;
-    const holidays = skipHolidays ? await fetchIsraelHolidays(created.startAt.getFullYear()) : [];
+    frequency = 'weekly';
+    until = new Date(body.repeat.weeklyUntil);
+    skipHolidays = !!body.repeat.skipHolidays;
+  } else if (body?.repeat?.frequency && body?.repeat?.until) {
+    frequency = body.repeat.frequency;
+    until = new Date(body.repeat.until);
+    skipHolidays = frequency === 'weekly' ? !!body.repeat.skipHolidays : false;
+  }
+  if (frequency && until) {
+    let holidays: { date: string; title: string }[] = [];
+    if (frequency === 'weekly' && skipHolidays) {
+      const years = new Set<number>([created.startAt.getFullYear(), until.getFullYear()]);
+      for (const y of years) {
+        const hs = await fetchIsraelHolidays(y);
+        holidays = holidays.concat(hs);
+      }
+    }
     const series: { startAt: Date; endAt: Date | null }[] = [];
     let cursor = new Date(created.startAt);
+    const originalDay = created.startAt.getDate();
     while (true) {
-      cursor = new Date(cursor.getTime());
-      cursor.setDate(cursor.getDate() + 7);
+      let next = new Date(cursor);
+      if (frequency === 'daily') {
+        next.setDate(next.getDate() + 1);
+      } else if (frequency === 'weekly') {
+        next.setDate(next.getDate() + 7);
+      } else if (frequency === 'monthly') {
+        next.setDate(1);
+        next.setMonth(next.getMonth() + 1);
+        const daysInMonth = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+        next.setDate(Math.min(originalDay, daysInMonth));
+      }
+      cursor = next;
       if (cursor > until) break;
-      if (skipHolidays && isHoliday(cursor, holidays)) continue;
+      if (frequency === 'weekly' && skipHolidays && isHoliday(cursor, holidays)) continue;
       const dur = created.endAt ? created.endAt.getTime() - created.startAt.getTime() : 0;
       const endAt = created.endAt ? new Date(cursor.getTime() + dur) : null;
       series.push({ startAt: new Date(cursor), endAt });

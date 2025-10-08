@@ -9,7 +9,7 @@ export default function NewEventPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
-  const [repeatHasUntil, setRepeatHasUntil] = useState(false);
+  const [repeatFreq, setRepeatFreq] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [skipHolidays, setSkipHolidays] = useState(true);
   const [notifyCreator, setNotifyCreator] = useState(true);
   const [hasEnd, setHasEnd] = useState(false);
@@ -28,8 +28,12 @@ export default function NewEventPage() {
     if (Object.keys(errors).length > 0) return;
     setSaving(true);
     const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null };
-    if (repeatWeekly && repeatHasUntil && repeatUntil) {
-      body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
+    if (repeatWeekly && repeatUntil) {
+      if (repeatFreq === 'weekly') {
+        body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
+      } else {
+        body.repeat = { frequency: repeatFreq, until: repeatUntil };
+      }
     }
     body.notifyCreator = !!notifyCreator;
     const res = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -120,24 +124,28 @@ export default function NewEventPage() {
           </label>
           {repeatWeekly && (
             <div className="space-y-2">
-              <div className="text-sm text-gray-600">משך חזרה</div>
-              <div className="flex flex-col gap-2">
+              <div className="text-sm text-gray-600">תדירות</div>
+              <div className="flex flex-wrap gap-4">
                 <label className="inline-flex items-center gap-2">
-                  <input type="radio" name="repeatDuration" checked={!repeatHasUntil} onChange={()=>{ setRepeatHasUntil(false); setRepeatUntil(''); }} />
-                  <span>ללא תאריך סיום</span>
+                  <input type="radio" name="repeatFrequency" checked={repeatFreq==='daily'} onChange={()=>setRepeatFreq('daily')} />
+                  <span>כל יום</span>
                 </label>
                 <label className="inline-flex items-center gap-2">
-                  <input type="radio" name="repeatDuration" checked={repeatHasUntil} onChange={()=>setRepeatHasUntil(true)} />
-                  <span>עד תאריך</span>
+                  <input type="radio" name="repeatFrequency" checked={repeatFreq==='weekly'} onChange={()=>setRepeatFreq('weekly')} />
+                  <span>כל שבוע</span>
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input type="radio" name="repeatFrequency" checked={repeatFreq==='monthly'} onChange={()=>setRepeatFreq('monthly')} />
+                  <span>כל חודש</span>
                 </label>
               </div>
-              {repeatHasUntil && (
-                <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} allowDateOnly />
+              <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} allowDateOnly />
+              {repeatFreq === 'weekly' && (
+                <label className="inline-flex items-center gap-2">
+                  <input type="checkbox" checked={skipHolidays} onChange={(e)=>setSkipHolidays(e.target.checked)} />
+                  <span>דלג על חגים</span>
+                </label>
               )}
-              <label className="inline-flex items-center gap-2">
-                <input type="checkbox" checked={skipHolidays} onChange={(e)=>setSkipHolidays(e.target.checked)} />
-                <span>דלג על חגים</span>
-              </label>
             </div>
           )}
         </div>
