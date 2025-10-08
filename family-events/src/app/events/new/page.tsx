@@ -54,6 +54,7 @@ export default function NewEventPage() {
         />
       )}
       <h1 className="text-2xl font-bold">אירוע חדש</h1>
+      {step === 1 && (
       <TemplatesTiles onPick={(tpl)=>{
         setForm({
           title: tpl.title,
@@ -65,17 +66,19 @@ export default function NewEventPage() {
         });
         (window as any).__holidayKey = tpl.holidayKey ?? null;
         setStep(2);
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
       }} />
+      )}
       {step === 2 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
         <div>
-          <div className="text-xs text-gray-500 mb-1">הזינו כותרת לאירוע</div>
-          <input className={inputCls} placeholder="כותרת" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+          {(!form.title || !form.title.trim()) && <div className="text-xs text-gray-500 mb-1">הזינו כותרת לאירוע</div>}
+          <input className={inputCls} value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
           {errors.title && <p className={errorCls}>{errors.title}</p>}
         </div>
         <div>
-          <div className="text-xs text-gray-500 mb-1">כמה מילים על האירוע</div>
-          <textarea rows={3} className={inputCls} placeholder="תיאור" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
+          {(!form.description || !form.description.trim()) && <div className="text-xs text-gray-500 mb-1">כמה מילים על האירוע</div>}
+          <textarea rows={3} className={inputCls} value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
         </div>
         <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
         <div>
