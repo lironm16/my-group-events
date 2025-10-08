@@ -45,7 +45,7 @@ export default function NewEventPage() {
   }
 
   const inputCls = "w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800";
-  const errorCls = "text-xs text-red-600";
+  const errorCls = "text-xs text-red-600 mt-1";
 
   return (
     <main className="container-page space-y-4">
@@ -83,15 +83,18 @@ export default function NewEventPage() {
           </button>
         </div>
         <div>
-          {(!form.title || !form.title.trim()) && <div className="text-xs text-gray-500 mb-1">הזינו כותרת לאירוע</div>}
+          <label className="block text-sm text-gray-600 mb-1">כותרת</label>
           <input className={inputCls} value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
           {errors.title && <p className={errorCls}>{errors.title}</p>}
         </div>
         <div>
-          {(!form.description || !form.description.trim()) && <div className="text-xs text-gray-500 mb-1">כמה מילים על האירוע</div>}
+          <label className="block text-sm text-gray-600 mb-1">תיאור</label>
           <textarea rows={3} className={inputCls} value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
         </div>
-        <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">מיקום</label>
+          <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
+        </div>
         <div>
           <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly timeToggle />
           {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
@@ -117,7 +120,8 @@ export default function NewEventPage() {
           )}
         </div>
         <div>
-          <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
+          <label className="block text-sm text-gray-600 mb-1">קישור חיצוני (אופציונלי)</label>
+          <input className={inputCls} value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
           {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
         </div>
         <div className="mt-2">
