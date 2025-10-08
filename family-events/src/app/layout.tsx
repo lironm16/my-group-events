@@ -18,11 +18,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <AuthProvider>
             <Nav />
+            <div className="max-w-6xl mx-auto px-4">
+              {children}
+            </div>
           </AuthProvider>
         </ThemeProvider>
-        <div className="max-w-6xl mx-auto px-4">
-          {children}
-        </div>
       </body>
     </html>
   );
