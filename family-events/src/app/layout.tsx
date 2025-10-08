@@ -15,14 +15,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <body>
-        <AuthProvider>
-          <ThemeProvider>
+        <ThemeProvider>
+          <AuthProvider>
             <Nav />
-            <div className="max-w-6xl mx-auto px-4">
-              {children}
-            </div>
-          </ThemeProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </ThemeProvider>
+        <div className="max-w-6xl mx-auto px-4">
+          {children}
+        </div>
       </body>
     </html>
   );
