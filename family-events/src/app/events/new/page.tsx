@@ -45,7 +45,7 @@ export default function NewEventPage() {
   }
 
   const inputCls = "w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800";
-  const errorCls = "text-xs text-red-600 mt-1";
+  const errorCls = "text-xs text-red-600 mt-2";
 
   return (
     <main className="container-page space-y-4">
