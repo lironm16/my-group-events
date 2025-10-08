@@ -12,6 +12,7 @@ type EventCard = {
   endAt: string | null;
   host: { name: string | null };
   hostId?: string | null;
+  holidayKey?: string | null;
   rsvps: { status: string; userId?: string }[];
 };
 
@@ -163,6 +164,19 @@ function filterByScope(events: EventCard[], scope: ScopeKey, myUserId: string): 
   return events.filter((e) => e.hostId === myUserId || e.rsvps.some((r) => r.userId === myUserId));
 }
 
+function pickImage(e: EventCard): string {
+  const title = (e.title || '').toLowerCase();
+  if (e.holidayKey === 'holiday' || /ראש השנה|כיפור|סוכות|חנוכה|פסח|שבועות|ט"ו|פורים|ל"ג בעומר/.test(e.title)) return '/templates/hanukkah.jpg';
+  if (/שישי|שבת|ערב/.test(title)) return '/templates/shishi-dinner.jpg';
+  if (/בוקר/.test(title)) return '/templates/brekfast.jpg';
+  if (/צהריים|ערב|ארוחה|מסעדה/.test(title)) return '/templates/dinner.jpg';
+  if (/ים/.test(title)) return '/templates/beach.jpg';
+  if (/פיקניק/.test(title)) return '/templates/picnic.jpg';
+  if (/טיול/.test(title)) return '/templates/party.jpg';
+  if (/יום הולדת|מזל טוב/.test(title)) return '/templates/birthday.jpg';
+  return '/templates/party.jpg';
+}
+
 function Cards({ list }: { list: EventCard[] }) {
   return (
     <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -175,6 +189,8 @@ function Cards({ list }: { list: EventCard[] }) {
             </div>
             <span className="text-xs text-gray-500">{new Date(e.startAt).toLocaleString('he-IL')}</span>
           </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={pickImage(e)} alt="" className="mt-3 w-full h-36 object-cover rounded" />
           {e.description && <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{e.description}</p>}
           <div className="mt-3 flex items-center justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-400">מארח: {e.host?.name ?? '—'}</span>
