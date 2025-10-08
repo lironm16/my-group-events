@@ -103,10 +103,11 @@ export default function NewEventPage() {
         <div className="mt-4 space-y-2">
           <label className="inline-flex items-center gap-2">
             <input type="checkbox" checked={repeatWeekly} onChange={(e)=>setRepeatWeekly(e.target.checked)} />
-            <span>חזרה כל שבוע</span>
+            <span>חזרות</span>
           </label>
           {repeatWeekly && (
             <div className="space-y-2">
+              <div className="text-sm text-gray-600">משך חזרה</div>
               <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} />
               <label className="inline-flex items-center gap-2">
                 <input type="checkbox" checked={skipHolidays} onChange={(e)=>setSkipHolidays(e.target.checked)} />
