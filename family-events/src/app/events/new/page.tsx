@@ -184,7 +184,7 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
     { cat: 'other', label: 'מותאם אישית', img: '/templates/party.jpg', tpl: { title: '', description: '', startAt: '' } },
   ];
 
-  const [cat, setCat] = useState<'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'>('holidays');
+  const [cat, setCat] = useState<'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'>('dinners');
 
   return (
     <div className="max-w-3xl space-y-3">
