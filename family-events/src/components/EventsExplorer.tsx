@@ -187,7 +187,7 @@ function Cards({ list }: { list: EventCard[] }) {
               <h3 className="font-semibold text-lg">{e.title}</h3>
               {e.location && <p className="text-sm text-gray-600 dark:text-gray-400">{e.location}</p>}
             </div>
-            <span className="text-xs text-gray-500">{new Date(e.startAt).toLocaleString('he-IL')}</span>
+            <span className="text-xs text-gray-500">{formatDateTime(e.startAt)}</span>
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={pickImage(e)} alt="" className="mt-3 w-full h-36 object-cover rounded" />
@@ -205,5 +205,13 @@ function Cards({ list }: { list: EventCard[] }) {
       ))}
     </ul>
   );
+}
+
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (d.getHours() === 0 && d.getMinutes() === 0) {
+    return d.toLocaleDateString('he-IL', { dateStyle: 'medium' });
+  }
+  return d.toLocaleString('he-IL', { dateStyle: 'medium', timeStyle: 'short' });
 }
 

@@ -34,8 +34,8 @@ export async function POST(req: Request) {
       title: body.title,
       description: body.description ?? null,
       location: body.location ?? null,
-      startAt: new Date(body.startAt),
-      endAt: body.endAt ? new Date(body.endAt) : null,
+      startAt: parseClientDate(body.startAt),
+      endAt: body.endAt ? parseClientDate(body.endAt) : null,
       externalLink: body.externalLink ?? null,
       isHolidayGenerated: body.holidayKey ? true : false,
       holidayKey: body.holidayKey ?? null,
@@ -67,11 +67,11 @@ export async function POST(req: Request) {
   let skipHolidays = false;
   if (body?.repeat?.weeklyUntil) {
     frequency = 'weekly';
-    until = new Date(body.repeat.weeklyUntil);
+    until = parseClientDate(body.repeat.weeklyUntil);
     skipHolidays = !!body.repeat.skipHolidays;
   } else if (body?.repeat?.frequency && body?.repeat?.until) {
     frequency = body.repeat.frequency;
-    until = new Date(body.repeat.until);
+    until = parseClientDate(body.repeat.until);
     skipHolidays = frequency === 'weekly' ? !!body.repeat.skipHolidays : false;
   }
   if (frequency && until) {
@@ -144,5 +144,15 @@ function isHoliday(d: Date, holidays: { date: string; title: string }[]) {
   const dd = String(d.getDate()).padStart(2, '0');
   const iso = `${yyyy}-${mm}-${dd}`;
   return holidays.some(h => h.date?.startsWith(iso));
+}
+
+function parseClientDate(input: string): Date {
+  // Accepts 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:mm'
+  if (!input) return new Date(NaN);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    const [y, m, d] = input.split('-').map(Number);
+    return new Date(y, m - 1, d, 0, 0, 0, 0); // local midnight
+  }
+  return new Date(input);
 }
 

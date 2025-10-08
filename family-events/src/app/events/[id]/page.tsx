@@ -67,7 +67,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
   for (const r of event.rsvps) userStatus.set(r.user.id, r.status);
   const pendingCount = (event.familyMembers || []).filter(m => (!userStatus.has(m.id) || userStatus.get(m.id) !== 'APPROVED')).length;
   const shareUrl = `${base}/events/${event.id}`;
-  const dateText = new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+  const dateText = formatDateTimeFull(event.startAt);
   const locText = event.location ? `במקום: ${event.location} ` : '';
   const pendForClient = (event.familyMembers || []).filter(p => (!userStatus.has(p.id) || userStatus.get(p.id) !== 'APPROVED'));
   return (
@@ -81,11 +81,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
           </div>
           <div>
             <dt className="text-sm text-gray-500">התחלה</dt>
-            <dd>{new Date(event.startAt).toLocaleString('he-IL')}</dd>
+            <dd>{formatDateTime(event.startAt)}</dd>
           </div>
           <div>
             <dt className="text-sm text-gray-500">סיום</dt>
-            <dd>{event.endAt ? new Date(event.endAt).toLocaleString('he-IL') : '—'}</dd>
+            <dd>{event.endAt ? formatDateTime(event.endAt) : '—'}</dd>
           </div>
           <div>
             <dt className="text-sm text-gray-500">מארח</dt>
@@ -153,5 +153,21 @@ function HeaderActions({ id, wa, ics, isHost, event, shareUrl }: { id: string; w
       </div>
     </div>
   );
+}
+
+function formatDateTimeFull(iso: string): string {
+  const d = new Date(iso);
+  if (d.getHours() === 0 && d.getMinutes() === 0) {
+    return d.toLocaleDateString('he-IL', { dateStyle: 'full' });
+  }
+  return d.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+}
+
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (d.getHours() === 0 && d.getMinutes() === 0) {
+    return d.toLocaleDateString('he-IL', { dateStyle: 'medium' });
+  }
+  return d.toLocaleString('he-IL', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
