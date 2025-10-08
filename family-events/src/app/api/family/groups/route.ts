@@ -14,12 +14,12 @@ export async function GET(req: Request) {
       if (process.env.VERCEL_ENV === 'preview') {
         const mock = [
           { id: 'g1', nickname: 'הורים', members: [
-            { id: 'u1', name: 'אבא', image: null, username: 'dad' },
-            { id: 'u2', name: 'אמא', image: null, username: 'mom' },
+            { id: 'u1', name: 'אבא', image: null },
+            { id: 'u2', name: 'אמא', image: null },
           ]},
           { id: 'g2', nickname: 'ילדים', members: [
-            { id: 'u3', name: 'דני', image: null, username: 'dani' },
-            { id: 'u4', name: 'נועה', image: null, username: 'noa' },
+            { id: 'u3', name: 'דני', image: null },
+            { id: 'u4', name: 'נועה', image: null },
           ]},
         ];
         return NextResponse.json({ groups: mock });
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     }
     const groups = await prisma.group.findMany({
       where: { familyId: family.id },
-      include: { members: { select: { id: true, name: true, image: true, username: true } }, parent: { select: { id: true, nickname: true } } },
+      include: { members: { select: { id: true, name: true, image: true } }, parent: { select: { id: true, nickname: true } } },
       orderBy: { createdAt: 'asc' },
     });
     return NextResponse.json({ groups });
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
   if (!user?.familyId) return NextResponse.json({ groups: [] });
   const groups = await prisma.group.findMany({
     where: { familyId: user.familyId },
-    include: { members: { select: { id: true, name: true, image: true, username: true } }, parent: { select: { id: true, nickname: true } } },
+    include: { members: { select: { id: true, name: true, image: true } }, parent: { select: { id: true, nickname: true } } },
     orderBy: { createdAt: 'asc' },
   });
   return NextResponse.json({ groups });

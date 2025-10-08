@@ -19,12 +19,10 @@ input, select, textarea {
   color: inherit;
   caret-color: currentColor;
   background-color: transparent;
-  -webkit-text-fill-color: currentColor !important; /* ensure mobile keyboards use current text color */
 }
 .dark input, .dark select, .dark textarea {
   color: inherit;
   caret-color: currentColor;
-  -webkit-text-fill-color: currentColor !important; /* force light text in dark mode even without autofill selector */
   color-scheme: dark;
 }
 input:disabled, select:disabled, textarea:disabled {
@@ -44,17 +42,17 @@ input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 select:-webkit-autofill,
 textarea:-webkit-autofill {
-  -webkit-text-fill-color: currentColor !important;
+  -webkit-text-fill-color: inherit !important; /* match theme color */
   -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
   box-shadow: inset 0 0 0 1000px transparent !important;
-  transition: background-color 5000s ease-in-out 0s;
+  transition: background-color 9999s ease-in-out 0s !important;
 }
 .dark input:-webkit-autofill,
 .dark input:-webkit-autofill:hover,
 .dark input:-webkit-autofill:focus,
 .dark select:-webkit-autofill,
 .dark textarea:-webkit-autofill {
-  -webkit-text-fill-color: currentColor !important;
+  -webkit-text-fill-color: inherit !important; /* ensure light text in dark */
   -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
   box-shadow: inset 0 0 0 1000px transparent !important;
 }

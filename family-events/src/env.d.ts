@@ -8,6 +8,7 @@ declare namespace NodeJS {
     NEXTAUTH_URL: string;
     GOOGLE_CLIENT_ID?: string;
     GOOGLE_CLIENT_SECRET?: string;
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?: string;
   }
 }
 

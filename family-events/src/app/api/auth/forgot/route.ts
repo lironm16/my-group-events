@@ -6,8 +6,9 @@ export async function POST(req: Request) {
   const { identifier } = await req.json();
   if (!identifier) return NextResponse.json({ ok: true });
   const idLower = String(identifier).toLowerCase();
-  const user = await prisma.user.findFirst({ where: { OR: [ { username: idLower }, { name: idLower } ] } });
-  if (!user) return NextResponse.json({ ok: true });
+  // Email-only: find by email (case-insensitive)
+  const user = await prisma.user.findFirst({ where: { email: { equals: idLower, mode: 'insensitive' } as any } as any });
+  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const token = crypto.randomBytes(24).toString('hex');
   const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
   await prisma.passwordResetToken.create({ data: { token, userId: user.id, expiresAt } });
@@ -38,8 +39,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // In development or when email is not configured, return the link for convenience
-  const dev = process.env.NODE_ENV !== 'production';
-  return NextResponse.json({ ok: true, link: dev ? link : undefined });
+  // Always respond OK
+  return NextResponse.json({ ok: true });
 }
 

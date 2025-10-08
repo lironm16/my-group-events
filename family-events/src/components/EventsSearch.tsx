@@ -1,5 +1,5 @@
 "use client";
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 
 export type EventItem = {
   id: string;
@@ -23,7 +23,9 @@ export default function EventsSearch({ items, onFilter }: { items: EventItem[]; 
     );
   }, [items, dq]);
 
-  useMemo(() => onFilter(filtered), [filtered, onFilter]);
+  useEffect(() => {
+    onFilter(filtered);
+  }, [filtered, onFilter]);
 
   return (
     <div className="max-w-xl">

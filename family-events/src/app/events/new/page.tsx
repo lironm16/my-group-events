@@ -2,6 +2,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import EventTypeIcon from '@/components/EventTypeIcon';
 import DateTimePicker from '@/components/DateTimePicker';
+import Script from 'next/script';
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
@@ -46,7 +47,14 @@ export default function NewEventPage() {
 
   return (
     <main className="container-page space-y-4">
+      {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && (
+        <Script
+          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&language=he`}
+          strategy="afterInteractive"
+        />
+      )}
       <h1 className="text-2xl font-bold">אירוע חדש</h1>
+      {step === 1 && (
       <TemplatesTiles onPick={(tpl)=>{
         setForm({
           title: tpl.title,
@@ -58,21 +66,27 @@ export default function NewEventPage() {
         });
         (window as any).__holidayKey = tpl.holidayKey ?? null;
         setStep(2);
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
       }} />
+      )}
       {step === 2 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
         <div>
-          <input className={inputCls} placeholder="כותרת" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+          {(!form.title || !form.title.trim()) && <div className="text-xs text-gray-500 mb-1">הזינו כותרת לאירוע</div>}
+          <input className={inputCls} value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
           {errors.title && <p className={errorCls}>{errors.title}</p>}
         </div>
-        <input className={inputCls} placeholder="תיאור" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
-        <input className={inputCls} placeholder="מיקום" value={form.location} onChange={e=>setForm({...form, location:e.target.value})} />
         <div>
-          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} />
+          {(!form.description || !form.description.trim()) && <div className="text-xs text-gray-500 mb-1">כמה מילים על האירוע</div>}
+          <textarea rows={3} className={inputCls} value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
+        </div>
+        <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
+        <div>
+          <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly timeToggle />
           {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
         </div>
         <div>
-          <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} />
+          <DateTimePicker label="תאריך סיום (אופציונלי)" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly timeToggle />
           {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
         </div>
         <div className="mt-4 space-y-2">
@@ -98,10 +112,7 @@ export default function NewEventPage() {
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
       )}
-      <section className="space-y-2 max-w-xl">
-        <h2 className="font-semibold">יצירת חגים (ישראל)</h2>
-        <GenerateHolidays />
-      </section>
+      {/* Holidays generator removed per request */}
     </main>
   );
 }
@@ -124,59 +135,88 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   // Use DiceBear shapes as an avatar-like background, overlay a relevant emoji icon
   const bg = (seed: string) => `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
   const random = () => Math.random().toString(36).slice(2,6);
-  const tpls: { label: string; type: 'shabat_eve' | 'holiday_eve' | 'holiday' | 'custom'; bgUrl: string; tpl: Template }[] = [
-    { label: 'ערב שישי', type: 'shabat_eve', bgUrl: bg(`Shabbat-${random()}`), tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
-    { label: 'ערב חג', type: 'holiday_eve', bgUrl: bg(`HolidayEve-${random()}`), tpl: { title: 'ערב חג', description: 'מפגש ערב חג', startAt: toLocal(tonight), holidayKey: 'holiday_eve' } },
-    { label: 'חג', type: 'holiday', bgUrl: bg(`Holiday-${random()}`), tpl: { title: 'חג', description: 'מפגש חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { label: 'מותאם אישית', type: 'custom', bgUrl: bg(`Custom-${random()}`), tpl: { title: '', description: '', startAt: '' } },
+  const categories: { key: 'dinners' | 'holidays' | 'outdoors' | 'other'; label: string }[] = [
+    { key: 'dinners', label: 'ארוחות' },
+    { key: 'holidays', label: 'חגים' },
+    { key: 'outdoors', label: 'טיולים/ים' },
+    { key: 'other', label: 'אחר' },
   ];
+  const items: { cat: typeof categories[number]['key']; label: string; img: string; tpl: Template }[] = [
+    // Holidays ordered starting from Rosh Hashanah
+    { cat: 'holidays', label: 'ראש השנה', img: '/templates/rosh-hashanah.jpg', tpl: { title: 'ראש השנה', description: 'ארוחת חג משפחתית', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'יום כיפור', img: '/templates/kippur.jpg', tpl: { title: 'מוצאי יום כיפור', description: 'ארוחת מפסקת/נעילת צום', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'סוכות', img: '/templates/sukkot.jpg', tpl: { title: 'סוכות', description: 'ארוחה בסוכה', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'חנוכה', img: '/templates/hanukkah.jpg', tpl: { title: 'חנוכה', description: 'הדלקת נרות', startAt: toLocal(tonight), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'ט"ו בשבט', img: '/templates/tu-bishvat.jpg', tpl: { title: 'ט"ו בשבט', description: 'סדר פירות', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'פורים', img: '/templates/purim.jpg', tpl: { title: 'פורים', description: 'מסיבת תחפושות', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'פסח', img: '/templates/passover.jpg', tpl: { title: 'פסח', description: 'ליל הסדר משפחתי', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'שבועות', img: '/templates/shavout.jpg', tpl: { title: 'שבועות', description: 'ארוחת חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'ט"ו באב', img: '/templates/tu-beav.jpg', tpl: { title: 'ט"ו באב', description: 'מפגש משפחתי', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'ל"ג בעומר', img: '/templates/lag-baomer.jpg', tpl: { title: 'ל"ג בעומר', description: 'מדורה משפחתית', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    // Meals first in tabs; include lunch
+    { cat: 'dinners', label: 'ערב שישי', img: '/templates/shishi-dinner.jpg', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
+    { cat: 'dinners', label: 'ארוחת צהריים', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת צהריים', description: 'מפגש צהריים', startAt: toLocal(tonight) } },
+    { cat: 'dinners', label: 'ארוחת ערב', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת ערב', description: 'מפגש משפחתי', startAt: toLocal(tonight) } },
+    { cat: 'dinners', label: 'ארוחת בוקר', img: '/templates/brekfast.jpg', tpl: { title: 'ארוחת בוקר', description: 'מפגש בוקר', startAt: toLocal(tonight) } },
+    { cat: 'other', label: 'יום הולדת', img: '/templates/birthday.jpg', tpl: { title: 'מסיבת יום הולדת', description: 'חוגגים יום הולדת', startAt: toLocal(nextWeek) } },
+    { cat: 'outdoors', label: 'פיקניק', img: '/templates/picnic.jpg', tpl: { title: 'פיקניק משפחתי', description: 'בפארק', startAt: toLocal(nextWeek) } },
+    { cat: 'outdoors', label: 'ים', img: '/templates/beach.jpg', tpl: { title: 'ים', description: 'יום כיף בים', startAt: toLocal(nextWeek) } },
+    { cat: 'outdoors', label: 'טיול', img: '/templates/party.jpg', tpl: { title: 'טיול', description: 'טיול משפחתי', startAt: toLocal(nextWeek) } },
+    { cat: 'other', label: 'מסעדה', img: '/templates/resturant.jpg', tpl: { title: 'מסעדה', description: 'ארוחה במסעדה', startAt: toLocal(nextWeek) } },
+    { cat: 'other', label: 'מותאם אישית', img: '/templates/party.jpg', tpl: { title: '', description: '', startAt: '' } },
+  ];
+
+  const [cat, setCat] = useState<'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'>('holidays');
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
-      {tpls.map((t)=> (
-        <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
-          <div className="relative w-32 h-32">
+    <div className="max-w-3xl space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {categories.map(c => (
+          <button key={c.key} type="button" onClick={()=>setCat(c.key)} className={`px-3 py-1 rounded border text-sm ${cat===c.key?'bg-blue-600 text-white border-blue-600':'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>{c.label}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {items.filter(i=>i.cat===cat).map((t)=> (
+          <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-2 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={t.bgUrl} alt="" className="absolute inset-0 w-full h-full rounded-xl" />
-            <div className="absolute inset-0 flex items-center justify-center text-gray-800 dark:text-gray-100">
-              <EventTypeIcon type={t.type} size={84} />
-            </div>
-          </div>
-          <div className="font-medium mt-3 text-sm md:text-base">{t.label}</div>
-        </button>
-      ))}
+            <img src={t.img} alt="" className="w-32 h-24 object-cover rounded" />
+            <div className="font-medium mt-2 text-sm text-center">{t.label}</div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
-function GenerateHolidays() {
+function PlacesInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   'use client';
-  const [year, setYear] = useState<number>(new Date().getFullYear());
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string>('');
-  async function run() {
-    setSaving(true); setMsg('');
-    try {
-      const res = await fetch('/api/events/generate-holidays', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ year, tz: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
-      const j = await res.json();
-      if (!res.ok) { setMsg(j.error || 'שגיאה'); return; }
-      setMsg(`נוצרו ${j.created} אירועים לשנת ${j.year}`);
-    } catch { setMsg('שגיאה'); }
-    finally { setSaving(false); }
-  }
+  const [input, setInput] = useState(value);
+  useEffect(() => { setInput(value); }, [value]);
+  useEffect(() => {
+    if (!(window as any).google || !(window as any).google.maps?.places) return;
+    const el = document.getElementById('places-input') as HTMLInputElement | null;
+    if (!el) return;
+    const ac = new (window as any).google.maps.places.Autocomplete(el, { fields: ['formatted_address', 'name', 'geometry'] });
+    ac.setFields(['formatted_address', 'name', 'geometry']);
+    ac.addListener('place_changed', () => {
+      const place = ac.getPlace();
+      const text = (place?.name && place?.formatted_address) ? `${place.name}, ${place.formatted_address}` : (place?.formatted_address || place?.name || el.value);
+      onChange(text || '');
+      setInput(text || '');
+    });
+  }, [onChange]);
   return (
-    <div className="flex items-center gap-2">
-      <input type="number" value={year} onChange={e=>setYear(Number(e.target.value)||new Date().getFullYear())} className="w-32 border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700" />
-      <button disabled={saving} onClick={run} className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">{saving?'מייצר…':'יצירת חגים'}</button>
-      {msg && <span className="text-sm text-gray-600 dark:text-gray-300">{msg}</span>}
-    </div>
+    <input id="places-input" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="מיקום" value={input} onChange={e=>{ setInput(e.target.value); onChange(e.target.value); }} />
   );
 }
+
+// Holidays generator removed per request
 
 function GuestSelector() {
   'use client';
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<{ id: string; groupId: string | null } | null>(null);
-  const [groups, setGroups] = useState<{ id: string; nickname: string; members: { id: string; name: string | null; image: string | null; username: string | null }[] }[]>([]);
+  const [groups, setGroups] = useState<{ id: string; nickname: string; members: { id: string; name: string | null; image: string | null }[] }[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
 
@@ -192,7 +232,11 @@ function GuestSelector() {
         // Default: select everyone (placeholder; apply opt-outs here later)
         const sel: Record<string, boolean> = {};
         (gj.groups || []).forEach((gr: any) => gr.members.forEach((u: any) => { sel[u.id] = true; }));
+        // Also select entire groups by default
+        const sg: Record<string, boolean> = {};
+        (gj.groups || []).forEach((gr: any) => { sg[gr.id] = true; });
         setSelected(sel);
+        setSelectedGroups(sg);
       } finally {
         setLoading(false);
       }
@@ -236,10 +280,10 @@ function GuestSelector() {
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
               {g.members.map((u) => (
-                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-50 border-blue-300' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800'}`}>
+                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-700 dark:border-blue-700 dark:text-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.username || u.name || 'user')}`} alt={u.name || u.username || ''} className="w-5 h-5" />
-                  <span>{u.name || u.username}</span>
+                  <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
+                  <span>{u.name || ''}</span>
                   <input type="checkbox" className="ml-1" checked={!!selected[u.id]} onChange={() => toggleUser(u.id)} />
                 </label>
               ))}

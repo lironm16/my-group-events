@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 export default function SignupForm({ initialCode }: { initialCode: string }) {
   const router = useRouter();
   const [code] = useState(initialCode);
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
@@ -15,7 +14,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   const [customSeed, setCustomSeed] = useState<string>('custom');
   const [groupId, setGroupId] = useState<string>('');
   const [newGroup, setNewGroup] = useState('');
-  const [groups, setGroups] = useState<{ id: string; nickname: string; members?: { id: string; name: string | null; image: string | null; username: string | null }[] }[]>([]);
+  const [groups, setGroups] = useState<{ id: string; nickname: string; members?: { id: string; name: string | null; image: string | null }[] }[]>([]);
   const [loading, setLoading] = useState(false);
   const [isFirst, setIsFirst] = useState(false);
   const [familyName, setFamilyName] = useState('');
@@ -45,10 +44,10 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, username, password, nickname, icon, groupId: groupId || null, email, imageUrl: imageUrl || null, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
+      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, password, nickname, icon, groupId: groupId || null, email, imageUrl: imageUrl || null, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
       if (res.ok) {
         // Try automatic login, then redirect to events
-        const login = await signIn('credentials', { username: (username || nickname).trim(), password, redirect: false });
+        const login = await signIn('credentials', { email: email.trim(), password, redirect: false });
         if (login?.ok) {
           router.replace('/events');
         } else {
@@ -72,25 +71,15 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           {isFirst && (
             <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="שם משפחה ראשי" value={familyName} onChange={e=>setFamilyName(e.target.value)} />
           )}
-          <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="שם משתמש" value={username} onChange={e=>setUsername(e.target.value)} />
-          <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
+          <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
           <div className="flex gap-2 justify-between">
             <span />
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async ()=>{
               const missing: string[] = [];
-              if (!username.trim()) missing.push('שם משתמש');
-              if (!password.trim()) missing.push('סיסמה');
               if (!email.trim()) missing.push('אימייל');
+              if (!password.trim()) missing.push('סיסמה');
               if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
-              // Check username availability before proceeding
-              try {
-                const res = await fetch(`/api/users/check-username?u=${encodeURIComponent(username.trim())}`);
-                const j = await res.json();
-                if (!j.available) { setError('שם המשתמש כבר תפוס'); return; }
-              } catch {
-                setError('תקלה בבדיקת שם המשתמש'); return;
-              }
               setError('');
               setStep(2);
             }}>הבא</button>
@@ -150,7 +139,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
             <>
               <div className="grid grid-cols-1 gap-3">
                 {groups.map(g => (
-                  <label key={g.id} className={`border rounded p-3 cursor-pointer flex flex-col gap-2 ${groupId===g.id?'ring-2 ring-blue-500':''}`}>
+                  <label key={g.id} className={`border rounded p-3 cursor-pointer flex flex-col gap-2 ${groupId===g.id?'ring-2 ring-blue-500 bg-white dark:bg-gray-100 text-gray-900':'bg-white dark:bg-gray-900'} border-gray-200 dark:border-gray-800`}>
                     <input type="radio" className="hidden" name="group" value={g.id} onChange={()=>setGroupId(g.id)} />
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium">{g.nickname}</span>
@@ -159,8 +148,8 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                       <div className="flex flex-wrap gap-2 pl-11">
                         {g.members.map(m => (
                           <span key={m.id} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs">
-                            <img src={m.image && m.image.startsWith('http') ? m.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(m.username || m.name || 'user')}`} alt={m.name || m.username || ''} className="w-4 h-4" />
-                            <span>{m.name || m.username}</span>
+                            <img src={m.image && m.image.startsWith('http') ? m.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(m.name || 'user')}`} alt={m.name || ''} className="w-4 h-4" />
+                            <span>{m.name || ''}</span>
                           </span>
                         ))}
                       </div>

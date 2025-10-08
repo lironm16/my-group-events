@@ -4,17 +4,14 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { code, username, password, nickname, icon, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; username?: string; password: string; nickname?: string; icon?: 'mom' | 'dad' | 'boy' | 'girl' | undefined; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
+  const { code, password, nickname, icon, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; password: string; nickname?: string; icon?: 'mom' | 'dad' | 'boy' | 'girl' | undefined; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
   const missing: string[] = [];
   // Invite code should come from the link; do not require manual entry
-  const rawUsername = (username ?? '').trim();
   const rawNickname = (nickname ?? '').trim();
-  const finalUsername = rawUsername || rawNickname;
-  if (!finalUsername) missing.push('שם משתמש');
+  if (!rawNickname) missing.push('כינוי');
   if (!email) missing.push('אימייל');
   if (!password) missing.push('סיסמה');
   if (!icon) missing.push('אייקון');
-  if (!nickname || !nickname.trim()) missing.push('כינוי');
   if (missing.length) return NextResponse.json({ error: `שדות חסרים: ${missing.join(', ')}` }, { status: 400 });
   const emailLower = (email || '').trim().toLowerCase();
   let family = null as null | { id: string };
@@ -22,19 +19,16 @@ export async function POST(req: Request) {
     const f = await prisma.family.findUnique({ where: { inviteCode: code } });
     if (f) family = { id: f.id };
   }
-  // בדיקת ייחודיות דוא"ל ושם משתמש
+  // בדיקת ייחודיות דוא"ל
   const existingEmail = await prisma.user.findFirst({ where: { email: { equals: emailLower, mode: 'insensitive' } } });
   if (existingEmail) return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
-  const usernameLower = finalUsername.toLowerCase();
-  const existing = await prisma.user.findFirst({ where: { username: usernameLower } });
-  if (existing) return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
   // אימייל חייב להיות ייחודי במערכת
   const passwordHash = await bcrypt.hash(password, 10);
   const isFirst = (await prisma.user.count()) === 0;
   let finalGroupId = groupId ?? undefined;
   // If no family via code: create a family ONLY for the very first user.
   if (!family && isFirst) {
-    const name = (familyName && familyName.trim()) || (nickname && nickname.trim()) || `המשפחה של ${username}`;
+    const name = (familyName && familyName.trim()) || (nickname && nickname.trim()) || 'המשפחה שלי';
     const inviteCode = Math.random().toString(36).slice(2, 10).toUpperCase();
     const created = await prisma.family.create({ data: { name, inviteCode } });
     family = { id: created.id };
@@ -52,8 +46,7 @@ export async function POST(req: Request) {
   try {
     const user = await prisma.user.create({
       data: {
-        username: usernameLower,
-        name: rawNickname || finalUsername,
+        name: rawNickname,
         image: imageUrl || (icon ? `icon:${icon}` : null),
         email: emailLower,
         passwordHash,
@@ -80,14 +73,11 @@ export async function POST(req: Request) {
       const targetStr = Array.isArray(rawTarget)
         ? String(rawTarget.join(',')).toLowerCase()
         : String(rawTarget || '').toLowerCase();
-      if (targetStr.includes('username')) {
-        return NextResponse.json({ error: 'שם המשתמש כבר תפוס' }, { status: 400 });
-      }
       if (targetStr.includes('email')) {
         return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
       }
       // Fallback when field not parsed
-      return NextResponse.json({ error: 'שם המשתמש או האימייל כבר קיימים' }, { status: 400 });
+      return NextResponse.json({ error: 'האימייל כבר בשימוש' }, { status: 400 });
     }
     return NextResponse.json({ error: 'אירעה שגיאה בהרשמה' }, { status: 500 });
   }

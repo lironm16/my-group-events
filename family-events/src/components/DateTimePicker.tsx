@@ -7,13 +7,15 @@ type Props = {
   onChange: (next: string) => void;
   required?: boolean;
   allowDateOnly?: boolean; // when true, user can leave time empty
+  timeToggle?: boolean; // when true, show a checkbox to enable/disable time selection
 };
 
-export default function DateTimePicker({ label, value, onChange, required, allowDateOnly }: Props) {
+export default function DateTimePicker({ label, value, onChange, required, allowDateOnly, timeToggle }: Props) {
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState<number>(() => (value ? new Date(value).getMonth() : new Date().getMonth()));
   const [year, setYear] = useState<number>(() => (value ? new Date(value).getFullYear() : new Date().getFullYear()));
   const [time, setTime] = useState<string>(() => (value.includes('T') ? formatTime(new Date(value)) : ''));
+  const [timeEnabled, setTimeEnabled] = useState<boolean>(() => (time ? true : false));
   const selected = value ? new Date(value) : undefined;
   const ref = useRef<HTMLDivElement>(null);
 
@@ -73,6 +75,23 @@ export default function DateTimePicker({ label, value, onChange, required, allow
     onChange(toLocalISO(dt));
   }
 
+  function onToggleTime(next: boolean) {
+    setTimeEnabled(next);
+    if (!next) {
+      // strip time from current value if any
+      if (selected) onChange(toLocalDateISO(selected));
+      setTime('');
+    } else {
+      // enable time with default 19:00 if none selected
+      const base = selected ?? new Date(year, month, new Date().getDate());
+      const dt = new Date(base);
+      const [hh, mm] = (time || '19:00').split(':').map(Number);
+      dt.setHours(hh, mm, 0, 0);
+      onChange(toLocalISO(dt));
+      if (!time) setTime('19:00');
+    }
+  }
+
   return (
     <div className="w-full" ref={ref} dir="rtl">
       {label && <label className="block text-sm text-gray-600 mb-1">{label}{required ? ' *' : ''}</label>}
@@ -102,8 +121,14 @@ export default function DateTimePicker({ label, value, onChange, required, allow
               </button>
             ))}
           </div>
+          {allowDateOnly && timeToggle && (
+            <label className="mt-3 inline-flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={timeEnabled} onChange={(e)=> onToggleTime(e.target.checked)} />
+              <span>כולל שעה</span>
+            </label>
+          )}
           <div className="mt-3">
-            <select dir="rtl" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-right" value={time} onChange={(e) => onTimeChange(e.target.value)}>
+            <select dir="rtl" disabled={allowDateOnly && timeToggle ? !timeEnabled : false} className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-right disabled:opacity-60" value={time} onChange={(e) => onTimeChange(e.target.value)}>
               {allowDateOnly && <option value="">ללא שעה</option>}
               {buildTimes().map((t) => (<option key={t} value={t}>{t}</option>))}
             </select>
