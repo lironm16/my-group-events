@@ -11,6 +11,7 @@ export default function NewEventPage() {
   const [repeatUntil, setRepeatUntil] = useState('');
   const [skipHolidays, setSkipHolidays] = useState(true);
   const [notifyCreator, setNotifyCreator] = useState(true);
+  const [hasEnd, setHasEnd] = useState(false);
   const [saving, setSaving] = useState(false);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
@@ -99,9 +100,17 @@ export default function NewEventPage() {
           <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly timeToggle />
           {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
         </div>
-        <div>
-          <DateTimePicker label="תאריך סיום (אופציונלי)" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly timeToggle />
-          {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
+        <div className="space-y-2">
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={hasEnd} onChange={(e)=>{ const on = e.target.checked; setHasEnd(on); if (!on) setForm({ ...form, endAt: '' }); }} />
+            <span>תאריך סיום</span>
+          </label>
+          {hasEnd && (
+            <div>
+              <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly timeToggle />
+              {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
+            </div>
+          )}
         </div>
         <div className="mt-4 space-y-2">
           <label className="inline-flex items-center gap-2">
