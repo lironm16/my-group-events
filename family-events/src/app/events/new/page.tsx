@@ -71,6 +71,15 @@ export default function NewEventPage() {
       )}
       {step === 2 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
+        <div className="mb-2">
+          <button
+            type="button"
+            onClick={()=>{ setStep(1); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }}
+            className="px-3 py-2 rounded border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
+          >
+            חזרה
+          </button>
+        </div>
         <div>
           {(!form.title || !form.title.trim()) && <div className="text-xs text-gray-500 mb-1">הזינו כותרת לאירוע</div>}
           <input className={inputCls} value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
