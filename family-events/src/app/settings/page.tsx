@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import ThemeModeSwitcher from '@/components/ThemeModeSwitcher';
+// Theme toggles use a pure server form here to avoid client boundaries
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -18,7 +18,7 @@ export default async function SettingsPage() {
     <main className="container-page space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">הגדרות</h1>
       <Approvals familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
-      <ThemeModeSwitcher currentTheme={(user as any)?.theme as string | undefined} />
+      <ThemeSelectForm userId={user!.id} current={(user as any)?.theme as string | undefined} />
       <DefaultLocationForm userId={user!.id} current={(user as any)?.defaultLocation as string | undefined} />
       <NotifyRsvpForm userId={user!.id} current={Boolean((user as any)?.notifyRsvpEmails)} />
       <ProfileForm userId={user!.id} current={{ name: user?.name ?? '', email: user?.email ?? '', image: user?.image ?? '' }} />
@@ -163,6 +163,26 @@ async function AdminMembers({ familyId, isAdmin }: { familyId: string | null; is
         ))}
       </ul>
     </div>
+  );
+}
+
+function ThemeSelectForm({ userId, current }: { userId: string; current?: string }) {
+  return (
+    <form
+      className="space-y-2"
+      action={async (fd: FormData) => {
+        'use server';
+        const mode = String(fd.get('mode') ?? 'light');
+        await prisma.user.update({ where: { id: userId }, data: { theme: mode } });
+      }}
+    >
+      <h2 className="font-semibold">מצב תצוגה</h2>
+      <select name="mode" defaultValue={current ?? 'light'} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+        <option value="light">בהיר</option>
+        <option value="dark">כהה</option>
+      </select>
+      <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
+    </form>
   );
 }
 
