@@ -21,6 +21,7 @@ export default function SignInPage() {
       const res = await signIn('credentials', { email, password: pwd, redirect: false });
       if (res?.ok) {
         router.replace('/events');
+        try { (window as any).location?.reload(); } catch {}
         return;
       }
       setError('אימייל או סיסמה שגויים');
