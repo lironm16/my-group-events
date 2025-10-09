@@ -182,7 +182,7 @@ function Cards({ list }: { list: EventCard[] }) {
     <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => (
         <li key={e.id} className="rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
-          <Link href={`/events/${e.id}`} className="block p-4 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <div className="relative p-4 hover:bg-gray-50 dark:hover:bg-gray-800 focus-within:ring-2 focus-within:ring-blue-500">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-semibold text-lg">{e.title}</h3>
@@ -192,12 +192,12 @@ function Cards({ list }: { list: EventCard[] }) {
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={pickImage(e)} alt="" className="mt-3 w-full h-36 object-cover" />
-            {e.description && <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{e.description}</p>}
             <div className="mt-3 flex items-center justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-400">מארח: {e.host?.name ?? '—'}</span>
               <span className="text-gray-600 dark:text-gray-400">אישורים: {e.rsvps.length}</span>
             </div>
-          </Link>
+            <Link href={`/events/${e.id}`} className="absolute inset-0" aria-label="פרטי האירוע" />
+          </div>
         </li>
       ))}
     </ul>
