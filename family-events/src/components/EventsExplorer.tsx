@@ -197,8 +197,8 @@ function Cards({ list }: { list: EventCard[] }) {
             <span className="text-gray-600 dark:text-gray-400">אישורים: {e.rsvps.length}</span>
           </div>
           <div className="mt-4 flex gap-2">
-            <Link className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800" href={`/events/${e.id}`}>
-              פרטים
+            <Link href={`/events/${e.id}`} legacyBehavior>
+              <a className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800">פרטים</a>
             </Link>
           </div>
         </li>
