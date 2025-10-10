@@ -182,7 +182,7 @@ function Cards({ list }: { list: EventCard[] }) {
     <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => (
         <li key={e.id} className="rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
-          <div className="relative p-4 hover:bg-gray-50 dark:hover:bg-gray-800 focus-within:ring-2 focus-within:ring-blue-500">
+          <div className="relative p-4 focus-within:ring-2 focus-within:ring-blue-500">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-semibold text-lg">{e.title}</h3>
