@@ -25,7 +25,7 @@ export default function Nav() {
   return (
     <nav className="sticky top-0 z-40 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2" />
+        {/* Put content on the first (rightmost in RTL) side */}
         <div className="flex items-center gap-2">
           {status === 'authenticated' && (
             <span className="hidden sm:inline text-sm text-gray-700 dark:text-gray-200 mr-2">
@@ -62,6 +62,8 @@ export default function Nav() {
           )}
           {/* No menu or login button when logged out */}
         </div>
+        {/* Leave the second (left) side empty to keep one-line layout */}
+        <div className="flex items-center gap-2" />
       </div>
     </nav>
   );

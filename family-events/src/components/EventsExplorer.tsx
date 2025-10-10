@@ -196,7 +196,9 @@ function Cards({ list }: { list: EventCard[] }) {
               <span className="text-gray-600 dark:text-gray-400">מארח: {e.host?.name ?? '—'}</span>
               <span className="text-gray-600 dark:text-gray-400">אישורים: {e.rsvps.length}</span>
             </div>
-            <Link href={`/events/${e.id}`} className="absolute inset-0" aria-label="פרטי האירוע" />
+            <Link href={`/events/${e.id}`} legacyBehavior>
+              <a className="absolute inset-0 z-10" aria-label="פרטי האירוע"></a>
+            </Link>
           </div>
         </li>
       ))}
