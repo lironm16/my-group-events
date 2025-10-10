@@ -25,9 +25,7 @@ export default function Nav() {
   return (
     <nav className="sticky top-0 z-40 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {/* Hamburger moved to right (RTL) */}
-        </div>
+        <div className="flex items-center gap-2" />
         <div className="flex items-center gap-2">
           {status === 'authenticated' && (
             <span className="hidden sm:inline text-sm text-gray-700 dark:text-gray-200 mr-2">
@@ -52,7 +50,7 @@ export default function Nav() {
                 onClick={() => setMenuOpen((o) => !o)}
               >☰</button>
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-lg overflow-hidden">
+                <div className="absolute right-0 mt-2 w-48 rounded border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-lg overflow-hidden z-50">
                   <Link href={status === 'authenticated' ? '/events' : '/'} className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={()=>setMenuOpen(false)}>בית</Link>
                   <Link href="/events/new" className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={()=>setMenuOpen(false)}>יצירת אירוע</Link>
                   <Link href="/settings" className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={()=>setMenuOpen(false)}>הגדרות</Link>
