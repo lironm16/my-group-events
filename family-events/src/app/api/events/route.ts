@@ -34,8 +34,8 @@ export async function POST(req: Request) {
       title: body.title,
       description: body.description ?? null,
       location: body.location ?? null,
-      startAt: new Date(body.startAt),
-      endAt: body.endAt ? new Date(body.endAt) : null,
+      startAt: parseClientDate(body.startAt),
+      endAt: body.endAt ? parseClientDate(body.endAt) : null,
       externalLink: body.externalLink ?? null,
       isHolidayGenerated: body.holidayKey ? true : false,
       holidayKey: body.holidayKey ?? null,
@@ -51,18 +51,56 @@ export async function POST(req: Request) {
       await prisma.rSVP.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid, status: 'MAYBE' })) });
     }
   } catch {}
-  // Handle weekly recurrence
+  // Optionally notify creator even if not owner
+  if (body?.notifyCreator && user?.id) {
+    try {
+      await prisma.rSVP.upsert({
+        where: { eventId_userId: { eventId: created.id, userId: user.id } },
+        update: {},
+        create: { eventId: created.id, userId: user.id, status: 'MAYBE' },
+      });
+    } catch {}
+  }
+  // Handle recurrence (daily/weekly/monthly)
+  let frequency: 'daily' | 'weekly' | 'monthly' | null = null;
+  let until: Date | null = null;
+  let skipHolidays = false;
   if (body?.repeat?.weeklyUntil) {
-    const until = new Date(body.repeat.weeklyUntil);
-    const skipHolidays = !!body.repeat.skipHolidays;
-    const holidays = skipHolidays ? await fetchIsraelHolidays(created.startAt.getFullYear()) : [];
+    frequency = 'weekly';
+    until = parseClientDate(body.repeat.weeklyUntil);
+    skipHolidays = !!body.repeat.skipHolidays;
+  } else if (body?.repeat?.frequency && body?.repeat?.until) {
+    frequency = body.repeat.frequency;
+    until = parseClientDate(body.repeat.until);
+    skipHolidays = frequency === 'weekly' ? !!body.repeat.skipHolidays : false;
+  }
+  if (frequency && until) {
+    let holidays: { date: string; title: string }[] = [];
+    if (frequency === 'weekly' && skipHolidays) {
+      const years = new Set<number>([created.startAt.getFullYear(), until.getFullYear()]);
+      for (const y of years) {
+        const hs = await fetchIsraelHolidays(y);
+        holidays = holidays.concat(hs);
+      }
+    }
     const series: { startAt: Date; endAt: Date | null }[] = [];
     let cursor = new Date(created.startAt);
+    const originalDay = created.startAt.getDate();
     while (true) {
-      cursor = new Date(cursor.getTime());
-      cursor.setDate(cursor.getDate() + 7);
+      let next = new Date(cursor);
+      if (frequency === 'daily') {
+        next.setDate(next.getDate() + 1);
+      } else if (frequency === 'weekly') {
+        next.setDate(next.getDate() + 7);
+      } else if (frequency === 'monthly') {
+        next.setDate(1);
+        next.setMonth(next.getMonth() + 1);
+        const daysInMonth = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+        next.setDate(Math.min(originalDay, daysInMonth));
+      }
+      cursor = next;
       if (cursor > until) break;
-      if (skipHolidays && isHoliday(cursor, holidays)) continue;
+      if (frequency === 'weekly' && skipHolidays && isHoliday(cursor, holidays)) continue;
       const dur = created.endAt ? created.endAt.getTime() - created.startAt.getTime() : 0;
       const endAt = created.endAt ? new Date(cursor.getTime() + dur) : null;
       series.push({ startAt: new Date(cursor), endAt });
@@ -106,5 +144,15 @@ function isHoliday(d: Date, holidays: { date: string; title: string }[]) {
   const dd = String(d.getDate()).padStart(2, '0');
   const iso = `${yyyy}-${mm}-${dd}`;
   return holidays.some(h => h.date?.startsWith(iso));
+}
+
+function parseClientDate(input: string): Date {
+  // Accepts 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:mm'
+  if (!input) return new Date(NaN);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    const [y, m, d] = input.split('-').map(Number);
+    return new Date(y, m - 1, d, 0, 0, 0, 0); // local midnight
+  }
+  return new Date(input);
 }
 

@@ -9,7 +9,10 @@ export default function NewEventPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
+  const [repeatFreq, setRepeatFreq] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [skipHolidays, setSkipHolidays] = useState(true);
+  const [notifyCreator, setNotifyCreator] = useState(true);
+  const [hasEnd, setHasEnd] = useState(false);
   const [saving, setSaving] = useState(false);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
@@ -26,8 +29,13 @@ export default function NewEventPage() {
     setSaving(true);
     const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null };
     if (repeatWeekly && repeatUntil) {
-      body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
+      if (repeatFreq === 'weekly') {
+        body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
+      } else {
+        body.repeat = { frequency: repeatFreq, until: repeatUntil };
+      }
     }
+    body.notifyCreator = !!notifyCreator;
     const res = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     setSaving(false);
     if (res.ok) {
@@ -43,7 +51,7 @@ export default function NewEventPage() {
   }
 
   const inputCls = "w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800";
-  const errorCls = "text-xs text-red-600";
+  const errorCls = "text-xs text-red-600 mt-2";
 
   return (
     <main className="container-page space-y-4">
@@ -71,42 +79,86 @@ export default function NewEventPage() {
       )}
       {step === 2 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
+        <div className="mb-2">
+          <button
+            type="button"
+            onClick={()=>{ setStep(1); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }}
+            className="px-3 py-2 rounded border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
+          >
+            חזרה
+          </button>
+        </div>
         <div>
-          {(!form.title || !form.title.trim()) && <div className="text-xs text-gray-500 mb-1">הזינו כותרת לאירוע</div>}
+          <label className="block text-sm text-gray-600 mb-1">כותרת</label>
           <input className={inputCls} value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
           {errors.title && <p className={errorCls}>{errors.title}</p>}
         </div>
         <div>
-          {(!form.description || !form.description.trim()) && <div className="text-xs text-gray-500 mb-1">כמה מילים על האירוע</div>}
+          <label className="block text-sm text-gray-600 mb-1">תיאור</label>
           <textarea rows={3} className={inputCls} value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
         </div>
-        <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
+        <div>
+          <label className="block text-sm text-gray-600 mb-1">מיקום</label>
+          <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
+        </div>
         <div>
           <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly timeToggle />
           {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
         </div>
-        <div>
-          <DateTimePicker label="תאריך סיום (אופציונלי)" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly timeToggle />
-          {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
+        <div className="space-y-2">
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={hasEnd} onChange={(e)=>{ const on = e.target.checked; setHasEnd(on); if (!on) setForm({ ...form, endAt: '' }); }} />
+            <span>תאריך סיום</span>
+          </label>
+          {hasEnd && (
+            <div>
+              <DateTimePicker label="תאריך סיום" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly timeToggle />
+              {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
+            </div>
+          )}
         </div>
         <div className="mt-4 space-y-2">
           <label className="inline-flex items-center gap-2">
             <input type="checkbox" checked={repeatWeekly} onChange={(e)=>setRepeatWeekly(e.target.checked)} />
-            <span>חזרה כל שבוע</span>
+            <span>חזרות</span>
           </label>
           {repeatWeekly && (
             <div className="space-y-2">
-              <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} />
-              <label className="inline-flex items-center gap-2">
-                <input type="checkbox" checked={skipHolidays} onChange={(e)=>setSkipHolidays(e.target.checked)} />
-                <span>דלג על חגים</span>
-              </label>
+              <div className="text-sm text-gray-600">תדירות</div>
+              <div className="flex flex-wrap gap-4">
+                <label className="inline-flex items-center gap-2">
+                  <input type="radio" name="repeatFrequency" checked={repeatFreq==='daily'} onChange={()=>setRepeatFreq('daily')} />
+                  <span>כל יום</span>
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input type="radio" name="repeatFrequency" checked={repeatFreq==='weekly'} onChange={()=>setRepeatFreq('weekly')} />
+                  <span>כל שבוע</span>
+                </label>
+                <label className="inline-flex items-center gap-2">
+                  <input type="radio" name="repeatFrequency" checked={repeatFreq==='monthly'} onChange={()=>setRepeatFreq('monthly')} />
+                  <span>כל חודש</span>
+                </label>
+              </div>
+              <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} allowDateOnly />
+              {repeatFreq === 'weekly' && (
+                <label className="inline-flex items-center gap-2">
+                  <input type="checkbox" checked={skipHolidays} onChange={(e)=>setSkipHolidays(e.target.checked)} />
+                  <span>דלג על חגים</span>
+                </label>
+              )}
             </div>
           )}
         </div>
         <div>
-          <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
+          <label className="block text-sm text-gray-600 mb-1">קישור חיצוני (אופציונלי)</label>
+          <input className={inputCls} value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
           {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
+        </div>
+        <div className="mt-2">
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={notifyCreator} onChange={(e)=>setNotifyCreator(e.target.checked)} />
+            <span>שלחו הודעה גם אלי</span>
+          </label>
         </div>
         <GuestSelector />
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
@@ -166,7 +218,7 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
     { cat: 'other', label: 'מותאם אישית', img: '/templates/party.jpg', tpl: { title: '', description: '', startAt: '' } },
   ];
 
-  const [cat, setCat] = useState<'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'>('holidays');
+  const [cat, setCat] = useState<'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'>('dinners');
 
   return (
     <div className="max-w-3xl space-y-3">

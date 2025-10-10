@@ -26,8 +26,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       title: body.title,
       description: body.description ?? null,
       location: body.location ?? null,
-      startAt: body.startAt ? new Date(body.startAt) : undefined,
-      endAt: body.endAt ? new Date(body.endAt) : undefined,
+      startAt: body.startAt ? parseClientDate(body.startAt) : undefined,
+      endAt: body.endAt ? parseClientDate(body.endAt) : undefined,
       externalLink: body.externalLink ?? null,
       isHolidayGenerated: body.holidayKey !== undefined ? !!body.holidayKey : undefined,
       holidayKey: body.holidayKey ?? undefined,
@@ -46,5 +46,14 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (existing.hostId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   await prisma.event.delete({ where: { id: params.id } });
   return new NextResponse(null, { status: 204 });
+}
+
+function parseClientDate(input: string): Date {
+  if (!input) return new Date(NaN);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    const [y, m, d] = input.split('-').map(Number);
+    return new Date(y, m - 1, d, 0, 0, 0, 0);
+  }
+  return new Date(input);
 }
 
