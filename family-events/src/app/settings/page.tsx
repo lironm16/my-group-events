@@ -153,8 +153,8 @@ async function Approvals({ familyId, isAdmin }: { familyId: string | null; isAdm
           <li key={u.id} className="flex items-center justify-between text-sm">
             <span>{u.name ?? u.email ?? u.id}</span>
             <div className="flex gap-2">
-              <form action={async ()=>act(u.id,'approve')}><button className="px-2 py-1 border rounded">אישור</button></form>
-              <form action={async ()=>act(u.id,'deny')}><button className="px-2 py-1 border rounded">דחייה</button></form>
+              <form action={act.bind(null, u.id, 'approve')}><button className="px-2 py-1 border rounded">אישור</button></form>
+              <form action={act.bind(null, u.id, 'deny')}><button className="px-2 py-1 border rounded">דחייה</button></form>
             </div>
           </li>
         ))}
@@ -180,11 +180,11 @@ async function AdminMembers({ familyId, isAdmin }: { familyId: string | null; is
             <span>{m.name ?? m.email ?? m.id} · {m.role}</span>
             <div className="flex gap-2">
               {m.role !== 'admin' ? (
-                <form action={async () => doMemberAction(m.id, 'promote')}><button className="px-2 py-1 border rounded">הפוך למנהל</button></form>
+                <form action={doMemberAction.bind(null, m.id, 'promote')}><button className="px-2 py-1 border rounded">הפוך למנהל</button></form>
               ) : (
-                <form action={async () => doMemberAction(m.id, 'demote')}><button className="px-2 py-1 border rounded">הפוך לחבר</button></form>
+                <form action={doMemberAction.bind(null, m.id, 'demote')}><button className="px-2 py-1 border rounded">הפוך לחבר</button></form>
               )}
-              <form action={async () => doMemberAction(m.id, 'remove')}><button className="px-2 py-1 border rounded">הסרה</button></form>
+              <form action={doMemberAction.bind(null, m.id, 'remove')}><button className="px-2 py-1 border rounded">הסרה</button></form>
             </div>
           </li>
         ))}
