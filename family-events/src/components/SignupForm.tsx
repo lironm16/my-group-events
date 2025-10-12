@@ -6,7 +6,7 @@ import AvataaarsEditor, { generateRandomAvataaarsUrl } from '@/components/Avataa
 
 export default function SignupForm({ initialCode }: { initialCode: string }) {
   const router = useRouter();
-  const [code] = useState(initialCode);
+  const [code, setCode] = useState(initialCode);
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
@@ -115,6 +115,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 setImageUrl(auto);
                 setError('');
                 if (!code) {
+                  if (!isFirst) { setError('כדי להצטרף למשפחה נדרש קוד הזמנה'); return; }
                   const fakeEvent = { preventDefault: () => {} } as any;
                   await submit(fakeEvent, auto);
                   return;
@@ -123,8 +124,9 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 return;
               }
               setError('');
-              // If no invite code provided, finish signup here (pending approval flow)
+              // If no invite code: first user can finish; others require invite code
               if (!code) {
+                if (!isFirst) { setError('כדי להצטרף למשפחה נדרש קוד הזמנה'); return; }
                 const fakeEvent = { preventDefault: () => {} } as any;
                 await submit(fakeEvent, imageUrl);
                 return;
