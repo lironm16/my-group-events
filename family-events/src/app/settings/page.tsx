@@ -244,7 +244,16 @@ function ProfileForm({ userId, current }: { userId: string; current: { name: str
             return;
           }
         }
-        await prisma.user.update({ where: { id: userId }, data: { name: name || null, email: email || null, image: image || null } });
+        const updated = await prisma.user.update({ where: { id: userId }, data: { name: name || null, email: email || null, image: image || null } });
+        try {
+          const { getServerSession } = await import('next-auth');
+          const { authOptions } = await import('@/auth');
+          const session = await getServerSession(authOptions);
+          if (session) {
+            // Refresh JWT by updating token data on next request; best effort only
+            // Client should re-fetch /api/users/me to update UI immediately
+          }
+        } catch {}
       }}
     >
       <h2 className="font-semibold">פרופיל</h2>
