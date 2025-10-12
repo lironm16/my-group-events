@@ -22,6 +22,39 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [error, setError] = useState<string>('');
 
+  // --- Avatar seed generators (fixed + random helpers) ---
+  const FAMILY_ROLES = ['Grandma','Grandpa','Mother','Father','Aunt','Uncle','Brother','Sister','Cousin','Baby','Toddler'];
+  const HEBREW_NAMES = ['Noa','Yael','Dana','Liron','Eitan','Maya','Liad','Yossi','Rivka','Shira','Avi','Nadav'];
+  const COLORS = ['Red','Blue','Green','Purple','Gold','Pink','Cyan','Teal','Orange','Brown'];
+  const ANIMALS = ['Lion','Tiger','Bear','Fox','Wolf','Deer','Dolphin','Panda','Owl','Eagle','Koala','Zebra'];
+
+  function pick<T>(arr: readonly T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function generateFamilyRoleSeed(): string {
+    return `${pick(FAMILY_ROLES)}-${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  function generateNameSeed(): string {
+    return `${pick(HEBREW_NAMES)}-${Math.random().toString(36).slice(2, 4)}`;
+  }
+
+  function generateColorAnimalSeed(): string {
+    return `${pick(COLORS)}-${pick(ANIMALS)}`;
+  }
+
+  function generateRandomSeed(): string {
+    return Math.random().toString(36).slice(2, 10);
+  }
+
+  function applyCustomSeed(seed: string) {
+    setCustomSeed(seed);
+    setIcon('custom');
+    const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(seed)}`;
+    setImageUrl(u);
+  }
+
   useEffect(() => {
     async function load() {
       const first = await fetch('/api/signup/first');
@@ -93,26 +126,23 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
             <div className="text-sm text-gray-600">בחרו אייקון</div>
             <div className="grid grid-cols-3 gap-3">
               {([
-                { key: 'mom', label: 'אישה', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Maria' },
-                { key: 'dad', label: 'גבר', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=la86p9t0' },
-                { key: 'custom', label: 'מותאם', url: `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(customSeed)}` },
+                { key: 'mom', label: 'אישה', emoji: '👩', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Maria' },
+                { key: 'dad', label: 'גבר', emoji: '👨', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=la86p9t0' },
+                { key: 'custom', label: 'מותאם', emoji: '🎨', url: `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(customSeed)}` },
               ] as const).map((opt) => (
                 <label key={opt.key} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===opt.key?'ring-2 ring-blue-500':''}`}>
                   <input className="hidden" type="radio" name="icon" value={opt.key} onChange={()=>{ setIcon(opt.key); setImageUrl(opt.url); }} />
-                  <img src={opt.url} alt={opt.label} className="w-16 h-16" />
+                  <div className="w-16 h-16 flex items-center justify-center text-4xl select-none">{opt.emoji}</div>
                   <span className="text-xs text-gray-700">{opt.label}</span>
                 </label>
               ))}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <button type="button" className="px-3 py-2 border rounded" onClick={()=>{
-                const rnd = Math.random().toString(36).slice(2,10);
-                setCustomSeed(rnd);
-                setIcon('custom');
-                const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(rnd)}`;
-                setImageUrl(u);
-              }}>אקראי</button>
-              <input className="border rounded p-2 flex-1 min-w-[160px] bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ const v = e.target.value; setCustomSeed(v); setIcon('custom'); const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(v)}`; setImageUrl(u); }} />
+              <button type="button" className="px-3 py-2 border rounded" onClick={()=>applyCustomSeed(generateRandomSeed())}>אקראי</button>
+              <button type="button" className="px-3 py-2 border rounded" onClick={()=>applyCustomSeed(generateFamilyRoleSeed())}>תפקיד משפחתי</button>
+              <button type="button" className="px-3 py-2 border rounded" onClick={()=>applyCustomSeed(generateNameSeed())}>שם</button>
+              <button type="button" className="px-3 py-2 border rounded" onClick={()=>applyCustomSeed(generateColorAnimalSeed())}>צבע+חיה</button>
+              <input className="border rounded p-2 flex-1 min-w-[160px] bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ applyCustomSeed(e.target.value); }} />
               <a className="text-sm text-blue-600 underline" href="https://www.dicebear.com/playground?style=adventurer" target="_blank" rel="noreferrer">עיון בגלריה</a>
             </div>
           </div>

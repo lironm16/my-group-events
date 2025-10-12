@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { code, password, nickname, icon, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; password: string; nickname?: string; icon?: 'mom' | 'dad' | 'boy' | 'girl' | undefined; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
+  const { code, password, nickname, icon, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; password: string; nickname?: string; icon?: 'mom' | 'dad' | 'custom' | undefined; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
   const missing: string[] = [];
   // Invite code should come from the link; do not require manual entry
   const rawNickname = (nickname ?? '').trim();
