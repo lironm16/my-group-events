@@ -10,8 +10,6 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [icon, setIcon] = useState<'mom' | 'dad' | 'custom' | ''>('');
-  const [customSeed, setCustomSeed] = useState<string>('custom');
   const [groupId, setGroupId] = useState<string>('');
   const [newGroup, setNewGroup] = useState('');
   const [groups, setGroups] = useState<{ id: string; nickname: string; members?: { id: string; name: string | null; image: string | null }[] }[]>([]);
@@ -22,37 +20,39 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [error, setError] = useState<string>('');
 
-  // --- Avatar seed generators (fixed + random helpers) ---
-  const FAMILY_ROLES = ['Grandma','Grandpa','Mother','Father','Aunt','Uncle','Brother','Sister','Cousin','Baby','Toddler'];
-  const HEBREW_NAMES = ['Noa','Yael','Dana','Liron','Eitan','Maya','Liad','Yossi','Rivka','Shira','Avi','Nadav'];
-  const COLORS = ['Red','Blue','Green','Purple','Gold','Pink','Cyan','Teal','Orange','Brown'];
-  const ANIMALS = ['Lion','Tiger','Bear','Fox','Wolf','Deer','Dolphin','Panda','Owl','Eagle','Koala','Zebra'];
+  // --- Avataaars single-preview controls ---
+  const DEFAULT_AVATAAARS_URL = 'https://avataaars.io/?avatarStyle=Circle&topType=ShortHairShortFlat&accessoriesType=Blank&hairColor=BrownDark&facialHairType=Blank&clotheType=Hoodie&clotheColor=Blue03&eyeType=Happy&eyebrowType=Default&mouthType=Smile&skinColor=Light';
 
-  function pick<T>(arr: readonly T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
+  function pick<T>(values: readonly T[]): T {
+    return values[Math.floor(Math.random() * values.length)];
   }
 
-  function generateFamilyRoleSeed(): string {
-    return `${pick(FAMILY_ROLES)}-${Math.random().toString(36).slice(2, 6)}`;
-  }
-
-  function generateNameSeed(): string {
-    return `${pick(HEBREW_NAMES)}-${Math.random().toString(36).slice(2, 4)}`;
-  }
-
-  function generateColorAnimalSeed(): string {
-    return `${pick(COLORS)}-${pick(ANIMALS)}`;
-  }
-
-  function generateRandomSeed(): string {
-    return Math.random().toString(36).slice(2, 10);
-  }
-
-  function applyCustomSeed(seed: string) {
-    setCustomSeed(seed);
-    setIcon('custom');
-    const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(seed)}`;
-    setImageUrl(u);
+  function generateRandomAvataaarsUrl(): string {
+    const topType = pick([
+      'NoHair','ShortHairShortFlat','ShortHairTheCaesar','ShortHairFrizzle','ShortHairCurly','LongHairStraight','LongHairCurvy','LongHairFro','Hijab','Hat'] as const);
+    const accessoriesType = pick(['Blank','Prescription01','Prescription02','Round','Kurt','Sunglasses'] as const);
+    const hairColor = pick(['Auburn','Black','Blonde','BlondeGolden','Brown','BrownDark','PastelPink','Platinum','Red','SilverGray'] as const);
+    const facialHairType = pick(['Blank','BeardLight','BeardMedium','MoustacheFancy','MoustacheMagnum'] as const);
+    const clotheType = pick(['BlazerShirt','BlazerSweater','Hoodie','Overall','ShirtCrewNeck','ShirtScoopNeck','ShirtVNeck'] as const);
+    const clotheColor = pick(['Black','Blue01','Blue02','Blue03','Gray01','Gray02','Heather','PastelBlue','PastelGreen','PastelOrange','PastelRed','PastelYellow','Pink','Red','White'] as const);
+    const eyeType = pick(['Default','Happy','Squint','Wink','EyeRoll','Side','Surprised'] as const);
+    const eyebrowType = pick(['Default','DefaultNatural','RaisedExcited','RaisedExcitedNatural','SadConcerned','SadConcernedNatural','UpDown','UpDownNatural'] as const);
+    const mouthType = pick(['Default','Smile','Serious','Twinkle','Disbelief','Grimace','Eating','Tongue'] as const);
+    const skinColor = pick(['Tanned','Yellow','Pale','Light','Brown','DarkBrown','Black'] as const);
+    const params = new URLSearchParams({
+      avatarStyle: 'Circle',
+      topType,
+      accessoriesType,
+      hairColor,
+      facialHairType,
+      clotheType,
+      clotheColor,
+      eyeType,
+      eyebrowType,
+      mouthType,
+      skinColor,
+    } as any);
+    return `https://avataaars.io/?${params.toString()}`;
   }
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, password, nickname, icon, groupId: groupId || null, email, imageUrl: imageUrl || null, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
+      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, password, nickname, groupId: groupId || null, email, imageUrl: imageUrl || null, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
       if (res.ok) {
         // Try automatic login, then redirect to events
         const login = await signIn('credentials', { email: email.trim(), password, redirect: false });
@@ -123,34 +123,30 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
         <div className="space-y-3">
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="כינוי" value={nickname} onChange={e=>setNickname(e.target.value)} />
           <div className="space-y-2">
-            <div className="text-sm text-gray-600">בחרו אייקון</div>
-            <div className="grid grid-cols-3 gap-3">
-              {([
-                { key: 'mom', label: 'אישה', emoji: '👩', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Maria' },
-                { key: 'dad', label: 'גבר', emoji: '👨', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=la86p9t0' },
-                { key: 'custom', label: 'מותאם', emoji: '🎨', url: `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(customSeed)}` },
-              ] as const).map((opt) => (
-                <label key={opt.key} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===opt.key?'ring-2 ring-blue-500':''}`}>
-                  <input className="hidden" type="radio" name="icon" value={opt.key} onChange={()=>{ setIcon(opt.key); setImageUrl(opt.url); }} />
-                  <div className="w-16 h-16 flex items-center justify-center text-4xl select-none">{opt.emoji}</div>
-                  <span className="text-xs text-gray-700">{opt.label}</span>
-                </label>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button type="button" className="px-3 py-2 border rounded" onClick={()=>applyCustomSeed(generateRandomSeed())}>אקראי</button>
-              <button type="button" className="px-3 py-2 border rounded" onClick={()=>applyCustomSeed(generateFamilyRoleSeed())}>תפקיד משפחתי</button>
-              <button type="button" className="px-3 py-2 border rounded" onClick={()=>applyCustomSeed(generateNameSeed())}>שם</button>
-              <button type="button" className="px-3 py-2 border rounded" onClick={()=>applyCustomSeed(generateColorAnimalSeed())}>צבע+חיה</button>
-              <input className="border rounded p-2 flex-1 min-w-[160px] bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ applyCustomSeed(e.target.value); }} />
-              <a className="text-sm text-blue-600 underline" href="https://www.dicebear.com/playground?style=adventurer" target="_blank" rel="noreferrer">עיון בגלריה</a>
+            <div className="text-sm text-gray-600">בחרו אווטאר</div>
+            <div className="flex items-center gap-3">
+              <img src={(imageUrl && imageUrl.trim()) || DEFAULT_AVATAAARS_URL} alt="avatar preview" className="w-20 h-20" />
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  <button type="button" className="px-3 py-2 border rounded" onClick={()=>setImageUrl(generateRandomAvataaarsUrl())}>אקראי</button>
+                  <a className="px-3 py-2 border rounded text-blue-700" href="https://getavataaars.com" target="_blank" rel="noreferrer">פתח את Get Avataaars</a>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <input className="border rounded p-2 flex-1 min-w-[180px] bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="הדביקו כאן קישור Avataaars" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
+                  <button type="button" className="px-3 py-2 border rounded" onClick={()=>{ if (imageUrl) navigator.clipboard.writeText(imageUrl).catch(()=>{}); }}>העתק קישור</button>
+                </div>
+              </div>
             </div>
           </div>
           <div className="flex gap-2 justify-between">
             <button className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async()=>{ 
               if (!nickname.trim()) { setError('יש להזין כינוי'); return; }
-              if (!icon) { setError('יש לבחור אייקון'); return; }
+              if (!(imageUrl && imageUrl.trim())) { 
+                // If user didn't paste anything, auto-pick a random avatar for them
+                const auto = generateRandomAvataaarsUrl();
+                setImageUrl(auto);
+              }
               setError('');
               // If no invite code provided, finish signup here (pending approval flow)
               if (!code) {

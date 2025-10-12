@@ -4,14 +4,13 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { code, password, nickname, icon, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; password: string; nickname?: string; icon?: 'mom' | 'dad' | 'custom' | undefined; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
+  const { code, password, nickname, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; password: string; nickname?: string; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
   const missing: string[] = [];
   // Invite code should come from the link; do not require manual entry
   const rawNickname = (nickname ?? '').trim();
   if (!rawNickname) missing.push('כינוי');
   if (!email) missing.push('אימייל');
   if (!password) missing.push('סיסמה');
-  if (!icon) missing.push('אייקון');
   if (missing.length) return NextResponse.json({ error: `שדות חסרים: ${missing.join(', ')}` }, { status: 400 });
   const emailLower = (email || '').trim().toLowerCase();
   let family = null as null | { id: string };
@@ -47,7 +46,7 @@ export async function POST(req: Request) {
     const user = await prisma.user.create({
       data: {
         name: rawNickname,
-        image: imageUrl || (icon ? `icon:${icon}` : null),
+        image: imageUrl || null,
         email: emailLower,
         passwordHash,
         role: isFirst ? 'admin' : 'member',
