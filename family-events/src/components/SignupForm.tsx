@@ -75,16 +75,28 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           )}
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-          <div className="flex gap-2 justify-between">
-            <span />
-            <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async ()=>{
-              const missing: string[] = [];
-              if (!email.trim()) missing.push('אימייל');
-              if (!password.trim()) missing.push('סיסמה');
-              if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
-              setError('');
-              setStep(2);
-            }}>הבא</button>
+          <div className="space-y-2">
+            <div className="flex gap-2 justify-between">
+              <span />
+              <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async ()=>{
+                const missing: string[] = [];
+                const emailTrim = email.trim().toLowerCase();
+                if (!emailTrim) missing.push('אימייל');
+                if (!password.trim()) missing.push('סיסמה');
+                if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
+                // early email availability check
+                try {
+                  const res = await fetch(`/api/users/check-email?email=${encodeURIComponent(emailTrim)}`);
+                  if (res.ok) {
+                    const j = await res.json();
+                    if (!j.available) { setError('האימייל כבר בשימוש'); return; }
+                  }
+                } catch {}
+                setError('');
+                setStep(2);
+              }}>הבא</button>
+            </div>
+            <div className="text-xs text-gray-500">האימייל נבדק מיד — אם הוא תפוס, תראו את ההודעה כבר כאן.</div>
           </div>
         </div>
       )}
