@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import AvataaarsEditor from '@/components/AvataaarsEditor';
+import CopyButton from '@/components/CopyButton';
 // Theme toggles use a pure server form here to avoid client boundaries
 
 export default async function SettingsPage() {
@@ -49,8 +50,7 @@ async function InvitePanel({ familyId, isAdmin }: { familyId: string | null; isA
       <div className="flex items-center gap-2">
         <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" defaultValue={url} readOnly />
         <form action={regenerate}><button className="px-3 py-2 border rounded">צור קישור חדש</button></form>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <button className="px-3 py-2 bg-blue-600 text-white rounded" formAction={async ()=>{ 'use server'; /* no-op */ }} onClick={async()=>{ 'use client'; try { await navigator.clipboard.writeText(url); } catch {} }}>העתק</button>
+        <CopyButton value={url} label="העתק" />
       </div>
       <div className="text-xs text-gray-500">שתפו את הקישור כדי לאפשר הרשמה ללא הזנת קוד ידנית.</div>
     </div>
