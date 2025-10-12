@@ -262,7 +262,7 @@ function ProfileForm({ userId, current }: { userId: string; current: { name: str
       <input name="email" defaultValue={current.email} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="אימייל" />
       <div className="pt-2 border-t space-y-2">
         <div className="text-sm text-gray-600">אווטאר</div>
-        <AvataaarsEditor defaultValue={current.image} name="image" />
+        <AvataaarsEditor defaultValue={current.image} name="image" showExternalLink />
       </div>
       <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
     </form>

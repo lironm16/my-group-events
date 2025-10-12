@@ -7,6 +7,7 @@ type Props = {
   onChange?: (url: string) => void;
   name?: string; // optional form field name (renders hidden input)
   className?: string;
+  showExternalLink?: boolean; // show link to Get Avataaars
 };
 
 const DEFAULT_AVATAAARS_URL =
@@ -136,7 +137,7 @@ export function generateRandomAvataaarsUrl(): string {
   return `https://avataaars.io/?${params.toString()}`;
 }
 
-export default function AvataaarsEditor({ value, defaultValue, onChange, name, className }: Props) {
+export default function AvataaarsEditor({ value, defaultValue, onChange, name, className, showExternalLink = false }: Props) {
   const isControlled = typeof value === "string";
   const [internal, setInternal] = useState<string>(defaultValue ?? "");
 
@@ -178,7 +179,9 @@ export default function AvataaarsEditor({ value, defaultValue, onChange, name, c
           </div>
           <div className="flex gap-2 flex-wrap w-full">
             <button type="button" className="px-3 py-2 border rounded" onClick={() => setUrl(generateRandomAvataaarsUrl())}>אקראי</button>
-            <a className="px-3 py-2 border rounded text-blue-700" href="https://getavataaars.com" target="_blank" rel="noreferrer">פתח את Get Avataaars</a>
+            {showExternalLink && (
+              <a className="px-3 py-2 border rounded text-blue-700" href="https://getavataaars.com" target="_blank" rel="noreferrer">פתח את Get Avataaars</a>
+            )}
           </div>
           <div className="flex gap-2 flex-wrap w-full">
             <button
