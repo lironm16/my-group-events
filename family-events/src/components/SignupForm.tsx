@@ -128,13 +128,9 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full">
               <img src={(imageUrl && imageUrl.trim()) || DEFAULT_AVATAAARS_URL} alt="avatar preview" className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border" />
               <div className="flex flex-col gap-2 w-full">
-                <div className="flex gap-2 flex-wrap">
-                  <button type="button" className="px-3 py-2 border rounded" onClick={()=>setImageUrl(generateRandomAvataaarsUrl())}>אקראי</button>
-                  <a className="px-3 py-2 border rounded text-blue-700" href="https://getavataaars.com" target="_blank" rel="noreferrer">פתח את Get Avataaars</a>
-                </div>
-                <div className="flex gap-2 items-center flex-wrap w-full">
+                <div className="w-full">
                   <input
-                    className="border rounded p-2 flex-1 min-w-0 w-full sm:w-auto bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                    className="border rounded p-2 w-full bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="הדביקו כאן קישור Avataaars או קוד SVG"
                     value={imageUrl}
                     onChange={e=>{
@@ -143,6 +139,10 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                       setImageUrl(match || raw);
                     }}
                   />
+                </div>
+                <div className="flex gap-2 flex-wrap w-full">
+                  <button type="button" className="px-3 py-2 border rounded" onClick={()=>setImageUrl(generateRandomAvataaarsUrl())}>אקראי</button>
+                  <a className="px-3 py-2 border rounded text-blue-700" href="https://getavataaars.com" target="_blank" rel="noreferrer">פתח את Get Avataaars</a>
                   <button type="button" className="px-3 py-2 border rounded" onClick={async()=>{
                     try { const t = await navigator.clipboard.readText(); const match = (t.match(/https?:\/\/avataaars\.io\/?\?[^"'<>\s]+/i) || [])[0]; setImageUrl(match || t || ''); } catch {}
                   }}>הדבק</button>

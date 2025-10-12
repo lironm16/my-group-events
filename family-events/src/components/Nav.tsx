@@ -39,7 +39,7 @@ export default function Nav() {
           <Link href="/family" className={linkCls('/family')}>משפחה</Link>
           {status === 'authenticated' && <a href="/settings" className={linkCls('/settings')}>הגדרות</a>}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {status === 'authenticated' && (
             <span className="hidden sm:inline text-sm text-gray-700 dark:text-gray-200 mr-2">
               {(() => {
@@ -50,6 +50,20 @@ export default function Nav() {
                 return `${g}${first ? ', ' + first : ''}`;
               })()}
             </span>
+          )}
+          {status === 'authenticated' && (
+            <a href="/settings" className="inline-flex items-center" aria-label="הגדרות">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={(() => {
+                  const img = ((session?.user as any)?.image as string | undefined) || '';
+                  if (img && /^https?:/i.test(img)) return img;
+                  return 'https://avataaars.io/?avatarStyle=Circle&topType=ShortHairShortFlat&accessoriesType=Blank&hairColor=BrownDark&facialHairType=Blank&clotheType=Hoodie&clotheColor=Blue03&eyeType=Happy&eyebrowType=Default&mouthType=Smile&skinColor=Light';
+                })()}
+                alt="avatar"
+                className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-700"
+              />
+            </a>
           )}
           {status === 'authenticated' && <GroupMenu />}
           <button onClick={toggle} className="px-2 py-1 rounded border text-sm dark:border-gray-700">

@@ -32,12 +32,14 @@ export const authOptions: NextAuthOptions = {
         (token as any).id = (user as any).id;
         (token as any).role = (user as any).role;
         (token as any).approved = (user as any).approved;
+        (token as any).image = (user as any).image;
       }
       return token;
     },
     async session({ session, token }) {
       (session.user as any).id = (token as any).id ?? token.sub;
       (session.user as any).role = (token as any).role;
+      (session.user as any).image = (token as any).image;
       return session;
     },
     async signIn({ user }) {
