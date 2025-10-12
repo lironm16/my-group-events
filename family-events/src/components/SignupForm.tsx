@@ -73,11 +73,12 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
     load();
   }, [code]);
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent, overrideImageUrl?: string) {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, password, nickname, groupId: groupId || null, email, imageUrl: imageUrl || null, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
+      const finalImageUrl = (overrideImageUrl ?? imageUrl) || null;
+      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, password, nickname, groupId: groupId || null, email, imageUrl: finalImageUrl, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
       if (res.ok) {
         // Try automatic login, then redirect to events
         const login = await signIn('credentials', { email: email.trim(), password, redirect: false });
@@ -96,7 +97,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   }
 
   return (
-    <main className="container-page max-w-md mx-auto space-y-4 px-3">
+    <main className="container-page max-w-md mx-auto space-y-4 px-3 overflow-x-hidden">
       <h1 className="text-2xl font-bold">הרשמה</h1>
       {error && <div className="text-sm text-red-600">{error}</div>}
       {step === 1 && (
@@ -124,17 +125,31 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="כינוי" value={nickname} onChange={e=>setNickname(e.target.value)} />
           <div className="space-y-2">
             <div className="text-sm text-gray-600">בחרו אווטאר</div>
-            <div className="flex items-center gap-3">
-              <img src={(imageUrl && imageUrl.trim()) || DEFAULT_AVATAAARS_URL} alt="avatar preview" className="w-20 h-20" />
-              <div className="flex flex-col gap-2">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full">
+              <img src={(imageUrl && imageUrl.trim()) || DEFAULT_AVATAAARS_URL} alt="avatar preview" className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border" />
+              <div className="flex flex-col gap-2 w-full">
                 <div className="flex gap-2 flex-wrap">
                   <button type="button" className="px-3 py-2 border rounded" onClick={()=>setImageUrl(generateRandomAvataaarsUrl())}>אקראי</button>
                   <a className="px-3 py-2 border rounded text-blue-700" href="https://getavataaars.com" target="_blank" rel="noreferrer">פתח את Get Avataaars</a>
                 </div>
-                <div className="flex gap-2 items-center">
-                  <input className="border rounded p-2 flex-1 min-w-[180px] bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="הדביקו כאן קישור Avataaars" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} />
-                  <button type="button" className="px-3 py-2 border rounded" onClick={()=>{ if (imageUrl) navigator.clipboard.writeText(imageUrl).catch(()=>{}); }}>העתק קישור</button>
+                <div className="flex gap-2 items-center flex-wrap w-full">
+                  <input
+                    className="border rounded p-2 flex-1 min-w-0 w-full sm:w-auto bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                    placeholder="הדביקו כאן קישור Avataaars או קוד SVG"
+                    value={imageUrl}
+                    onChange={e=>{
+                      const raw = e.target.value;
+                      const match = (raw.match(/https?:\/\/avataaars\.io\/?\?[^"'<>\s]+/i) || [])[0];
+                      setImageUrl(match || raw);
+                    }}
+                  />
+                  <button type="button" className="px-3 py-2 border rounded" onClick={async()=>{
+                    try { const t = await navigator.clipboard.readText(); const match = (t.match(/https?:\/\/avataaars\.io\/?\?[^"'<>\s]+/i) || [])[0]; setImageUrl(match || t || ''); } catch {}
+                  }}>הדבק</button>
+                  <button type="button" className="px-3 py-2 border rounded" onClick={()=>{ if (imageUrl) navigator.clipboard.writeText(imageUrl).catch(()=>{}); }}>העתק</button>
+                  <button type="button" className="px-3 py-2 border rounded" onClick={()=>setImageUrl('')}>נקה</button>
                 </div>
+                <div className="text-xs text-gray-500">טיפ: אפשר להדביק גם SVG מלא, נחלץ את קישור ה‑Avataaars מתוכו.</div>
               </div>
             </div>
           </div>
@@ -143,15 +158,22 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async()=>{ 
               if (!nickname.trim()) { setError('יש להזין כינוי'); return; }
               if (!(imageUrl && imageUrl.trim())) { 
-                // If user didn't paste anything, auto-pick a random avatar for them
                 const auto = generateRandomAvataaarsUrl();
                 setImageUrl(auto);
+                setError('');
+                if (!code) {
+                  const fakeEvent = { preventDefault: () => {} } as any;
+                  await submit(fakeEvent, auto);
+                  return;
+                }
+                setStep(3);
+                return;
               }
               setError('');
               // If no invite code provided, finish signup here (pending approval flow)
               if (!code) {
                 const fakeEvent = { preventDefault: () => {} } as any;
-                await submit(fakeEvent);
+                await submit(fakeEvent, imageUrl);
                 return;
               }
               setStep(3); 
