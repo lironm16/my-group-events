@@ -96,7 +96,6 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                 setStep(2);
               }}>הבא</button>
             </div>
-            <div className="text-xs text-gray-500">האימייל נבדק מיד — אם הוא תפוס, תראו את ההודעה כבר כאן.</div>
           </div>
         </div>
       )}
