@@ -3,6 +3,7 @@ import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import AvataaarsEditor from '@/components/AvataaarsEditor';
 import CopyButton from '@/components/CopyButton';
+import FormSubmit from '@/components/FormSubmit';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 // Theme toggles use a pure server form here to avoid client boundaries
@@ -51,7 +52,7 @@ async function InvitePanel({ familyId, isAdmin, inviteCode }: { familyId: string
       <h2 className="font-semibold">קישור הזמנה</h2>
       <div className="flex items-center gap-2">
         <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" defaultValue={url || '— אין קישור עדיין —'} readOnly />
-        <form action={regenerate}><button className="px-3 py-2 border rounded">צור קישור חדש</button></form>
+        <form action={regenerate}><FormSubmit>צור קישור חדש</FormSubmit></form>
         <CopyButton value={url || ''} label="העתק" />
       </div>
       <div className="text-xs text-gray-500">שתפו את הקישור כדי לאפשר הרשמה ללא הזנת קוד ידנית.</div>
