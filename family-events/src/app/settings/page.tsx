@@ -19,6 +19,7 @@ export default async function SettingsPage() {
     <main className="container-page space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">הגדרות</h1>
       <Approvals familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
+      <InvitePanel familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
       <ThemeSelectForm userId={user!.id} current={(user as any)?.theme as string | undefined} />
       <DefaultLocationForm userId={user!.id} current={(user as any)?.defaultLocation as string | undefined} />
       <NotifyRsvpForm userId={user!.id} current={Boolean((user as any)?.notifyRsvpEmails)} />
@@ -28,6 +29,31 @@ export default async function SettingsPage() {
       <AdminMembers familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
       <GroupForm userId={user!.id} currentGroupId={user?.group?.id ?? null} groups={groups} />
     </main>
+  );
+}
+async function InvitePanel({ familyId, isAdmin }: { familyId: string | null; isAdmin: boolean }) {
+  if (!isAdmin) return null;
+  // Fetch or create current invite
+  const res = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/family/invite`, { cache: 'no-store' });
+  if (!res.ok) return null;
+  const j = await res.json();
+  const code = j.inviteCode as string;
+  const url = `${process.env.NEXTAUTH_URL ?? ''}/signup?code=${encodeURIComponent(code)}`;
+  async function regenerate() {
+    'use server';
+    await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/family/invite`, { method: 'POST' });
+  }
+  return (
+    <div className="space-y-2">
+      <h2 className="font-semibold">קישור הזמנה</h2>
+      <div className="flex items-center gap-2">
+        <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" defaultValue={url} readOnly />
+        <form action={regenerate}><button className="px-3 py-2 border rounded">צור קישור חדש</button></form>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <button className="px-3 py-2 bg-blue-600 text-white rounded" formAction={async ()=>{ 'use server'; /* no-op */ }} onClick={async()=>{ 'use client'; try { await navigator.clipboard.writeText(url); } catch {} }}>העתק</button>
+      </div>
+      <div className="text-xs text-gray-500">שתפו את הקישור כדי לאפשר הרשמה ללא הזנת קוד ידנית.</div>
+    </div>
   );
 }
 
