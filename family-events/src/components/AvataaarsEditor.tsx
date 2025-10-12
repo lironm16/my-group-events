@@ -179,6 +179,8 @@ export default function AvataaarsEditor({ value, defaultValue, onChange, name, c
           <div className="flex gap-2 flex-wrap w-full">
             <button type="button" className="px-3 py-2 border rounded" onClick={() => setUrl(generateRandomAvataaarsUrl())}>אקראי</button>
             <a className="px-3 py-2 border rounded text-blue-700" href="https://getavataaars.com" target="_blank" rel="noreferrer">פתח את Get Avataaars</a>
+          </div>
+          <div className="flex gap-2 flex-wrap w-full">
             <button
               type="button"
               className="px-3 py-2 border rounded"
