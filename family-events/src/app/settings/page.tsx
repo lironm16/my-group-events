@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import AvataaarsEditor from '@/components/AvataaarsEditor';
 // Theme toggles use a pure server form here to avoid client boundaries
 
 export default async function SettingsPage() {
@@ -259,12 +260,9 @@ function ProfileForm({ userId, current }: { userId: string; current: { name: str
       <h2 className="font-semibold">פרופיל</h2>
       <input name="name" defaultValue={current.name} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="שם תצוגה" />
       <input name="email" defaultValue={current.email} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="אימייל" />
-      <div className="flex items-center gap-2">
-        <input name="image" defaultValue={current.image} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="קישור לתמונה" />
-      </div>
-      <div className="pt-2 border-t">
-        <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
-        
+      <div className="pt-2 border-t space-y-2">
+        <div className="text-sm text-gray-600">אווטאר</div>
+        <AvataaarsEditor defaultValue={current.image} name="image" />
       </div>
       <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
     </form>
