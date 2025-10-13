@@ -138,11 +138,15 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       )}
       {step === 3 && (
         <form onSubmit={submit} className="space-y-3">
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold">בחירת או יצירת קבוצה</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300">בחרו קבוצה קיימת להצטרף או צרו קבוצה חדשה.</p>
+          </div>
           {groups.length > 0 ? (
             <>
               <div className="grid grid-cols-1 gap-3">
                 {groups.map(g => (
-                  <label key={g.id} className={`border rounded p-3 cursor-pointer flex flex-col gap-2 ${groupId===g.id?'ring-2 ring-blue-500 bg-white dark:bg-gray-100 text-gray-900':'bg-white dark:bg-gray-900'} border-gray-200 dark:border-gray-800`}>
+                  <label key={g.id} className={`border rounded p-3 cursor-pointer flex flex-col gap-2 ${groupId===g.id?'ring-2 ring-blue-500 bg-white dark:bg-gray-100 text-gray-900':'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100'} border-gray-200 dark:border-gray-800`}>
                     <input type="radio" className="hidden" name="group" value={g.id} onChange={()=>setGroupId(g.id)} />
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium">{g.nickname}</span>
@@ -150,24 +154,24 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
                     {g.members && g.members.length > 0 ? (
                       <div className="flex flex-wrap gap-2 pl-11">
                         {g.members.map(m => (
-                          <span key={m.id} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs">
+                          <span key={m.id} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-100">
                             <img src={m.image && m.image.startsWith('http') ? m.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(m.name || 'user')}`} alt={m.name || ''} className="w-4 h-4" />
                             <span>{m.name || ''}</span>
                           </span>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-xs text-gray-500 pl-11">אין חברים עדיין</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 pl-11">אין חברים עדיין</div>
                     )}
                   </label>
                 ))}
               </div>
-              <div className="text-sm text-gray-500 pt-2">או צרו קבוצה חדשה:</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 pt-2">או צרו קבוצה חדשה:</div>
               <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="שם קבוצה (ייחודי)" value={newGroup} onChange={e=>{ setNewGroup(e.target.value); setGroupId(''); }} />
             </>
           ) : (
             <>
-              <div className="text-sm text-gray-500">אין קבוצות קיימות. צרו קבוצה חדשה:</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">אין קבוצות קיימות. צרו קבוצה חדשה:</div>
               <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="שם קבוצה (ייחודי)" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
             </>
           )}
