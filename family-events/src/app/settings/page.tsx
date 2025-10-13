@@ -1,6 +1,11 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import AvataaarsEditor from '@/components/AvataaarsEditor';
+import CopyButton from '@/components/CopyButton';
+import FormSubmit from '@/components/FormSubmit';
+import { headers } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 // Theme toggles use a pure server form here to avoid client boundaries
 
 export default async function SettingsPage() {
@@ -18,6 +23,7 @@ export default async function SettingsPage() {
     <main className="container-page space-y-6 max-w-xl">
       <h1 className="text-2xl font-bold">הגדרות</h1>
       <Approvals familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
+      <InvitePanel familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} inviteCode={user?.family?.inviteCode ?? null} />
       <ThemeSelectForm userId={user!.id} current={(user as any)?.theme as string | undefined} />
       <DefaultLocationForm userId={user!.id} current={(user as any)?.defaultLocation as string | undefined} />
       <NotifyRsvpForm userId={user!.id} current={Boolean((user as any)?.notifyRsvpEmails)} />
@@ -27,6 +33,30 @@ export default async function SettingsPage() {
       <AdminMembers familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
       <GroupForm userId={user!.id} currentGroupId={user?.group?.id ?? null} groups={groups} />
     </main>
+  );
+}
+async function InvitePanel({ familyId, isAdmin, inviteCode }: { familyId: string | null; isAdmin: boolean; inviteCode: string | null }) {
+  if (!isAdmin) return null;
+  const h = headers();
+  const proto = h.get('x-forwarded-proto') ?? 'https';
+  const host = h.get('x-forwarded-host') ?? h.get('host') ?? '';
+  const base = (process.env.NEXTAUTH_URL && process.env.NEXTAUTH_URL.trim()) ? process.env.NEXTAUTH_URL : (host ? `${proto}://${host}` : '');
+  const url = inviteCode && base ? `${base}/signup?code=${encodeURIComponent(inviteCode)}` : '';
+  async function regenerate() {
+    'use server';
+    await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/family/invite`, { method: 'POST' });
+    revalidatePath('/settings');
+  }
+  return (
+    <div className="space-y-2">
+      <h2 className="font-semibold">קישור הזמנה</h2>
+      <div className="flex items-center gap-2">
+        <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" defaultValue={url || '— אין קישור עדיין —'} readOnly />
+        <form action={regenerate}><FormSubmit>צור קישור חדש</FormSubmit></form>
+        <CopyButton value={url || ''} label="העתק" />
+      </div>
+      <div className="text-xs text-gray-500">שתפו את הקישור כדי לאפשר הרשמה ללא הזנת קוד ידנית.</div>
+    </div>
   );
 }
 
@@ -126,8 +156,8 @@ async function Approvals({ familyId, isAdmin }: { familyId: string | null; isAdm
           <li key={u.id} className="flex items-center justify-between text-sm">
             <span>{u.name ?? u.email ?? u.id}</span>
             <div className="flex gap-2">
-              <form action={async ()=>act(u.id,'approve')}><button className="px-2 py-1 border rounded">אישור</button></form>
-              <form action={async ()=>act(u.id,'deny')}><button className="px-2 py-1 border rounded">דחייה</button></form>
+              <form action={act.bind(null, u.id, 'approve')}><button className="px-2 py-1 border rounded">אישור</button></form>
+              <form action={act.bind(null, u.id, 'deny')}><button className="px-2 py-1 border rounded">דחייה</button></form>
             </div>
           </li>
         ))}
@@ -153,11 +183,11 @@ async function AdminMembers({ familyId, isAdmin }: { familyId: string | null; is
             <span>{m.name ?? m.email ?? m.id} · {m.role}</span>
             <div className="flex gap-2">
               {m.role !== 'admin' ? (
-                <form action={async () => doMemberAction(m.id, 'promote')}><button className="px-2 py-1 border rounded">הפוך למנהל</button></form>
+                <form action={doMemberAction.bind(null, m.id, 'promote')}><button className="px-2 py-1 border rounded">הפוך למנהל</button></form>
               ) : (
-                <form action={async () => doMemberAction(m.id, 'demote')}><button className="px-2 py-1 border rounded">הפוך לחבר</button></form>
+                <form action={doMemberAction.bind(null, m.id, 'demote')}><button className="px-2 py-1 border rounded">הפוך לחבר</button></form>
               )}
-              <form action={async () => doMemberAction(m.id, 'remove')}><button className="px-2 py-1 border rounded">הסרה</button></form>
+              <form action={doMemberAction.bind(null, m.id, 'remove')}><button className="px-2 py-1 border rounded">הסרה</button></form>
             </div>
           </li>
         ))}
@@ -244,18 +274,24 @@ function ProfileForm({ userId, current }: { userId: string; current: { name: str
             return;
           }
         }
-        await prisma.user.update({ where: { id: userId }, data: { name: name || null, email: email || null, image: image || null } });
+        const updated = await prisma.user.update({ where: { id: userId }, data: { name: name || null, email: email || null, image: image || null } });
+        try {
+          const { getServerSession } = await import('next-auth');
+          const { authOptions } = await import('@/auth');
+          const session = await getServerSession(authOptions);
+          if (session) {
+            // Refresh JWT by updating token data on next request; best effort only
+            // Client should re-fetch /api/users/me to update UI immediately
+          }
+        } catch {}
       }}
     >
       <h2 className="font-semibold">פרופיל</h2>
       <input name="name" defaultValue={current.name} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="שם תצוגה" />
       <input name="email" defaultValue={current.email} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="אימייל" />
-      <div className="flex items-center gap-2">
-        <input name="image" defaultValue={current.image} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="קישור לתמונה" />
-      </div>
-      <div className="pt-2 border-t">
-        <div className="text-sm text-gray-600 mb-1">או לבחור מכל גלריית DiceBear</div>
-        
+      <div className="pt-2 border-t space-y-2">
+        <div className="text-sm text-gray-600">אווטאר</div>
+        <AvataaarsEditor defaultValue={current.image} name="image" showExternalLink />
       </div>
       <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
     </form>

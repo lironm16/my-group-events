@@ -2,16 +2,15 @@
 import { useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import AvataaarsEditor, { generateRandomAvataaarsUrl } from '@/components/AvataaarsEditor';
 
 export default function SignupForm({ initialCode }: { initialCode: string }) {
   const router = useRouter();
-  const [code] = useState(initialCode);
+  const [code, setCode] = useState(initialCode);
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [icon, setIcon] = useState<'mom' | 'dad' | 'custom' | ''>('');
-  const [customSeed, setCustomSeed] = useState<string>('custom');
   const [groupId, setGroupId] = useState<string>('');
   const [newGroup, setNewGroup] = useState('');
   const [groups, setGroups] = useState<{ id: string; nickname: string; members?: { id: string; name: string | null; image: string | null }[] }[]>([]);
@@ -21,6 +20,8 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   const [uploading, setUploading] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [error, setError] = useState<string>('');
+
+  // Avatar generation imported from AvataaarsEditor
 
   useEffect(() => {
     async function load() {
@@ -40,11 +41,12 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
     load();
   }, [code]);
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent, overrideImageUrl?: string) {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, password, nickname, icon, groupId: groupId || null, email, imageUrl: imageUrl || null, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
+      const finalImageUrl = (overrideImageUrl ?? imageUrl) || null;
+      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, password, nickname, groupId: groupId || null, email, imageUrl: finalImageUrl, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
       if (res.ok) {
         // Try automatic login, then redirect to events
         const login = await signIn('credentials', { email: email.trim(), password, redirect: false });
@@ -63,7 +65,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   }
 
   return (
-    <main className="container-page max-w-md mx-auto space-y-4 px-3">
+    <main className="container-page max-w-md mx-auto space-y-4 px-3 overflow-x-hidden">
       <h1 className="text-2xl font-bold">הרשמה</h1>
       {error && <div className="text-sm text-red-600">{error}</div>}
       {step === 1 && (
@@ -73,16 +75,27 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
           )}
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="אימייל" value={email} onChange={e=>setEmail(e.target.value)} />
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="סיסמה" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-          <div className="flex gap-2 justify-between">
-            <span />
-            <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async ()=>{
-              const missing: string[] = [];
-              if (!email.trim()) missing.push('אימייל');
-              if (!password.trim()) missing.push('סיסמה');
-              if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
-              setError('');
-              setStep(2);
-            }}>הבא</button>
+          <div className="space-y-2">
+            <div className="flex gap-2 justify-between">
+              <span />
+              <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async ()=>{
+                const missing: string[] = [];
+                const emailTrim = email.trim().toLowerCase();
+                if (!emailTrim) missing.push('אימייל');
+                if (!password.trim()) missing.push('סיסמה');
+                if (missing.length) { setError(`שדות חסרים: ${missing.join(', ')}`); return; }
+                // early email availability check
+                try {
+                  const res = await fetch(`/api/users/check-email?email=${encodeURIComponent(emailTrim)}`);
+                  if (res.ok) {
+                    const j = await res.json();
+                    if (!j.available) { setError('האימייל כבר בשימוש'); return; }
+                  }
+                } catch {}
+                setError('');
+                setStep(2);
+              }}>הבא</button>
+            </div>
           </div>
         </div>
       )}
@@ -90,42 +103,32 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
         <div className="space-y-3">
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="כינוי" value={nickname} onChange={e=>setNickname(e.target.value)} />
           <div className="space-y-2">
-            <div className="text-sm text-gray-600">בחרו אייקון</div>
-            <div className="grid grid-cols-3 gap-3">
-              {([
-                { key: 'mom', label: 'אישה', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=Maria' },
-                { key: 'dad', label: 'גבר', url: 'https://api.dicebear.com/9.x/adventurer/svg?seed=la86p9t0' },
-                { key: 'custom', label: 'מותאם', url: `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(customSeed)}` },
-              ] as const).map((opt) => (
-                <label key={opt.key} className={`flex flex-col items-center gap-1 p-2 border rounded cursor-pointer ${icon===opt.key?'ring-2 ring-blue-500':''}`}>
-                  <input className="hidden" type="radio" name="icon" value={opt.key} onChange={()=>{ setIcon(opt.key); setImageUrl(opt.url); }} />
-                  <img src={opt.url} alt={opt.label} className="w-16 h-16" />
-                  <span className="text-xs text-gray-700">{opt.label}</span>
-                </label>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button type="button" className="px-3 py-2 border rounded" onClick={()=>{
-                const rnd = Math.random().toString(36).slice(2,10);
-                setCustomSeed(rnd);
-                setIcon('custom');
-                const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(rnd)}`;
-                setImageUrl(u);
-              }}>אקראי</button>
-              <input className="border rounded p-2 flex-1 min-w-[160px] bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="מפתח מותאם" value={customSeed} onChange={e=>{ const v = e.target.value; setCustomSeed(v); setIcon('custom'); const u = `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(v)}`; setImageUrl(u); }} />
-              <a className="text-sm text-blue-600 underline" href="https://www.dicebear.com/playground?style=adventurer" target="_blank" rel="noreferrer">עיון בגלריה</a>
-            </div>
+            <div className="text-sm text-gray-600">בחרו אווטאר</div>
+            <AvataaarsEditor value={imageUrl} onChange={setImageUrl} showExternalLink />
           </div>
           <div className="flex gap-2 justify-between">
             <button className="px-3 py-2 border rounded" onClick={()=>setStep(1)}>חזרה</button>
             <button className="px-3 py-2 bg-blue-600 text-white rounded" onClick={async()=>{ 
               if (!nickname.trim()) { setError('יש להזין כינוי'); return; }
-              if (!icon) { setError('יש לבחור אייקון'); return; }
+              if (!(imageUrl && imageUrl.trim())) { 
+                const auto = generateRandomAvataaarsUrl();
+                setImageUrl(auto);
+                setError('');
+                if (!code) {
+                  if (!isFirst) { setError('כדי להצטרף למשפחה נדרש קוד הזמנה'); return; }
+                  const fakeEvent = { preventDefault: () => {} } as any;
+                  await submit(fakeEvent, auto);
+                  return;
+                }
+                setStep(3);
+                return;
+              }
               setError('');
-              // If no invite code provided, finish signup here (pending approval flow)
+              // If no invite code: first user can finish; others require invite code
               if (!code) {
+                if (!isFirst) { setError('כדי להצטרף למשפחה נדרש קוד הזמנה'); return; }
                 const fakeEvent = { preventDefault: () => {} } as any;
-                await submit(fakeEvent);
+                await submit(fakeEvent, imageUrl);
                 return;
               }
               setStep(3); 
