@@ -16,22 +16,38 @@ type EventCard = {
   rsvps: { status: string; userId?: string }[];
 };
 
-export default async function EventsPage({ searchParams }: { searchParams?: { page?: string } }) {
+export default async function EventsPage({ searchParams }: { searchParams?: { page?: string; family?: string } }) {
   const session = await getServerSession(authOptions);
   const authorized = !!session?.user?.email;
   const page = Number(searchParams?.page ?? '1') || 1;
   const pageSize = 12;
   let events: EventCard[] = [];
   let total = 0;
-  let needsOnboarding = false;
+  const filterFamilyId = (searchParams?.family ?? '').trim();
   if (authorized) {
     const user = await prisma.user.findFirst({ where: { email: session!.user!.email as string } });
     if (user) {
-      if (user.approved && user.familyId && !user.groupId) needsOnboarding = true;
-      const where = { OR: [
-        { hostId: user.id },
-        { familyId: user.familyId ?? undefined, visibleToAll: true }
-      ] } as any;
+      // Collect all families the user belongs to
+      const memberships = await prisma.familyMembership.findMany({ where: { userId: user.id }, select: { familyId: true } });
+      const familyIds = new Set<string>(memberships.map((m) => m.familyId));
+      if (user.familyId) familyIds.add(user.familyId);
+
+      const familyList = Array.from(familyIds);
+      const limitToFamily = filterFamilyId && familyIds.has(filterFamilyId) ? filterFamilyId : '';
+
+      const orClauses: any[] = [];
+      // Events I host
+      orClauses.push(limitToFamily ? { hostId: user.id, familyId: limitToFamily } : { hostId: user.id });
+      // Events I'm invited to (RSVP exists)
+      orClauses.push(limitToFamily ? { familyId: limitToFamily, rsvps: { some: { userId: user.id } } } : { rsvps: { some: { userId: user.id } } });
+      // Public events in my families
+      if (limitToFamily) {
+        orClauses.push({ familyId: limitToFamily, visibleToAll: true });
+      } else if (familyList.length > 0) {
+        orClauses.push({ familyId: { in: familyList }, visibleToAll: true });
+      }
+
+      const where = { OR: orClauses } as any;
       total = await prisma.event.count({ where });
       const rows = await prisma.event.findMany({
         where,
@@ -55,11 +71,6 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
   }
   return (
     <main className="container-page space-y-4">
-      {needsOnboarding && (
-        <div className="p-3 rounded border border-yellow-300 bg-yellow-50 text-yellow-900">
-          לא בחרתם קבוצה עדיין. <Link className="underline" href="/onboarding/group">בחירת קבוצה</Link>
-        </div>
-      )}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">אירועים</h1>
         {authorized ? (
