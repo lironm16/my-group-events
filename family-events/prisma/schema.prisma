@@ -15,6 +15,7 @@ model Family {
   members    User[]
   groups     Group[]
   events     Event[]
+  memberships FamilyMembership[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -44,6 +45,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   groupMemberships GroupMembership[]
+  familyMemberships FamilyMembership[]
   sentMessages     Message[]       @relation("MessageSender")
   messageReads     MessageRead[]
 }
