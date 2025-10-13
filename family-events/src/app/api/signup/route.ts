@@ -63,6 +63,12 @@ export async function POST(req: Request) {
         approved: shouldApprove,
       },
     });
+    // Record membership for the created/selected family when available
+    if (family?.id) {
+      try {
+        await prisma.familyMembership.create({ data: { userId: user.id, familyId: family.id, role: isFirst ? 'admin' : 'member' } });
+      } catch {}
+    }
     if (isFirst) {
       // Ensure first user is approved and admin for immediate access
       try {
