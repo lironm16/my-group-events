@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import DirtySubmit from '@/components/DirtySubmit';
 import { revalidatePath } from 'next/cache';
 
 export default async function SettingsPrefsThemePage() {
@@ -37,7 +38,7 @@ export default async function SettingsPrefsThemePage() {
           <option value="light">בהיר</option>
           <option value="dark">כהה</option>
         </select>
-        <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
+        <DirtySubmit names={["mode"]} initial={{ mode: String((me as any)?.theme ?? 'light') }} />
       </form>
     </main>
   );

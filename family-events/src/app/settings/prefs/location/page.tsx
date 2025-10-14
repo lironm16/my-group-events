@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import DirtySubmit from '@/components/DirtySubmit';
 import { revalidatePath } from 'next/cache';
 
 export default async function SettingsPrefsLocationPage() {
@@ -34,7 +35,7 @@ export default async function SettingsPrefsLocationPage() {
       </div>
       <form className="space-y-2" action={update}>
         <input name="loc" defaultValue={(me as any)?.defaultLocation ?? ''} placeholder="למשל: הבית, חיפה, הפארק..." className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" />
-        <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
+        <DirtySubmit names={["loc"]} initial={{ loc: String((me as any)?.defaultLocation ?? '') }} />
       </form>
     </main>
   );

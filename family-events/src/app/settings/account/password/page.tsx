@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import DirtySubmit from '@/components/DirtySubmit';
 import { revalidatePath } from 'next/cache';
 
 export default async function SettingsAccountPasswordPage() {
@@ -43,8 +44,8 @@ export default async function SettingsAccountPasswordPage() {
         <Link className="px-3 py-2 rounded border" href="/settings">חזרה להגדרות</Link>
       </div>
       <form className="space-y-2" action={update}>
-        <input name="password" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="סיסמה חדשה" type="password" />
-        <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
+        <input name="password" defaultValue="" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="סיסמה חדשה" type="password" />
+        <DirtySubmit names={["password"]} initial={{ password: "" }} />
       </form>
     </main>
   );

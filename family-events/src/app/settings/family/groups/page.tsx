@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import DirtySubmit from '@/components/DirtySubmit';
 
 export default async function SettingsFamilyGroupsPage() {
   const session = await getServerSession(authOptions);
@@ -62,12 +63,12 @@ export default async function SettingsFamilyGroupsPage() {
               <option key={g.id} value={g.id}>{g.nickname}</option>
             ))}
           </select>
-          <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירת בחירה</button>
+          <DirtySubmit names={["groupId"]} initial={{ groupId: me.group?.id ?? '' }} />
         </form>
         <div className="text-sm text-gray-500">או צור קבוצה חדשה:</div>
         <form className="space-y-2" action={create}>
           <input name="nickname" placeholder="כינוי לקבוצה" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" />
-          <button className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">יצירת קבוצה ושיוך</button>
+          <DirtySubmit names={["nickname"]} initial={{ nickname: '' }} />
         </form>
       </div>
     </main>

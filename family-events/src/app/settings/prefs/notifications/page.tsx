@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import DirtySubmit from '@/components/DirtySubmit';
 import { revalidatePath } from 'next/cache';
 
 export default async function SettingsPrefsNotificationsPage() {
@@ -38,7 +39,7 @@ export default async function SettingsPrefsNotificationsPage() {
           <span>קבל מייל כשיש שינוי באישורי הגעה לאירועים שלי</span>
         </label>
         <div>
-          <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
+          <DirtySubmit names={["on"]} initial={{ on: Boolean((me as any)?.notifyRsvpEmails) ? 'on' : '' }} />
         </div>
       </form>
     </main>

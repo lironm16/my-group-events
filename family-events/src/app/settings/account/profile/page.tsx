@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import AvataaarsEditor from '@/components/AvataaarsEditor';
+import DirtySubmit from '@/components/DirtySubmit';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
 
@@ -47,7 +48,7 @@ export default async function SettingsAccountProfilePage() {
           <div className="text-sm text-gray-600">אווטאר</div>
           <AvataaarsEditor defaultValue={current.image} name="image" showExternalLink />
         </div>
-        <button className="px-3 py-2 bg-blue-600 text-white rounded">שמירה</button>
+        <DirtySubmit names={["name","email","image"]} initial={{ name: current.name, email: current.email, image: current.image }} updateSessionFields={["name","email","image"]} />
       </form>
     </main>
   );
