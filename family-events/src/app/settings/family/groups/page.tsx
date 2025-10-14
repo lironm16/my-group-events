@@ -29,15 +29,23 @@ export default async function SettingsFamilyGroupsPage() {
   async function select(fd: FormData) {
     'use server';
     const groupId = String(fd.get('groupId') ?? '');
-    if (groupId) await prisma.user.update({ where: { id: me.id }, data: { groupId } });
+    const sessionInner = await getServerSession(authOptions);
+    if (!sessionInner?.user?.email) return;
+    const meInner = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
+    if (!meInner) return;
+    if (groupId) await prisma.user.update({ where: { id: meInner.id }, data: { groupId } });
   }
 
   async function create(fd: FormData) {
     'use server';
     const nickname = String(fd.get('nickname') ?? '').trim();
     if (!nickname) return;
-    const group = await prisma.group.create({ data: { nickname, familyId: me.familyId! } });
-    await prisma.user.update({ where: { id: me.id }, data: { groupId: group.id } });
+    const sessionInner = await getServerSession(authOptions);
+    if (!sessionInner?.user?.email) return;
+    const meInner = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
+    if (!meInner?.familyId) return;
+    const group = await prisma.group.create({ data: { nickname, familyId: meInner.familyId } });
+    await prisma.user.update({ where: { id: meInner.id }, data: { groupId: group.id } });
   }
 
   return (

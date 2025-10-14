@@ -19,7 +19,9 @@ export default async function SettingsAccountProfilePage() {
 
   async function update(fd: FormData) {
     'use server';
-    const me = await prisma.user.findFirst({ where: { email: session.user!.email! } });
+    const sessionInner = await getServerSession(authOptions);
+    if (!sessionInner?.user?.email) return;
+    const me = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
     if (!me) return;
     const name = String(fd.get('name') ?? '').trim();
     const email = String(fd.get('email') ?? '').trim().toLowerCase();

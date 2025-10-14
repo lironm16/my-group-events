@@ -17,7 +17,10 @@ export default async function SettingsFamilyNewPage() {
 
   async function create(fd: FormData) {
     'use server';
-    if (!me) return;
+    const sessionInner = await getServerSession(authOptions);
+    if (!sessionInner?.user?.email) return;
+    const meInner = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
+    if (!meInner) return;
     const name = String(fd.get('name') ?? '').trim() || 'משפחה חדשה';
     function generateCode(length = 8) {
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -32,7 +35,7 @@ export default async function SettingsFamilyNewPage() {
       code = generateCode();
     }
     const family = await prisma.family.create({ data: { name, inviteCode: code } });
-    await prisma.user.update({ where: { id: me.id }, data: { familyId: family.id, groupId: null } });
+    await prisma.user.update({ where: { id: meInner.id }, data: { familyId: family.id, groupId: null } });
     revalidatePath('/settings/family/new');
   }
 

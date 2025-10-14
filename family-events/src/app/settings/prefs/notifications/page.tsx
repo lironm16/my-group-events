@@ -18,8 +18,11 @@ export default async function SettingsPrefsNotificationsPage() {
   async function update(fd: FormData) {
     'use server';
     const on = String(fd.get('on') ?? 'off') === 'on';
-    if (!me) return;
-    await prisma.user.update({ where: { id: me.id }, data: { notifyRsvpEmails: on } });
+    const sessionInner = await getServerSession(authOptions);
+    if (!sessionInner?.user?.email) return;
+    const meInner = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
+    if (!meInner) return;
+    await prisma.user.update({ where: { id: meInner.id }, data: { notifyRsvpEmails: on } });
     revalidatePath('/settings/prefs/notifications');
   }
 

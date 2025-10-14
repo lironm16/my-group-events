@@ -42,7 +42,11 @@ export default async function SettingsFamilyNamePage() {
     'use server';
     const name = String(fd.get('name') ?? '').trim();
     if (!name) return;
-    await prisma.family.update({ where: { id: me.familyId! }, data: { name } });
+    const sessionInner = await getServerSession(authOptions);
+    if (!sessionInner?.user?.email) return;
+    const meInner = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
+    if (!meInner?.familyId) return;
+    await prisma.family.update({ where: { id: meInner.familyId }, data: { name } });
   }
 
   return (

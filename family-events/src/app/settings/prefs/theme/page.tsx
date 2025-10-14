@@ -18,8 +18,11 @@ export default async function SettingsPrefsThemePage() {
   async function update(fd: FormData) {
     'use server';
     const mode = String(fd.get('mode') ?? 'light');
-    if (!me) return;
-    await prisma.user.update({ where: { id: me.id }, data: { theme: mode } });
+    const sessionInner = await getServerSession(authOptions);
+    if (!sessionInner?.user?.email) return;
+    const meInner = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
+    if (!meInner) return;
+    await prisma.user.update({ where: { id: meInner.id }, data: { theme: mode } });
     revalidatePath('/settings/prefs/theme');
   }
 

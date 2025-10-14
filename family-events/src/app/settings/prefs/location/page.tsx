@@ -18,8 +18,11 @@ export default async function SettingsPrefsLocationPage() {
   async function update(fd: FormData) {
     'use server';
     const loc = String(fd.get('loc') ?? '').trim();
-    if (!me) return;
-    await prisma.user.update({ where: { id: me.id }, data: { defaultLocation: loc || null } });
+    const sessionInner = await getServerSession(authOptions);
+    if (!sessionInner?.user?.email) return;
+    const meInner = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
+    if (!meInner) return;
+    await prisma.user.update({ where: { id: meInner.id }, data: { defaultLocation: loc || null } });
     revalidatePath('/settings/prefs/location');
   }
 

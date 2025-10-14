@@ -26,9 +26,13 @@ export default async function SettingsAccountPasswordPage() {
     'use server';
     const password = String(fd.get('password') ?? '');
     if (!password) return;
+    const sessionInner = await getServerSession(authOptions);
+    if (!sessionInner?.user?.email) return;
+    const meInner = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
+    if (!meInner) return;
     const bcrypt = (await import('bcryptjs')).default;
     const hash = await bcrypt.hash(password, 10);
-    await prisma.user.update({ where: { id: me.id }, data: { passwordHash: hash } });
+    await prisma.user.update({ where: { id: meInner.id }, data: { passwordHash: hash } });
     revalidatePath('/settings/account/password');
   }
 
