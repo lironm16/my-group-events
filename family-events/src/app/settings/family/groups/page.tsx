@@ -27,26 +27,22 @@ export default async function SettingsFamilyGroupsPage() {
 
   const groups = await prisma.group.findMany({ where: { familyId: me.familyId }, orderBy: { createdAt: 'asc' } });
 
-  async function select(fd: FormData) {
+  async function save(fd: FormData) {
     'use server';
-    const groupId = String(fd.get('groupId') ?? '');
-    const sessionInner = await getServerSession(authOptions);
-    if (!sessionInner?.user?.email) return;
-    const meInner = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
-    if (!meInner) return;
-    if (groupId) await prisma.user.update({ where: { id: meInner.id }, data: { groupId } });
-  }
-
-  async function create(fd: FormData) {
-    'use server';
-    const nickname = String(fd.get('nickname') ?? '').trim();
-    if (!nickname) return;
+    const mode = String(fd.get('mode') ?? 'select');
     const sessionInner = await getServerSession(authOptions);
     if (!sessionInner?.user?.email) return;
     const meInner = await prisma.user.findFirst({ where: { email: sessionInner.user.email } });
     if (!meInner?.familyId) return;
-    const group = await prisma.group.create({ data: { nickname, familyId: meInner.familyId } });
-    await prisma.user.update({ where: { id: meInner.id }, data: { groupId: group.id } });
+    if (mode === 'create') {
+      const nickname = String(fd.get('nickname') ?? '').trim();
+      if (!nickname) return;
+      const group = await prisma.group.create({ data: { nickname, familyId: meInner.familyId } });
+      await prisma.user.update({ where: { id: meInner.id }, data: { groupId: group.id } });
+    } else {
+      const groupId = String(fd.get('groupId') ?? '');
+      if (groupId) await prisma.user.update({ where: { id: meInner.id }, data: { groupId } });
+    }
   }
 
   return (
@@ -55,20 +51,28 @@ export default async function SettingsFamilyGroupsPage() {
         <h1 className="text-2xl font-bold">קבוצה</h1>
         <Link className="px-3 py-2 rounded border" href="/settings">חזרה להגדרות</Link>
       </div>
-      <div className="space-y-2">
-        <form className="space-y-2" action={select}>
-          <select name="groupId" defaultValue={me.group?.id ?? ''} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
-            <option value="">— לבחור קבוצה —</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>{g.nickname}</option>
-            ))}
-          </select>
-          <DirtySubmit names={["groupId"]} initial={{ groupId: me.group?.id ?? '' }} />
-        </form>
-        <div className="text-sm text-gray-500">או צור קבוצה חדשה:</div>
-        <form className="space-y-2" action={create}>
-          <input name="nickname" placeholder="כינוי לקבוצה" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" />
-          <DirtySubmit names={["nickname"]} initial={{ nickname: '' }} />
+      <div className="space-y-3">
+        <form className="space-y-3" action={save}>
+          <div className="space-y-2">
+            <label className="inline-flex items-center gap-2">
+              <input type="radio" name="mode" value="select" defaultChecked />
+              <span>בחירת קבוצה קיימת</span>
+            </label>
+            <select name="groupId" defaultValue={me.group?.id ?? ''} className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+              <option value="">— לבחור קבוצה —</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>{g.nickname}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="inline-flex items-center gap-2">
+              <input type="radio" name="mode" value="create" />
+              <span>יצירת קבוצה חדשה</span>
+            </label>
+            <input name="nickname" placeholder="כינוי לקבוצה" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" />
+          </div>
+          <DirtySubmit names={["mode","groupId","nickname"]} initial={{ mode: 'select', groupId: me.group?.id ?? '', nickname: '' }} />
         </form>
       </div>
     </main>

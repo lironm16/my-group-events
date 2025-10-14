@@ -140,6 +140,7 @@ export function generateRandomAvataaarsUrl(): string {
 export default function AvataaarsEditor({ value, defaultValue, onChange, name, className, showExternalLink = false }: Props) {
   const isControlled = typeof value === "string";
   const [internal, setInternal] = useState<string>(defaultValue ?? "");
+  const hiddenRef = useRef<HTMLInputElement | null>(null);
 
   const current = isControlled ? (value as string) : internal;
 
@@ -151,6 +152,15 @@ export default function AvataaarsEditor({ value, defaultValue, onChange, name, c
   function setUrl(next: string) {
     if (onChange) onChange(next);
     if (!isControlled) setInternal(next);
+    // Notify forms that a named hidden input changed, so dirty-tracking can react
+    if (name && hiddenRef.current) {
+      try {
+        // Ensure the hidden input's value is in sync before dispatching event
+        hiddenRef.current.value = next;
+        hiddenRef.current.dispatchEvent(new Event('input', { bubbles: true }));
+        hiddenRef.current.dispatchEvent(new Event('change', { bubbles: true }));
+      } catch {}
+    }
   }
 
   function handleChange(raw: string) {
@@ -175,7 +185,7 @@ export default function AvataaarsEditor({ value, defaultValue, onChange, name, c
               value={current}
               onChange={(e) => handleChange(e.target.value)}
             />
-            {name ? <input type="hidden" name={name} value={current} /> : null}
+            {name ? <input ref={hiddenRef} type="hidden" name={name} value={current} /> : null}
           </div>
           <div className="flex gap-2 flex-wrap w-full">
             <button type="button" className="px-3 py-2 border rounded" onClick={() => setUrl(generateRandomAvataaarsUrl())}>אקראי</button>

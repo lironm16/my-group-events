@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   let finalGroupId = groupId ?? undefined;
   // If no family via code: create a family ONLY for the very first user.
   if (!family && isFirst) {
-    const name = (familyName && familyName.trim()) || (nickname && nickname.trim()) || 'המשפחה שלי';
+    const name = (familyName && familyName.trim()) || 'המשפחה שלי';
     // Try to generate a unique invite code with a few attempts
     let created: { id: string } | null = null;
     for (let i = 0; i < 5 && !created; i++) {
