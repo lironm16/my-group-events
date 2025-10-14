@@ -56,6 +56,9 @@ function CreateNewFamilyForm({ userId }: { userId: string }) {
     }
     const family = await prisma.family.create({ data: { name, inviteCode: code } });
     await prisma.user.update({ where: { id: userId }, data: { familyId: family.id, groupId: null } });
+    try {
+      await prisma.familyMembership.create({ data: { userId, familyId: family.id, role: 'admin' } });
+    } catch {}
     // refresh settings
     revalidatePath('/settings');
   }
