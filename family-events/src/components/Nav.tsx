@@ -13,7 +13,7 @@ export default function Nav() {
   const linkCls = (href: string) =>
     [
       'px-2 py-1 rounded transition-colors',
-      pathname === href
+      pathname === href || pathname.startsWith(`${href}/`)
         ? 'bg-blue-600 text-white'
         : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800',
     ].join(' ');
@@ -37,7 +37,7 @@ export default function Nav() {
             <a href="/events/new" className="px-2 py-1 bg-green-600 text-white rounded">יצירת אירוע</a>
           )}
           <Link href="/family" className={linkCls('/family')}>משפחה</Link>
-          {status === 'authenticated' && <a href="/settings" className={linkCls('/settings')}>הגדרות</a>}
+          {status === 'authenticated' && <Link href="/settings" className={linkCls('/settings')}>הגדרות</Link>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {status === 'authenticated' && (
@@ -52,7 +52,7 @@ export default function Nav() {
             </span>
           )}
           {status === 'authenticated' && (
-            <a href="/settings" className="inline-flex items-center" aria-label="הגדרות">
+            <Link href="/settings" className="inline-flex items-center" aria-label="הגדרות">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={(() => {
@@ -63,7 +63,7 @@ export default function Nav() {
                 alt="avatar"
                 className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-700"
               />
-            </a>
+            </Link>
           )}
           {status === 'authenticated' && <FamilyMenu />}
           <button onClick={toggle} className="px-2 py-1 rounded border text-sm dark:border-gray-700">
