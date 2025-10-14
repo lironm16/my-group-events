@@ -15,6 +15,7 @@ model Family {
   members    User[]
   groups     Group[]
   events     Event[]
+  memberships FamilyMembership[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -44,6 +45,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   groupMemberships GroupMembership[]
+  familyMemberships FamilyMembership[]
   sentMessages     Message[]       @relation("MessageSender")
   messageReads     MessageRead[]
 }
@@ -202,5 +204,19 @@ model MessageRead {
   readAt     DateTime @default(now())
 
   @@unique([messageId, userId])
+  @@index([userId])
+}
+
+model FamilyMembership {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  family    Family   @relation(fields: [familyId], references: [id])
+  familyId  String
+  role      String   @default("member")
+  createdAt DateTime @default(now())
+
+  @@unique([userId, familyId])
+  @@index([familyId])
   @@index([userId])
 }

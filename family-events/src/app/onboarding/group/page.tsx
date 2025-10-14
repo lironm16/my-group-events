@@ -55,7 +55,8 @@ export default async function OnboardingGroupPage() {
 
   return (
     <main className="container-page space-y-4 max-w-4xl">
-      <h1 className="text-2xl font-bold">בחירת קבוצה</h1>
+      <h1 className="text-2xl font-bold">בחירת או יצירת קבוצה</h1>
+      <p className="text-gray-600 dark:text-gray-300">בחרו קבוצה קיימת להצטרף או צרו קבוצה חדשה, ואז אשרו.</p>
       <div className="space-y-2">
         <h2 className="font-semibold">בחרו קבוצה קיימת</h2>
         {groups.length === 0 ? (
@@ -72,18 +73,18 @@ export default async function OnboardingGroupPage() {
                   {g.members.length > 0 ? (
                     <div className="flex flex-wrap justify-center gap-2">
                       {g.members.slice(0, 6).map((m) => (
-                        <span key={m.id} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                        <span key={m.id} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-100">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={resolveUserAvatar(m.image, m.name)} alt={m.name || ''} className="w-4 h-4" />
                           <span>{m.name || ''}</span>
                         </span>
                       ))}
                       {g.members.length > 6 && (
-                        <span className="text-xs text-gray-500">+{g.members.length - 6}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">+{g.members.length - 6}</span>
                       )}
                     </div>
                   ) : (
-                    <div className="text-xs text-gray-500">אין חברים בקבוצה</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">אין חברים בקבוצה</div>
                   )}
                   <button className="mt-2 px-3 py-2 bg-blue-600 text-white rounded w-full">בחירה</button>
                 </div>
@@ -95,8 +96,8 @@ export default async function OnboardingGroupPage() {
       <div className="space-y-2">
         <h2 className="font-semibold">או יצירת קבוצה חדשה</h2>
         <form action={createGroup} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-start">
-          <input name="nickname" placeholder="שם קבוצה" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" />
-          <select name="parentId" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+          <input name="nickname" placeholder="שם קבוצה" className="w-full border p-2 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 placeholder-gray-400 dark:placeholder-gray-500" />
+          <select name="parentId" className="w-full border p-2 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800">
             <option value="">רמת על (עליון)</option>
             {groups.map((g)=> (
               <option key={g.id} value={g.id}>{g.nickname}</option>

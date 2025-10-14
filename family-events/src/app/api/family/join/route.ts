@@ -15,6 +15,9 @@ export async function POST(req: Request) {
   if (!family) return NextResponse.json({ error: 'Invalid code' }, { status: 404 });
 
   await prisma.user.update({ where: { id: user.id }, data: { familyId: family.id, groupId: groupId ?? undefined } });
+  try {
+    await prisma.familyMembership.create({ data: { userId: user.id, familyId: family.id, role: 'member' } });
+  } catch {}
   return NextResponse.json({ ok: true, familyId: family.id });
 }
 

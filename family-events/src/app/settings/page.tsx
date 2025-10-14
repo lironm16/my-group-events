@@ -24,6 +24,7 @@ export default async function SettingsPage() {
       <h1 className="text-2xl font-bold">הגדרות</h1>
       <Approvals familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
       <InvitePanel familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} inviteCode={user?.family?.inviteCode ?? null} />
+      <CreateNewFamilyForm userId={user!.id} />
       <ThemeSelectForm userId={user!.id} current={(user as any)?.theme as string | undefined} />
       <DefaultLocationForm userId={user!.id} current={(user as any)?.defaultLocation as string | undefined} />
       <NotifyRsvpForm userId={user!.id} current={Boolean((user as any)?.notifyRsvpEmails)} />
@@ -33,6 +34,38 @@ export default async function SettingsPage() {
       <AdminMembers familyId={user?.family?.id ?? null} isAdmin={user?.role === 'admin'} />
       <GroupForm userId={user!.id} currentGroupId={user?.group?.id ?? null} groups={groups} />
     </main>
+  );
+}
+
+function CreateNewFamilyForm({ userId }: { userId: string }) {
+  async function create(fd: FormData) {
+    'use server';
+    const name = String(fd.get('name') ?? '').trim() || 'משפחה חדשה';
+    function generateCode(length = 8) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let res = '';
+      for (let i = 0; i < length; i++) res += chars[Math.floor(Math.random() * chars.length)];
+      return res;
+    }
+    // create unique invite code
+    let code = generateCode();
+    for (let i = 0; i < 5; i++) {
+      const exists = await prisma.family.findUnique({ where: { inviteCode: code } }).catch(() => null);
+      if (!exists) break;
+      code = generateCode();
+    }
+    const family = await prisma.family.create({ data: { name, inviteCode: code } });
+    await prisma.user.update({ where: { id: userId }, data: { familyId: family.id, groupId: null } });
+    // refresh settings
+    revalidatePath('/settings');
+  }
+  return (
+    <form className="space-y-2" action={create}>
+      <h2 className="font-semibold">יצירת משפחה ראשית חדשה</h2>
+      <input name="name" placeholder="שם המשפחה" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" />
+      <button className="px-3 py-2 bg-green-600 text-white rounded">יצירה והחלפת הקשר</button>
+      <div className="text-xs text-gray-500">ניצור משפחה חדשה ונעביר את ההקשר הפעיל אליה. תוכלו להמשיך לבחור תת־קבוצה בתוך המשפחה החדשה.</div>
+    </form>
   );
 }
 async function InvitePanel({ familyId, isAdmin, inviteCode }: { familyId: string | null; isAdmin: boolean; inviteCode: string | null }) {

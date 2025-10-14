@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
 import { useSession, signOut } from 'next-auth/react';
-import GroupMenu from '@/components/GroupMenu';
+import FamilyMenu from '@/components/FamilyMenu';
 
 export default function Nav() {
   const { data: session, status } = useSession();
@@ -65,7 +65,7 @@ export default function Nav() {
               />
             </a>
           )}
-          {status === 'authenticated' && <GroupMenu />}
+          {status === 'authenticated' && <FamilyMenu />}
           <button onClick={toggle} className="px-2 py-1 rounded border text-sm dark:border-gray-700">
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>

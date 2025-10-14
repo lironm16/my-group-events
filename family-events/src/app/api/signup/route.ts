@@ -24,6 +24,7 @@ export async function POST(req: Request) {
   // אימייל חייב להיות ייחודי במערכת
   const passwordHash = await bcrypt.hash(password, 10);
   const isFirst = (await prisma.user.count()) === 0;
+  const shouldApprove = isFirst || Boolean(family);
   let finalGroupId = groupId ?? undefined;
   // If no family via code: create a family ONLY for the very first user.
   if (!family && isFirst) {
@@ -59,8 +60,15 @@ export async function POST(req: Request) {
         role: isFirst ? 'admin' : 'member',
         familyId: family?.id ?? null,
         groupId: finalGroupId,
+        approved: shouldApprove,
       },
     });
+    // Record membership for the created/selected family when available
+    if (family?.id) {
+      try {
+        await prisma.familyMembership.create({ data: { userId: user.id, familyId: family.id, role: isFirst ? 'admin' : 'member' } });
+      } catch {}
+    }
     if (isFirst) {
       // Ensure first user is approved and admin for immediate access
       try {
@@ -70,7 +78,7 @@ export async function POST(req: Request) {
     if (isFirst && family && familyName && familyName.trim()) {
       await prisma.family.update({ where: { id: family.id }, data: { name: familyName.trim() } });
     }
-    return NextResponse.json({ ok: true, userId: user.id, pending: !isFirst });
+    return NextResponse.json({ ok: true, userId: user.id, pending: !shouldApprove });
   } catch (err: any) {
     // Prisma unique constraint (P2002) - target may be array of fields or constraint name string
     try { console.error('signup_error', { code: err?.code, meta: err?.meta }); } catch {}
