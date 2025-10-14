@@ -3,6 +3,7 @@ import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import CopyButton from '@/components/CopyButton';
+import WhatsAppShare from '@/components/WhatsAppShare';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
@@ -45,11 +46,24 @@ export default async function SettingsFamilyInvitePage() {
         <h1 className="text-2xl font-bold">קישור הזמנה</h1>
         <Link className="px-3 py-2 rounded border" href="/settings">חזרה להגדרות</Link>
       </div>
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" defaultValue={url || '— אין קישור עדיין —'} readOnly />
+      <div className="space-y-3">
+        <div>
+          <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" value={url || '— אין קישור עדיין —'} readOnly />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <form action={regenerate}><button className="px-3 py-2 border rounded">צור קישור חדש</button></form>
           <CopyButton value={url || ''} label="העתק" />
+          {url && (
+            <WhatsAppShare
+              // Using minimal placeholders to fit component requirements
+              eventId="invite"
+              title={me.family?.name || 'הצטרפות למשפחה'}
+              startAtISO={new Date().toISOString()}
+              location={null}
+              typeKey={null}
+              shareUrl={url}
+            />
+          )}
         </div>
         <div className="text-xs text-gray-500">שתפו את הקישור כדי לאפשר הרשמה ללא הזנת קוד ידנית.</div>
       </div>

@@ -41,19 +41,24 @@ export default async function SettingsFamilyMembersPage() {
         <Link className="px-3 py-2 rounded border" href="/settings">חזרה להגדרות</Link>
       </div>
       <ul className="space-y-1">
-        {members.map((m) => (
-          <li key={m.id} className="flex items-center justify-between text-sm">
-            <span>{m.name ?? m.email ?? m.id} · {m.role}</span>
-            <div className="flex gap-2">
-              {m.role !== 'admin' ? (
-                <form action={doMemberAction.bind(null, m.id, 'promote')}><button className="px-2 py-1 border rounded">הפוך למנהל</button></form>
-              ) : (
-                <form action={doMemberAction.bind(null, m.id, 'demote')}><button className="px-2 py-1 border rounded">הפוך לחבר</button></form>
+        {members.map((m) => {
+          const isSelf = m.id === me.id;
+          return (
+            <li key={m.id} className="flex items-center justify-between text-sm">
+              <span>{m.name ?? m.email ?? m.id} · {m.role}{isSelf ? ' (את/ה)' : ''}</span>
+              {!isSelf && (
+                <div className="flex gap-2">
+                  {m.role !== 'admin' ? (
+                    <form action={doMemberAction.bind(null, m.id, 'promote')}><button className="px-2 py-1 border rounded">הפוך למנהל</button></form>
+                  ) : (
+                    <form action={doMemberAction.bind(null, m.id, 'demote')}><button className="px-2 py-1 border rounded">הפוך לחבר</button></form>
+                  )}
+                  <form action={doMemberAction.bind(null, m.id, 'remove')}><button className="px-2 py-1 border rounded">הסרה</button></form>
+                </div>
               )}
-              <form action={doMemberAction.bind(null, m.id, 'remove')}><button className="px-2 py-1 border rounded">הסרה</button></form>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
     </main>
   );
