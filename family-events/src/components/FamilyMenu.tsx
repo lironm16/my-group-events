@@ -1,12 +1,16 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 type Family = { id: string; name: string };
 
 export default function FamilyMenu() {
   const [families, setFamilies] = useState<Family[]>([]);
-  const [active, setActive] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selected = searchParams.get('family') || '';
 
   useEffect(() => {
     (async () => {
@@ -22,12 +26,11 @@ export default function FamilyMenu() {
     })();
   }, []);
 
-  async function select(familyId: string) {
-    setActive(familyId);
-    try {
-      await fetch('/api/users/family', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ familyId }) });
-      if (typeof window !== 'undefined') window.location.reload();
-    } catch {}
+  function select(familyId: string) {
+    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    if (familyId) params.set('family', familyId);
+    else params.delete('family');
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   if (loading || families.length === 0) return null;
@@ -36,9 +39,10 @@ export default function FamilyMenu() {
     <div className="relative">
       <select
         className="px-2 py-1 border rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
-        value={active || ''}
+        value={selected}
         onChange={(e) => select(e.target.value)}
       >
+        <option value="">כל המשפחות</option>
         {families.map((f) => (
           <option key={f.id} value={f.id}>{f.name}</option>
         ))}
