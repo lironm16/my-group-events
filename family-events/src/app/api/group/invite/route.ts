@@ -15,11 +15,14 @@ export async function GET(req: Request) {
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const me = await prisma.user.findFirst({ where: { email: session.user.email }, include: { family: true } });
   if (!me?.familyId) return NextResponse.json({ error: 'No family/group context' }, { status: 400 });
+  const myFamilyId: string = me.familyId as string;
+  const myGroupId: string | null = me.groupId ?? null;
+  const myFamilyName: string = me.family?.name || 'קבוצה ראשית';
 
   // Resolve main (top-level) group: user's current group root, or family's root group; create if missing
   async function resolveMainGroup() {
-    if (me.groupId) {
-      const found = await prisma.group.findUnique({ where: { id: me.groupId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+    if (myGroupId) {
+      const found = await prisma.group.findUnique({ where: { id: myGroupId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
       if (found) {
         let g = found;
         while (g.parentId) {
@@ -31,10 +34,10 @@ export async function GET(req: Request) {
       }
     }
     // fallback: family's root group
-    let root = await prisma.group.findFirst({ where: { familyId: me.familyId, parentId: null }, orderBy: { createdAt: 'asc' }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+    let root = await prisma.group.findFirst({ where: { familyId: myFamilyId, parentId: null }, orderBy: { createdAt: 'asc' }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
     if (!root) {
-      const nickname = me.family?.name || 'קבוצה ראשית';
-      root = await prisma.group.create({ data: { nickname, familyId: me.familyId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+      const nickname = myFamilyName;
+      root = await prisma.group.create({ data: { nickname, familyId: myFamilyId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
     }
     return root;
   }
@@ -56,11 +59,14 @@ export async function POST(req: Request) {
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const me = await prisma.user.findFirst({ where: { email: session.user.email }, include: { family: true } });
   if (!me?.familyId) return NextResponse.json({ error: 'No family/group context' }, { status: 400 });
+  const myFamilyId: string = me.familyId as string;
+  const myGroupId: string | null = me.groupId ?? null;
+  const myFamilyName: string = me.family?.name || 'קבוצה ראשית';
 
   // Resolve main group same as GET
   async function resolveMainGroup() {
-    if (me.groupId) {
-      const found = await prisma.group.findUnique({ where: { id: me.groupId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+    if (myGroupId) {
+      const found = await prisma.group.findUnique({ where: { id: myGroupId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
       if (found) {
         let g = found;
         while (g.parentId) {
@@ -71,10 +77,10 @@ export async function POST(req: Request) {
         return g;
       }
     }
-    let root = await prisma.group.findFirst({ where: { familyId: me.familyId, parentId: null }, orderBy: { createdAt: 'asc' }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+    let root = await prisma.group.findFirst({ where: { familyId: myFamilyId, parentId: null }, orderBy: { createdAt: 'asc' }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
     if (!root) {
-      const nickname = me.family?.name || 'קבוצה ראשית';
-      root = await prisma.group.create({ data: { nickname, familyId: me.familyId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+      const nickname = myFamilyName;
+      root = await prisma.group.create({ data: { nickname, familyId: myFamilyId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
     }
     return root;
   }
