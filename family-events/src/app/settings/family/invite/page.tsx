@@ -16,7 +16,7 @@ export default async function SettingsFamilyInvitePage() {
       </main>
     );
   }
-  const me = await prisma.user.findFirst({ where: { email: session.user.email }, include: { family: true } });
+  const me = await prisma.user.findFirst({ where: { email: session.user.email }, include: { family: true, group: true } });
   if (!me?.familyId || me.role !== 'admin') {
     return (
       <main className="container-page max-w-xl" dir="rtl">
@@ -54,7 +54,7 @@ export default async function SettingsFamilyInvitePage() {
           <form action={regenerate}><button className="px-3 py-2 border rounded">צור קישור חדש</button></form>
           <CopyButton value={url || ''} label="העתק" />
           {url && (
-            <InviteShare familyName={me.family?.name} shareUrl={url} />
+            <InviteShare familyName={me.group?.nickname || me.family?.name || ''} shareUrl={url} />
           )}
         </div>
         <div className="text-xs text-gray-500">שתפו את הקישור כדי לאפשר הרשמה ללא הזנת קוד ידנית.</div>
