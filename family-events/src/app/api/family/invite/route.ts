@@ -16,25 +16,9 @@ export async function GET() {
   const user = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  let family = user.familyId ? await prisma.family.findUnique({ where: { id: user.familyId } }) : null;
-  if (!family) {
-    // Create a new family for the user if they do not belong to one
-    let code: string = generateCode();
-    // Ensure uniqueness
-    while (await prisma.family.findUnique({ where: { inviteCode: code } })) {
-      code = generateCode();
-    }
-    family = await prisma.family.create({
-      data: {
-        name: user.name ? `המשפחה של ${user.name}` : 'המשפחה שלי',
-        inviteCode: code,
-        members: { connect: { id: user.id } },
-      },
-    });
-    await prisma.user.update({ where: { id: user.id }, data: { familyId: family.id } });
-  }
-
-  return NextResponse.json({ inviteCode: family.inviteCode, familyId: family.id });
+  // Family invites are deprecated; use group invites. Keep endpoint for backward compatibility.
+  const family = user.familyId ? await prisma.family.findUnique({ where: { id: user.familyId } }) : null;
+  return NextResponse.json({ inviteCode: family?.inviteCode ?? null, familyId: family?.id ?? null, deprecated: true });
 }
 
 export async function POST() {

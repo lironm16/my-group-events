@@ -15,8 +15,13 @@ export async function POST(req: Request) {
   const emailLower = (email || '').trim().toLowerCase();
   let family = null as null | { id: string };
   if (code) {
-    const f = await prisma.family.findUnique({ where: { inviteCode: code } });
-    if (f) family = { id: f.id };
+    // Prefer group invite codes
+    const g = await prisma.group.findFirst({ where: { inviteCode: code } });
+    if (g) family = { id: g.familyId };
+    if (!g) {
+      const f = await prisma.family.findUnique({ where: { inviteCode: code } });
+      if (f) family = { id: f.id };
+    }
   }
   // בדיקת ייחודיות דוא"ל
   const existingEmail = await prisma.user.findFirst({ where: { email: { equals: emailLower, mode: 'insensitive' } } });
@@ -43,7 +48,7 @@ export async function POST(req: Request) {
   // If invite-code flow is not used, allow skipping group creation
   if (!finalGroupId && newGroup && newGroup.trim()) {
     if (!family) {
-      return NextResponse.json({ error: 'נדרש קוד הזמנה למשפחה כדי ליצור קבוצה חדשה' }, { status: 400 });
+      return NextResponse.json({ error: 'נדרש קוד הזמנה לקבוצה/משפחה כדי ליצור קבוצה חדשה' }, { status: 400 });
     }
     const existsGroup = await prisma.group.findFirst({ where: { familyId: family.id, nickname: newGroup.trim() } });
     if (existsGroup) return NextResponse.json({ error: 'שם הקבוצה כבר קיים' }, { status: 400 });

@@ -53,6 +53,7 @@ model User {
 model Group {
   id        String   @id @default(cuid())
   nickname  String
+  inviteCode String? @unique
   family    Family   @relation(fields: [familyId], references: [id])
   familyId  String
   parent    Group?   @relation("GroupToChildren", fields: [parentId], references: [id])

@@ -32,11 +32,11 @@ export default async function SettingsFamilyInvitePage() {
   const proto = h.get('x-forwarded-proto') ?? 'https';
   const host = h.get('x-forwarded-host') ?? h.get('host') ?? '';
   const base = (process.env.NEXTAUTH_URL && process.env.NEXTAUTH_URL.trim()) ? process.env.NEXTAUTH_URL : (host ? `${proto}://${host}` : '');
-  const url = me.family?.inviteCode && base ? `${base}/signup?code=${encodeURIComponent(me.family.inviteCode)}` : '';
+  const url = me.group?.inviteCode && base ? `${base}/signup?code=${encodeURIComponent(me.group.inviteCode)}` : '';
 
   async function regenerate() {
     'use server';
-    await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/family/invite`, { method: 'POST' });
+    await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/group/invite`, { method: 'POST' });
     revalidatePath('/settings/family/invite');
   }
 
