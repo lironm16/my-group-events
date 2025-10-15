@@ -95,7 +95,7 @@ export default function DirtySubmit({
       const form = btnRef.current?.closest("form") as HTMLFormElement | null;
       if (form && updateSessionFields && update) {
         const current = getFormValues(form, updateSessionFields);
-        try { await update(current as any); } catch {}
+        try { void update(current as any); } catch {}
       }
       // Small delay to allow any cache revalidations
       setTimeout(() => {
