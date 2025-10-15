@@ -6,11 +6,11 @@ export default function InviteShare({ familyName, shareUrl }: { familyName?: str
   const variants = useMemo(() => {
     const label = familyName && familyName.trim() ? ` "${familyName.trim()}"` : '';
     return [
-      `הצטרפו לקבוצה${label} באפליקציה. כל האירועים והעדכונים במקום אחד:\n${shareUrl}`,
-      `מזמין/ה אתכם להצטרף לקבוצה${label}.\nלחצו כאן להרשמה: ${shareUrl}`,
-      `בואו לקבוצה${label}! כאן מתאמים אירועים, משתפים תמונות ונשארים מעודכנים.\nהצטרפות: ${shareUrl}`,
-      `נשמח שתהיו איתנו בקבוצה${label}.\nהצטרפות מיידית בקישור: ${shareUrl}`,
-      `היי! הקבוצה שלנו פתוחה להצטרפות${label} – הנה הקישור:\n${shareUrl}`,
+      `הצטרפו לקבוצה${label}.\n${shareUrl}`,
+      `הזמנה לקבוצת${label}.\n${shareUrl}`,
+      `לחצו להצטרפות לקבוצה${label}.\n${shareUrl}`,
+      `בואו לקבוצה${label}.\n${shareUrl}`,
+      `הקבוצה${label} פתוחה להצטרפות.\n${shareUrl}`,
     ];
   }, [familyName, shareUrl]);
 
