@@ -14,7 +14,7 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
       </main>
     );
   }
-  let user = await prisma.user.findFirst({ where: { email: session.user.email }, include: { family: { include: { members: true, groups: true } }, group: true } });
+  let user = await prisma.user.findFirst({ where: { email: session.user.email }, include: { family: true, group: true } });
   const code = searchParams?.code;
   const groupId = searchParams?.groupId;
   if (!user?.family && code) {
@@ -36,52 +36,49 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
     );
   }
 
-  const base = process.env.NEXTAUTH_URL ?? '';
-  const inviteUrl = `${base}/family?code=${encodeURIComponent(family.inviteCode)}`;
+  // Load sub-groups (top-level groups) and their members (no buttons/actions)
+  const subGroups = await prisma.group.findMany({
+    where: { familyId: family.id, parentId: null },
+    orderBy: { createdAt: 'asc' },
+    include: { members: { select: { id: true, name: true, email: true, image: true } } },
+  });
 
-  const needsGroup = !!family && !user?.groupId;
   return (
     <main className="container-page space-y-4 max-w-2xl">
       <h1 className="text-2xl font-bold">{family.name}</h1>
-      <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-sm text-gray-500">קוד הזמנה</div>
-            <div className="font-mono text-lg">{family.inviteCode}</div>
-          </div>
-          <CopyButton value={inviteUrl} />
-        </div>
-        <div>
-          <h2 className="font-semibold mb-2">חברי קבוצה</h2>
-          <ul className="space-y-1">
-            {family.members.map((m) => (
-              <li key={m.id} className="text-sm text-gray-700 dark:text-gray-300">{m.name ?? m.email ?? m.id}</li>
+      <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 space-y-6">
+        {subGroups.length === 0 ? (
+          <p className="text-sm text-gray-600 dark:text-gray-300">אין תתי-קבוצות עדיין.</p>
+        ) : (
+          <ul className="space-y-5">
+            {subGroups.map((g) => (
+              <li key={g.id} className="space-y-2">
+                <div className="font-semibold">{g.nickname}</div>
+                {g.members.length === 0 ? (
+                  <div className="text-xs text-gray-500">אין חברים בקבוצה זו</div>
+                ) : (
+                  <ul className="flex flex-wrap gap-3">
+                    {g.members.map((m) => (
+                      <li key={m.id} className="flex items-center gap-2 text-sm">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={(() => {
+                            const img = (m as any).image as string | null;
+                            if (img && /^https?:/i.test(img)) return img;
+                            const seed = encodeURIComponent((m as any).name || (m as any).email || 'member');
+                            return `https://api.dicebear.com/9.x/adventurer/svg?seed=${seed}`;
+                          })()}
+                          alt={(m as any).name || ''}
+                          className="w-6 h-6 rounded-full border"
+                        />
+                        <span>{(m as any).name || (m as any).email || m.id}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
             ))}
           </ul>
-        </div>
-        <div>
-          <h2 className="font-semibold mb-2">תתי-קבוצות</h2>
-          {family.groups.length === 0 ? (
-            <p className="text-sm text-gray-600 dark:text-gray-300">אין קבוצות עדיין. ניתן ליצור קבוצה חדשה ב-&apos;הגדרות&apos;.</p>
-          ) : (
-            <ul className="space-y-1">
-              {family.groups.map((g) => {
-                const link = `${base}/family?code=${encodeURIComponent(family.inviteCode)}&groupId=${g.id}`;
-                return (
-                  <li key={g.id} className="flex items-center justify-between text-sm text-gray-700 dark:text-gray-300 gap-2">
-                    <span>{g.nickname}</span>
-                    <CopyButton value={link} />
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-        {needsGroup && (
-          <div className="rounded border border-blue-200 dark:border-blue-900 p-3 bg-blue-50/50 dark:bg-blue-900/20">
-            <div className="mb-2 font-medium">לא שויכת לקבוצה</div>
-            <div className="text-sm">גשו ל-&apos;הגדרות&apos; כדי לבחור קבוצה קיימת או ליצור אחת חדשה.</div>
-          </div>
         )}
       </div>
     </main>
