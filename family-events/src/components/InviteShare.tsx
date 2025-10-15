@@ -4,11 +4,13 @@ import { useMemo, useState } from 'react';
 export default function InviteShare({ familyName, shareUrl }: { familyName?: string | null; shareUrl: string }) {
   const [idx, setIdx] = useState(0);
   const variants = useMemo(() => {
-    const name = familyName && familyName.trim() ? ` (${familyName})` : '';
+    const label = familyName && familyName.trim() ? ` "${familyName.trim()}"` : '';
     return [
-      `הצטרפו לקבוצת המשפחה${name} באפליקציה:\n${shareUrl}`,
-      `מזמין/ה אתכם להצטרף לקבוצה המשפחתית${name}.\nהרשמה בקישור: ${shareUrl}`,
-      `כדי להצטרף לקבוצה המשפחתית${name}, לחצו כאן:\n${shareUrl}`,
+      `הצטרפו לקבוצה${label} באפליקציה. כל האירועים והעדכונים במקום אחד:\n${shareUrl}`,
+      `מזמין/ה אתכם להצטרף לקבוצה${label}.\nלחצו כאן להרשמה: ${shareUrl}`,
+      `בואו לקבוצה${label}! כאן מתאמים אירועים, משתפים תמונות ונשארים מעודכנים.\nהצטרפות: ${shareUrl}`,
+      `נשמח שתהיו איתנו בקבוצה${label}.\nהצטרפות מיידית בקישור: ${shareUrl}`,
+      `היי! הקבוצה שלנו פתוחה להצטרפות${label} – הנה הקישור:\n${shareUrl}`,
     ];
   }, [familyName, shareUrl]);
 
