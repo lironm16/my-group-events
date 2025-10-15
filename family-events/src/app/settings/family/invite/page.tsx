@@ -28,11 +28,33 @@ export default async function SettingsFamilyInvitePage() {
     );
   }
 
+  // Read or create a main group invite code via API (ensures there is always a link)
+  let inviteCode: string | null = null;
+  let mainNickname: string | undefined = undefined;
+  try {
+    const r = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/group/invite`, { cache: 'no-store' });
+    if (r.ok) {
+      const j = await r.json();
+      inviteCode = j?.inviteCode || null;
+      mainNickname = j?.nickname || undefined;
+    }
+  } catch {}
+  if (!inviteCode) {
+    try {
+      const r2 = await fetch(`${process.env.NEXTAUTH_URL ?? ''}/api/group/invite`, { method: 'POST' });
+      if (r2.ok) {
+        const j2 = await r2.json();
+        inviteCode = j2?.inviteCode || null;
+        mainNickname = j2?.nickname || mainNickname;
+      }
+    } catch {}
+  }
+
   const h = headers();
   const proto = h.get('x-forwarded-proto') ?? 'https';
   const host = h.get('x-forwarded-host') ?? h.get('host') ?? '';
   const base = (process.env.NEXTAUTH_URL && process.env.NEXTAUTH_URL.trim()) ? process.env.NEXTAUTH_URL : (host ? `${proto}://${host}` : '');
-  const url = me.group?.inviteCode && base ? `${base}/signup?code=${encodeURIComponent(me.group.inviteCode)}` : '';
+  const url = inviteCode && base ? `${base}/signup?code=${encodeURIComponent(inviteCode)}` : '';
 
   async function regenerate() {
     'use server';
@@ -54,7 +76,7 @@ export default async function SettingsFamilyInvitePage() {
           <form action={regenerate}><button className="px-3 py-2 border rounded">צור קישור חדש</button></form>
           <CopyButton value={url || ''} label="העתק" />
           {url && (
-            <InviteShare familyName={me.group?.nickname || me.family?.name || ''} shareUrl={url} />
+            <InviteShare familyName={mainNickname || ''} shareUrl={url} />
           )}
         </div>
         <div className="text-xs text-gray-500">שתפו את הקישור כדי לאפשר הרשמה ללא הזנת קוד ידנית.</div>
