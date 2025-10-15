@@ -13,44 +13,77 @@ function generateCode(length = 8) {
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const me = await prisma.user.findFirst({ where: { email: session.user.email } });
-  if (!me?.groupId) return NextResponse.json({ error: 'No active group' }, { status: 400 });
-  const found = await prisma.group.findUnique({ where: { id: me.groupId }, select: { id: true, inviteCode: true, nickname: true, parentId: true } });
-  if (!found) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  let group: NonNullable<typeof found> = found;
-  // Walk up to main (top-level) group
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    if (!group.parentId) break;
-    const parent = await prisma.group.findUnique({ where: { id: group.parentId }, select: { id: true, inviteCode: true, nickname: true, parentId: true } });
-    if (!parent) break;
-    group = parent as typeof group;
+  const me = await prisma.user.findFirst({ where: { email: session.user.email }, include: { family: true } });
+  if (!me?.familyId) return NextResponse.json({ error: 'No family/group context' }, { status: 400 });
+
+  // Resolve main (top-level) group: user's current group root, or family's root group; create if missing
+  async function resolveMainGroup() {
+    if (me.groupId) {
+      const found = await prisma.group.findUnique({ where: { id: me.groupId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+      if (found) {
+        let g = found;
+        while (g.parentId) {
+          const parent = await prisma.group.findUnique({ where: { id: g.parentId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+          if (!parent) break;
+          g = parent as typeof g;
+        }
+        return g;
+      }
+    }
+    // fallback: family's root group
+    let root = await prisma.group.findFirst({ where: { familyId: me.familyId, parentId: null }, orderBy: { createdAt: 'asc' }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+    if (!root) {
+      const nickname = me.family?.name || 'קבוצה ראשית';
+      root = await prisma.group.create({ data: { nickname, familyId: me.familyId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+    }
+    return root;
   }
-  return NextResponse.json({ inviteCode: group.inviteCode || null, groupId: group.id, nickname: group.nickname });
+
+  const group = await resolveMainGroup();
+  if (!group) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!group.inviteCode) {
+    // Pre-generate an invite code if missing
+    let code = generateCode();
+    while (await prisma.group.findFirst({ where: { inviteCode: code } })) code = generateCode();
+    const updated = await prisma.group.update({ where: { id: group.id }, data: { inviteCode: code }, select: { inviteCode: true, nickname: true, id: true } });
+    return NextResponse.json({ inviteCode: updated.inviteCode, groupId: updated.id, nickname: updated.nickname });
+  }
+  return NextResponse.json({ inviteCode: group.inviteCode, groupId: group.id, nickname: group.nickname });
 }
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const me = await prisma.user.findFirst({ where: { email: session.user.email } });
-  if (!me?.groupId) return NextResponse.json({ error: 'No active group' }, { status: 400 });
-  const found = await prisma.group.findUnique({ where: { id: me.groupId }, select: { id: true, inviteCode: true, nickname: true, parentId: true } });
-  if (!found) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  let group: NonNullable<typeof found> = found;
-  // Walk up to main (top-level) group
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    if (!group.parentId) break;
-    const parent = await prisma.group.findUnique({ where: { id: group.parentId }, select: { id: true, inviteCode: true, nickname: true, parentId: true } });
-    if (!parent) break;
-    group = parent as typeof group;
+  const me = await prisma.user.findFirst({ where: { email: session.user.email }, include: { family: true } });
+  if (!me?.familyId) return NextResponse.json({ error: 'No family/group context' }, { status: 400 });
+
+  // Resolve main group same as GET
+  async function resolveMainGroup() {
+    if (me.groupId) {
+      const found = await prisma.group.findUnique({ where: { id: me.groupId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+      if (found) {
+        let g = found;
+        while (g.parentId) {
+          const parent = await prisma.group.findUnique({ where: { id: g.parentId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+          if (!parent) break;
+          g = parent as typeof g;
+        }
+        return g;
+      }
+    }
+    let root = await prisma.group.findFirst({ where: { familyId: me.familyId, parentId: null }, orderBy: { createdAt: 'asc' }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+    if (!root) {
+      const nickname = me.family?.name || 'קבוצה ראשית';
+      root = await prisma.group.create({ data: { nickname, familyId: me.familyId }, select: { id: true, inviteCode: true, nickname: true, parentId: true, familyId: true } });
+    }
+    return root;
   }
-  // Only allow members of the same family; admins can always regenerate via family route
-  // Here we simply allow any current group member to generate a code for the group
+
+  const group = await resolveMainGroup();
+  if (!group) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  // Generate a fresh code
   let code: string = generateCode();
-  while (await prisma.group.findFirst({ where: { inviteCode: code } })) {
-    code = generateCode();
-  }
-  const updated = await prisma.group.update({ where: { id: group.id }, data: { inviteCode: code } });
-  return NextResponse.json({ inviteCode: updated.inviteCode, groupId: updated.id, nickname: group.nickname });
+  while (await prisma.group.findFirst({ where: { inviteCode: code } })) code = generateCode();
+  const updated = await prisma.group.update({ where: { id: group.id }, data: { inviteCode: code }, select: { inviteCode: true, id: true, nickname: true } });
+  return NextResponse.json({ inviteCode: updated.inviteCode, groupId: updated.id, nickname: updated.nickname });
 }
