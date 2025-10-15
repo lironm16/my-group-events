@@ -38,7 +38,7 @@ export default async function HomePage() {
           })()}
         </div>
         <h1 className="text-4xl font-extrabold tracking-tight flex items-center justify-center gap-3">
-          <span>אירועי משפחה, פשוט</span>
+          <span>אירועי קבוצה, פשוט</span>
         </h1>
         <p className="mt-3 text-gray-600 dark:text-gray-300">ניהול אירועים, הזמנות ואישורי הגעה במקום אחד.</p>
         <div className="mt-6 flex items-center justify-center gap-3">
