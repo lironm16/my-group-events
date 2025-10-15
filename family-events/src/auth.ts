@@ -27,19 +27,29 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         (token as any).id = (user as any).id;
         (token as any).role = (user as any).role;
         (token as any).approved = (user as any).approved;
         (token as any).image = (user as any).image;
+        (token as any).name = (user as any).name;
+        (token as any).email = (user as any).email;
+      }
+      if (trigger === 'update' && session) {
+        const s: any = session;
+        if (typeof s.name === 'string') (token as any).name = s.name;
+        if (typeof s.email === 'string') (token as any).email = s.email;
+        if (typeof s.image === 'string') (token as any).image = s.image;
       }
       return token;
     },
     async session({ session, token }) {
       (session.user as any).id = (token as any).id ?? token.sub;
       (session.user as any).role = (token as any).role;
-      (session.user as any).image = (token as any).image;
+      (session.user as any).image = (token as any).image ?? (session.user as any).image;
+      (session.user as any).name = (token as any).name ?? (session.user as any).name;
+      (session.user as any).email = (token as any).email ?? (session.user as any).email;
       return session;
     },
     async signIn({ user }) {
