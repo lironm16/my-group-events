@@ -9,8 +9,8 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
   if (!session?.user?.email) {
     return (
       <main className="container-page space-y-4">
-        <h1 className="text-2xl font-bold">משפחה</h1>
-        <p className="text-gray-600 dark:text-gray-300">התחברו כדי לנהל משפחה.</p>
+        <h1 className="text-2xl font-bold">קבוצה</h1>
+        <p className="text-gray-600 dark:text-gray-300">התחברו כדי לנהל קבוצה.</p>
       </main>
     );
   }
@@ -30,7 +30,7 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
     // Offer join by code
     return (
       <main className="container-page space-y-4 max-w-xl">
-        <h1 className="text-2xl font-bold">משפחה</h1>
+        <h1 className="text-2xl font-bold">קבוצה</h1>
         <JoinForm />
       </main>
     );
@@ -52,7 +52,7 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
           <CopyButton value={inviteUrl} />
         </div>
         <div>
-          <h2 className="font-semibold mb-2">חברים</h2>
+          <h2 className="font-semibold mb-2">חברי קבוצה</h2>
           <ul className="space-y-1">
             {family.members.map((m) => (
               <li key={m.id} className="text-sm text-gray-700 dark:text-gray-300">{m.name ?? m.email ?? m.id}</li>
@@ -60,7 +60,7 @@ export default async function FamilyPage({ searchParams }: { searchParams?: { co
           </ul>
         </div>
         <div>
-          <h2 className="font-semibold mb-2">קבוצות</h2>
+          <h2 className="font-semibold mb-2">תתי-קבוצות</h2>
           {family.groups.length === 0 ? (
             <p className="text-sm text-gray-600 dark:text-gray-300">אין קבוצות עדיין. ניתן ליצור קבוצה חדשה ב-&apos;הגדרות&apos;.</p>
           ) : (

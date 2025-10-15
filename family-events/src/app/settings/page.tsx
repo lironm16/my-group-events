@@ -44,14 +44,14 @@ export default async function SettingsIndexPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">משפחה</h2>
+        <h2 className="text-lg font-semibold">קבוצה</h2>
         <ul className="space-y-2">
-          {hasFamily && <Item href="/settings/family/name">שם המשפחה</Item>}
+          {hasFamily && <Item href="/settings/family/name">שם הקבוצה הראשית</Item>}
           {hasFamily && <Item href="/settings/family/groups">בחירת/יצירת קבוצה</Item>}
-          {isAdmin && hasFamily && <Item href="/settings/family/invite">קישור הזמנה</Item>}
-          {isAdmin && hasFamily && <Item href="/settings/family/members">ניהול חברים</Item>}
+          {isAdmin && hasFamily && <Item href="/settings/family/invite">קישור הזמנה לקבוצה</Item>}
+          {isAdmin && hasFamily && <Item href="/settings/family/members">ניהול חברי קבוצה</Item>}
           {isAdmin && hasFamily && <Item href="/settings/family/approvals">בקשות הצטרפות</Item>}
-          <Item href="/settings/family/new">יצירת משפחה ראשית חדשה</Item>
+          <Item href="/settings/family/new">יצירת קבוצה ראשית חדשה</Item>
         </ul>
       </section>
     </main>
