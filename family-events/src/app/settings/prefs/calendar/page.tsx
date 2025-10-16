@@ -54,8 +54,8 @@ export default async function SettingsCalendarPage() {
           </a>
         </div>
         <div className="text-xs text-gray-500 space-y-1">
-          <p>ב-Apple Calendar: Calendar > File > New Calendar Subscription והדביקו את הכתובת.</p>
-          <p>ב-Google Calendar: הגדרות > הוספת לוח שנה > מכתובת URL והדביקו את הכתובת.</p>
+          <p>ב-Apple Calendar: Calendar &gt; File &gt; New Calendar Subscription והדביקו את הכתובת.</p>
+          <p>ב-Google Calendar: הגדרות &gt; הוספת לוח שנה &gt; מכתובת URL והדביקו את הכתובת.</p>
         </div>
       </section>
     </main>

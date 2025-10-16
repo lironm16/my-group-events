@@ -48,7 +48,7 @@ export default async function SettingsFamilyGroupsPage() {
   return (
     <main className="container-page space-y-6 max-w-xl text-right" dir="rtl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">קבוצה</h1>
+        <h1 className="text-2xl font-bold">בחירת קבוצה</h1>
         <Link className="px-3 py-2 rounded border" href="/settings">חזרה להגדרות</Link>
       </div>
       <div className="space-y-3">
@@ -68,9 +68,9 @@ export default async function SettingsFamilyGroupsPage() {
           <div className="space-y-2">
             <label className="inline-flex items-center gap-2">
               <input type="radio" name="mode" value="create" />
-              <span>יצירת קבוצה חדשה</span>
+              <span>יצירת קבוצה/תת־קבוצה חדשה</span>
             </label>
-            <input name="nickname" placeholder="כינוי לקבוצה" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" />
+            <input name="nickname" placeholder="כינוי לקבוצה/תת־קבוצה" className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" />
           </div>
           <DirtySubmit names={["mode","groupId","nickname"]} initial={{ mode: 'select', groupId: me.group?.id ?? '', nickname: '' }} />
         </form>

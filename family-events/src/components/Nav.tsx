@@ -36,7 +36,7 @@ export default function Nav() {
           {status === 'authenticated' && (
             <a href="/events/new" className="px-2 py-1 bg-green-600 text-white rounded">יצירת אירוע</a>
           )}
-          <Link href="/family" className={linkCls('/family')}>קבוצה</Link>
+          <Link href="/family" className={linkCls('/family')}>קבוצות</Link>
           {status === 'authenticated' && <Link href="/settings" className={linkCls('/settings')}>הגדרות</Link>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
