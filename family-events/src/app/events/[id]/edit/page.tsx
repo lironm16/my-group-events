@@ -89,6 +89,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
           <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
           {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
         </div>
+        <InvitesEditor eventId={params.id} />
         <div className="flex gap-2">
           <button disabled={saving || Object.keys(errors).length > 0} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
           <button type="button" onClick={()=>router.push(`/events/${params.id}`)} className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">ביטול</button>
@@ -97,4 +98,169 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
     </main>
   );
 }
+function InvitesEditor({ eventId }: { eventId: string }) {
+  const [loading, setLoading] = useState(true);
+  type GroupNode = { id: string; nickname: string; parentId: string | null; members: { id: string; name: string | null; image: string | null }[] };
+  const [groups, setGroups] = useState<GroupNode[]>([]);
+  const [initialUserIds, setInitialUserIds] = useState<Set<string>>(new Set());
+  const [selectedUsers, setSelectedUsers] = useState<Record<string, boolean>>({});
+  const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [gRes, eRes] = await Promise.all([
+          fetch('/api/family/groups', { cache: 'no-store' }),
+          fetch(`/api/events/${eventId}`, { cache: 'no-store' }),
+        ]);
+        const gj = await gRes.json();
+        const nodes: GroupNode[] = (gj.groups || [])
+          .map((gr: any) => ({
+            id: gr.id,
+            nickname: gr.nickname,
+            parentId: gr.parent?.id || null,
+            members: (gr.members || []).map((u: any) => ({ id: u.id, name: u.name || null, image: u.image || null })),
+          }))
+          .filter((g: GroupNode) => g.members.length > 0);
+        setGroups(nodes);
+        const ej = await eRes.json();
+        const currIds = new Set<string>((ej?.event?.rsvps || []).map((r: any) => r.userId));
+        setInitialUserIds(currIds);
+        // initialize selection based on current RSVPs
+        const sel: Record<string, boolean> = {};
+        for (const id of currIds) sel[id] = true;
+        setSelectedUsers(sel);
+        // precompute selected groups from users
+        const sg: Record<string, boolean> = {};
+        for (const g of nodes) {
+          const allOn = g.members.every((m) => sel[m.id]);
+          if (allOn) sg[g.id] = true;
+        }
+        setSelectedGroups(sg);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [eventId]);
+
+  const byId = useMemo(() => {
+    const map = new Map<string, GroupNode>();
+    groups.forEach((g) => map.set(g.id, g));
+    return map;
+  }, [groups]);
+  const byParent = useMemo(() => {
+    const map = new Map<string | null, GroupNode[]>();
+    groups.forEach((g) => {
+      const key = g.parentId;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(g);
+    });
+    return map;
+  }, [groups]);
+  const roots = useMemo(() => byParent.get(null) || [], [byParent]);
+
+  function collectDescendantUserIds(groupId: string): string[] {
+    const res: string[] = [];
+    const stack: string[] = [groupId];
+    while (stack.length) {
+      const gid = stack.pop()!;
+      const node = byId.get(gid);
+      if (!node) continue;
+      node.members.forEach((u) => res.push(u.id));
+      const children = byParent.get(gid) || [];
+      children.forEach((c) => stack.push(c.id));
+    }
+    return res;
+  }
+
+  function toggleUser(userId: string) {
+    setSelectedUsers((s) => ({ ...s, [userId]: !s[userId] }));
+  }
+
+  function toggleGroup(groupId: string) {
+    setSelectedGroups((prev) => {
+      const on = !prev[groupId];
+      const userIds = collectDescendantUserIds(groupId);
+      setSelectedUsers((s) => {
+        const ns = { ...s };
+        for (const uid of userIds) ns[uid] = on;
+        return ns;
+      });
+      return { ...prev, [groupId]: on };
+    });
+  }
+
+  async function saveInvites() {
+    setSaving(true);
+    try {
+      const selectedIds = new Set<string>(Object.entries(selectedUsers).filter(([, v]) => v).map(([k]) => k));
+      const toAdd: string[] = [];
+      const toRemove: string[] = [];
+      for (const id of selectedIds) if (!initialUserIds.has(id)) toAdd.push(id);
+      for (const id of initialUserIds) if (!selectedIds.has(id)) toRemove.push(id);
+      if (toAdd.length === 0 && toRemove.length === 0) return;
+      const updates = toAdd.map((uid) => ({ userId: uid, status: 'NA' }));
+      const res = await fetch('/api/rsvp/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, updates, remove: toRemove }),
+      });
+      if (res.ok) {
+        setInitialUserIds(selectedIds);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div className="text-sm text-gray-600 dark:text-gray-300">טוען מוזמנים…</div>;
+
+  return (
+    <div className="space-y-2">
+      <h3 className="font-semibold">מוזמנים</h3>
+      <div className="space-y-3">
+        {roots.map((root) => (
+          <GroupItem key={root.id} node={root} level={0} byParent={byParent} selectedGroups={selectedGroups} onToggleGroup={toggleGroup} selectedUsers={selectedUsers} onToggleUser={toggleUser} />
+        ))}
+      </div>
+      <div>
+        <button type="button" disabled={saving} onClick={saveInvites} className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">שמירת מוזמנים</button>
+      </div>
+    </div>
+  );
+
+  function GroupItem({ node, level, byParent, selectedGroups, onToggleGroup, selectedUsers, onToggleUser }: { node: GroupNode; level: number; byParent: Map<string | null, GroupNode[]>; selectedGroups: Record<string, boolean>; onToggleGroup: (id: string) => void; selectedUsers: Record<string, boolean>; onToggleUser: (id: string) => void; }) {
+    const children = byParent.get(node.id) || [];
+    return (
+      <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
+        <label className="inline-flex items-center gap-2 mb-2">
+          <input type="checkbox" checked={!!selectedGroups[node.id]} onChange={() => onToggleGroup(node.id)} />
+          <span className="font-medium">{node.nickname}</span>
+          {level > 0 && <span className="text-xs text-gray-500">תת־קבוצה</span>}
+        </label>
+        {node.members.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {node.members.map((u) => (
+              <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selectedUsers[u.id] ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-700 dark:border-blue-700 dark:text-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
+                <span>{u.name || ''}</span>
+                <input type="checkbox" className="ml-1" checked={!!selectedUsers[u.id]} onChange={() => onToggleUser(u.id)} />
+              </label>
+            ))}
+          </div>
+        )}
+        {children.length > 0 && (
+          <div className="mt-3 space-y-3">
+            {children.map((c) => (
+              <GroupItem key={c.id} node={c} level={level + 1} byParent={byParent} selectedGroups={selectedGroups} onToggleGroup={onToggleGroup} selectedUsers={selectedUsers} onToggleUser={onToggleUser} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+}
+
 
