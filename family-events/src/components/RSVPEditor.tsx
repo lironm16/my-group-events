@@ -146,7 +146,25 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
       {open && (
         <div className="space-y-3">
           {roots.map((root) => (
-            <GroupItem key={root.id} node={root} level={0} byParent={byParent} onQuickApply={quickApply} getStatus={getUserStatus} setStatus={setUserStatus} canEdit={canEditUser} />
+            <GroupItem
+              key={root.id}
+              node={root}
+              level={0}
+              byParent={byParent}
+              onQuickApply={quickApply}
+              onGroupNote={(userIds, note) => {
+                setChanges((c) => {
+                  const out = { ...c } as Record<string, { status: Status; note?: string | null }>;
+                  for (const uid of userIds) {
+                    if (out[uid]) out[uid] = { ...out[uid], note };
+                  }
+                  return out;
+                });
+              }}
+              getStatus={getUserStatus}
+              setStatus={setUserStatus}
+              canEdit={canEditUser}
+            />
           ))}
           <div className="sticky bottom-0 left-0 right-0 z-30">
             <div className="max-w-6xl mx-auto px-4 py-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
@@ -163,7 +181,7 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
   );
 }
 
-function GroupItem({ node, level, byParent, onQuickApply, getStatus, setStatus, canEdit }: { node: GroupNode; level: number; byParent: Map<string | null, GroupNode[]>; onQuickApply: (id: string, s: Status, onlyNA: boolean) => void; getStatus: (userId: string) => Status; setStatus: (userId: string, s: Status) => void; canEdit: (userId: string) => boolean }) {
+function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus, setStatus, canEdit }: { node: GroupNode; level: number; byParent: Map<string | null, GroupNode[]>; onQuickApply: (id: string, s: Status, onlyNA: boolean) => void; onGroupNote: (userIds: string[], note: string) => void; getStatus: (userId: string) => Status; setStatus: (userId: string, s: Status) => void; canEdit: (userId: string) => boolean }) {
   const children = byParent.get(node.id) || [];
   return (
     <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
@@ -180,20 +198,15 @@ function GroupItem({ node, level, byParent, onQuickApply, getStatus, setStatus, 
         </div>
       </div>
       <div className="mb-2">
-        <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-xs" placeholder="הערה לקבוצה זו (אופציונלי) — תתווסף לכל המשתנים שנערכים כאן" onChange={(e)=> {
-          const val = e.target.value;
-          // Apply group note lazily: set note on any user already in changes, without altering status
-          // Users changed later will not inherit automatically (to avoid surprises)
-          // This keeps control simple and avoids unexpected propagation
-          const users = node.members.map(m=>m.id);
-          setChanges((c)=>{
-            const out = { ...c } as any;
-            for (const uid of users) {
-              if (out[uid]) out[uid] = { ...out[uid], note: val };
-            }
-            return out;
-          });
-        }} />
+        <input
+          className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-xs"
+          placeholder="הערה לקבוצה זו (אופציונלי) — תתווסף לכל המשתתפים ששיניתם"
+          onChange={(e)=> {
+            const val = e.target.value;
+            const users = node.members.map(m=>m.id);
+            onGroupNote(users, val);
+          }}
+        />
       </div>
       {node.members.length > 0 && (
         <ul className="flex flex-wrap gap-2">
@@ -210,7 +223,7 @@ function GroupItem({ node, level, byParent, onQuickApply, getStatus, setStatus, 
       {children.length > 0 && (
         <div className="mt-3 space-y-3">
           {children.map((c) => (
-            <GroupItem key={c.id} node={c} level={level + 1} byParent={byParent} onQuickApply={onQuickApply} getStatus={getStatus} setStatus={setStatus} canEdit={canEdit} />
+            <GroupItem key={c.id} node={c} level={level + 1} byParent={byParent} onQuickApply={onQuickApply} onGroupNote={onGroupNote} getStatus={getStatus} setStatus={setStatus} canEdit={canEdit} />
           ))}
         </div>
       )}
