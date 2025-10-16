@@ -89,7 +89,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
               <ul className="space-y-0.5 sm:space-y-1">
                 {list.slice(0, 3).map((e) => (
                   <li key={e.id} className="truncate">
-                    <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}`} className="inline-block max-w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800">
+                    <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}`} className="block w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer">
                       {new Date(e.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · {e.title}
                     </a>
                   </li>

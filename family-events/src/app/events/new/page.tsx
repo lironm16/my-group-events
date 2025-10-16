@@ -277,37 +277,20 @@ function GuestSelector() {
     return res;
   }
 
-  // Initialize default selection once we have groups and user
+  // Initialize default selection: select ALL groups and ALL members
   useEffect(() => {
     if (initialized || loading) return;
     if (!groups.length) { setInitialized(true); return; }
     const nextGroups: Record<string, boolean> = {};
     const nextUsers: Record<string, boolean> = {};
-    // If user has an active group, select that root's subtree; otherwise select all
-    const myGroupId = me?.groupId || null;
-    let rootId: string | null = null;
-    if (myGroupId && byId.has(myGroupId)) {
-      let cursor: GroupNode | undefined = byId.get(myGroupId);
-      const visited = new Set<string>();
-      while (cursor && cursor.parentId && !visited.has(cursor.id)) {
-        visited.add(cursor.id);
-        cursor = byId.get(cursor.parentId);
-      }
-      rootId = cursor?.id || myGroupId;
-    }
-    if (rootId) {
-      nextGroups[rootId] = true;
-      for (const uid of collectDescendantUserIds(rootId)) nextUsers[uid] = true;
-    } else {
-      for (const g of groups) {
-        nextGroups[g.id] = true;
-        for (const u of g.members) nextUsers[u.id] = true;
-      }
+    for (const g of groups) {
+      nextGroups[g.id] = true;
+      for (const u of g.members) nextUsers[u.id] = true;
     }
     setSelectedGroups(nextGroups);
     setSelectedUsers(nextUsers);
     setInitialized(true);
-  }, [initialized, loading, groups, me, byId, byParent]);
+  }, [initialized, loading, groups]);
 
   function toggleUser(userId: string) {
     setSelectedUsers((s) => ({ ...s, [userId]: !s[userId] }));
