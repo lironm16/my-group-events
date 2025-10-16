@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import PendingWhatsApp from '@/components/PendingWhatsApp';
+import RSVPEditor from '@/components/RSVPEditor';
 
 type EventDetail = {
   id: string;
@@ -116,50 +117,7 @@ export default async function EventDetailPage({ params, searchParams }: { params
           <RSVPButtons eventId={event.id} initial={toRSVPStatus(myRsvp)} canGroup={true} canAll={isHost || (session?.user as any)?.role === 'admin'} />
         </div>
       </div>
-      <section>
-        <h2 className="font-semibold mb-2">מוזמנים לפי קבוצה</h2>
-        {(() => {
-          const byGroup = new Map<string, typeof event.rsvps>();
-          for (const r of event.rsvps) {
-            const key = r.user.groupNickname || 'ללא קבוצה';
-            if (!byGroup.has(key)) byGroup.set(key, [] as any);
-            (byGroup.get(key) as any).push(r);
-          }
-          const groups = Array.from(byGroup.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-          if (groups.length === 0) return <p className="text-gray-600 dark:text-gray-300">אין מוזמנים עדיין.</p>;
-          return (
-            <div className="space-y-4">
-              {groups.map(([gname, list]) => (
-                <div key={gname} className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
-                  <div className="font-medium mb-2">{gname}</div>
-                  <ul className="flex flex-wrap gap-2">
-                    {list.map((r) => (
-                      <li key={r.id} className="inline-flex items-center gap-2 px-2 py-1 rounded border text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={(r.user.image && r.user.image.startsWith('http')) ? r.user.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(r.user.name || 'user')}`}
-                          alt={r.user.name || ''}
-                          className="w-5 h-5 rounded-full"
-                        />
-                        <span>{r.user.name || '—'}</span>
-                        <span className={[
-                          'px-2 py-0.5 rounded text-xs',
-                          r.status === 'APPROVED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200' :
-                          r.status === 'DECLINED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200' :
-                          r.status === 'MAYBE' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-200' :
-                          'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
-                        ].join(' ')}>
-                          {r.status === 'NA' ? '—' : r.status}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
-      </section>
+      <RSVPEditor eventId={event.id} />
       {isHost && pendingCount > 0 && (
         <>
           <h2 className="font-semibold">תזכורות (למי שטרם אישרו)</h2>
