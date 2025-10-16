@@ -150,24 +150,35 @@ function Scope({ scope, onChange }: { scope: ScopeKey; onChange: (s: ScopeKey) =
 }
 
 function ViewToggle({ view, onChange }: { view: ViewKey; onChange: (v: ViewKey) => void }) {
-  const btn = (key: ViewKey, icon: string, title: string) => (
-    <button
-      key={key}
-      onClick={() => onChange(key)}
-      title={title}
-      aria-label={title}
-      className={[
-        'px-3 py-1 rounded border text-sm',
-        view === key ? 'bg-blue-600 text-white border-transparent' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800',
-      ].join(' ')}
-    >
-      {icon}
-    </button>
-  );
   return (
     <div className="flex gap-2 ml-auto">
-      {btn('list', '🗒️', 'תצוגת רשימה')}
-      {btn('calendar', '📅', 'תצוגת לוח שנה')}
+      <button
+        onClick={() => onChange('list')}
+        title="תצוגת רשימה"
+        aria-label="תצוגת רשימה"
+        className={[
+          'px-3 py-1 rounded border',
+          view === 'list' ? 'bg-blue-600 text-white border-transparent' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800',
+        ].join(' ')}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <button
+        onClick={() => onChange('calendar')}
+        title="תצוגת לוח שנה"
+        aria-label="תצוגת לוח שנה"
+        className={[
+          'px-3 py-1 rounded border',
+          view === 'calendar' ? 'bg-blue-600 text-white border-transparent' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800',
+        ].join(' ')}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M16 3v4M8 3v4M3 9h18" />
+        </svg>
+      </button>
     </div>
   );
 }
