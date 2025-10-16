@@ -47,9 +47,9 @@ export default function CalendarMonth({ events }: { events: CalendarEvent[] }) {
           {cursor.toLocaleString("he-IL", { month: "long", year: "numeric" })}
         </div>
         <div className="flex gap-2">
-          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, -1))}>◀</button>
+          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, 1))}>◀</button>
           <button className="px-2 py-1 rounded border" onClick={() => setCursor(getStartOfMonth(new Date()))}>היום</button>
-          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, 1))}>▶</button>
+          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, -1))}>▶</button>
         </div>
       </div>
       <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-800 rounded overflow-hidden">
