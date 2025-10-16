@@ -10,12 +10,12 @@ type EventCard = {
   title: string;
   description: string | null;
   location: string | null;
-  image: string | null;
   startAt: string;
   endAt: string | null;
   host: { name: string | null };
   hostId?: string | null;
   hostImage?: string | null;
+  holidayKey?: string | null;
   rsvps: { status: string; userId?: string }[];
 };
 
@@ -205,12 +205,7 @@ function Cards({ list }: { list: EventCard[] }) {
             <div className="mt-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={(() => {
-                  const img = e.image as string | undefined | null;
-                  if (img && /^https?:/i.test(img)) return img;
-                  const seed = encodeURIComponent(e.title || 'event');
-                  return `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
-                })()}
+                src={resolveEventTypeImage(e.holidayKey, e.title)}
                 alt={e.title}
                 className="w-full h-36 object-cover rounded"
               />
@@ -229,5 +224,24 @@ function Cards({ list }: { list: EventCard[] }) {
       ))}
     </ul>
   );
+}
+
+function resolveEventTypeImage(holidayKey?: string | null, title?: string | null) {
+  const map: Record<string, string> = {
+    holiday: '/templates/party.jpg',
+    shabat_eve: '/templates/shishi-dinner.jpg',
+    sukkot: '/templates/sukkot.jpg',
+    hanukkah: '/templates/hanukkah.jpg',
+    purim: '/templates/purim.jpg',
+    passover: '/templates/passover.jpg',
+  };
+  if (holidayKey && map[holidayKey]) return map[holidayKey];
+  const t = (title || '').toLowerCase();
+  if (/שישי|שבת/.test(t)) return '/templates/shishi-dinner.jpg';
+  if (/סוכות/.test(t)) return '/templates/sukkot.jpg';
+  if (/חנוכ/.test(t)) return '/templates/hanukkah.jpg';
+  if (/פורים/.test(t)) return '/templates/purim.jpg';
+  if (/פסח/.test(t)) return '/templates/passover.jpg';
+  return '/templates/party.jpg';
 }
 
