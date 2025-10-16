@@ -9,23 +9,7 @@ export async function GET(req: Request) {
   if (code) {
     // Unauthenticated listing by invite code for signup step (signup flow only)
     const family = await prisma.family.findUnique({ where: { inviteCode: code } });
-    if (!family) {
-      // Optional: preview-only mock for signup demos
-      if (process.env.VERCEL_ENV === 'preview') {
-        const mock = [
-          { id: 'g1', nickname: 'הורים', members: [
-            { id: 'u1', name: 'אבא', image: null },
-            { id: 'u2', name: 'אמא', image: null },
-          ]},
-          { id: 'g2', nickname: 'ילדים', members: [
-            { id: 'u3', name: 'דני', image: null },
-            { id: 'u4', name: 'נועה', image: null },
-          ]},
-        ];
-        return NextResponse.json({ groups: mock });
-      }
-      return NextResponse.json({ groups: [] });
-    }
+    if (!family) return NextResponse.json({ groups: [] });
     const groups = await prisma.group.findMany({
       where: { familyId: family.id },
       include: { members: { select: { id: true, name: true, image: true } }, parent: { select: { id: true, nickname: true } } },
