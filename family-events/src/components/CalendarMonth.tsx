@@ -24,8 +24,14 @@ function toKey(d: Date) {
   return `${y}-${m}-${day}`;
 }
 
-export default function CalendarMonth({ events }: { events: CalendarEvent[] }) {
-  const [cursor, setCursor] = useState<Date>(() => getStartOfMonth(new Date()));
+export default function CalendarMonth({ events, initialMonth, onMonthChange }: { events: CalendarEvent[]; initialMonth?: string; onMonthChange?: (month: string) => void }) {
+  const [cursor, setCursor] = useState<Date>(() => {
+    if (initialMonth && /^\d{4}-\d{2}$/.test(initialMonth)) {
+      const [y, m] = initialMonth.split('-').map(Number);
+      return new Date(y, (m as number) - 1, 1);
+    }
+    return getStartOfMonth(new Date());
+  });
 
   const days = useMemo(() => buildMonthGrid(cursor), [cursor]);
   const byDay = useMemo(() => {
@@ -40,6 +46,14 @@ export default function CalendarMonth({ events }: { events: CalendarEvent[] }) {
     return map;
   }, [events]);
 
+  // notify month changes
+  useMemo(() => {
+    const y = cursor.getFullYear();
+    const m = String(cursor.getMonth() + 1).padStart(2, '0');
+    onMonthChange && onMonthChange(`${y}-${m}`);
+    return undefined;
+  }, [cursor, onMonthChange]);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -47,9 +61,9 @@ export default function CalendarMonth({ events }: { events: CalendarEvent[] }) {
           {cursor.toLocaleString("he-IL", { month: "long", year: "numeric" })}
         </div>
         <div className="flex gap-2">
-          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, 1))}>◀</button>
+          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, -1))}>◀</button>
           <button className="px-2 py-1 rounded border" onClick={() => setCursor(getStartOfMonth(new Date()))}>היום</button>
-          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, -1))}>▶</button>
+          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, 1))}>▶</button>
         </div>
       </div>
       <div className="grid grid-cols-7 sm:gap-px gap-[1px] bg-gray-200 dark:bg-gray-800 rounded overflow-hidden text-xs sm:text-sm">
@@ -75,9 +89,9 @@ export default function CalendarMonth({ events }: { events: CalendarEvent[] }) {
               <ul className="space-y-0.5 sm:space-y-1">
                 {list.slice(0, 3).map((e) => (
                   <li key={e.id} className="truncate">
-                    <Link href={`/events/${e.id}`} className="inline-block max-w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800">
+                    <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}`} className="inline-block max-w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800">
                       {new Date(e.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · {e.title}
-                    </Link>
+                    </a>
                   </li>
                 ))}
                 {list.length > 3 && (
