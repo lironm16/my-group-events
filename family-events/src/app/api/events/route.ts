@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       externalLink: body.externalLink ?? null,
       isHolidayGenerated: body.holidayKey ? true : false,
       holidayKey: body.holidayKey ?? null,
-      hostId: user.id,
+      hostId: (body.hostId && typeof body.hostId === 'string') ? body.hostId : user.id,
       familyId: user.familyId ?? null,
     },
   });
