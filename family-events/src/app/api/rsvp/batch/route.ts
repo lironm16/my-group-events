@@ -12,7 +12,8 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({} as any));
   const eventId: string | undefined = body?.eventId;
   const updates: { userId: string; status: 'APPROVED' | 'DECLINED' | 'MAYBE' | 'NA'; note?: string | null }[] = Array.isArray(body?.updates) ? body.updates : [];
-  if (!eventId || updates.length === 0) return NextResponse.json({ error: 'Missing inputs' }, { status: 400 });
+  const remove: string[] = Array.isArray(body?.remove) ? body.remove : [];
+  if (!eventId) return NextResponse.json({ error: 'Missing inputs' }, { status: 400 });
 
   const event = await prisma.event.findUnique({ where: { id: eventId }, select: { hostId: true, familyId: true } });
   if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -32,17 +33,20 @@ export async function POST(req: Request) {
 
   const valid = new Set(['APPROVED', 'DECLINED', 'MAYBE', 'NA']);
   const toApply = updates.filter((u) => allowedUserIds.has(u.userId) && valid.has(u.status)).map((u) => ({ ...u, note: (u.note ?? null) as string | null }));
-  if (toApply.length === 0) return NextResponse.json({ ok: true, updated: 0, skipped: updates.length });
+  const toRemove = remove.filter((uid) => allowedUserIds.has(uid));
 
-  await prisma.$transaction(
-    toApply.map((u) =>
+  await prisma.$transaction([
+    ...toApply.map((u) =>
       prisma.rSVP.upsert({
         where: { eventId_userId: { eventId, userId: u.userId } },
         create: { eventId, userId: u.userId, status: u.status as any, note: u.note },
         update: { status: u.status as any, note: u.note },
       })
-    )
-  );
+    ),
+    ...(toRemove.length ? [
+      prisma.rSVP.deleteMany({ where: { eventId, userId: { in: toRemove } } })
+    ] : []),
+  ]);
 
-  return NextResponse.json({ ok: true, updated: toApply.length, skipped: updates.length - toApply.length });
+  return NextResponse.json({ ok: true, updated: toApply.length, removed: toRemove.length, skipped: updates.length - toApply.length });
 }

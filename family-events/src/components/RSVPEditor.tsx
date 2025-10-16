@@ -21,6 +21,7 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
   const [groups, setGroups] = useState<GroupNode[]>([]);
   const [statusByUser, setStatusByUser] = useState<Map<string, { status: Status; note: string | null }>>(new Map());
   const [changes, setChanges] = useState<Record<string, { status: Status; note?: string | null }>>({});
+  const [removed, setRemoved] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     (async () => {
@@ -109,6 +110,10 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
     });
   }
 
+  function toggleInvite(userId: string) {
+    setRemoved((r) => ({ ...r, [userId]: !r[userId] }));
+  }
+
   const pendingCount = useMemo(() => {
     let n = 0;
     for (const [uid, change] of Object.entries(changes)) {
@@ -126,11 +131,13 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
         return !base || base.status !== change.status || (base.note ?? '') !== (change.note ?? '');
       })
       .map(([userId, change]) => ({ userId, status: change.status, note: change.note ?? null }));
-    if (updates.length === 0) { setOpen(false); return; }
-    const res = await fetch('/api/rsvp/batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId, updates }) });
+    const toRemove = Object.entries(removed).filter(([, v]) => v).map(([uid]) => uid);
+    if (updates.length === 0 && toRemove.length === 0) { setOpen(false); return; }
+    const res = await fetch('/api/rsvp/batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId, updates, remove: toRemove }) });
     if (res.ok) {
       setOpen(false);
       setChanges({});
+      setRemoved({});
       router.refresh();
     }
   }
@@ -200,10 +207,11 @@ function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus
       {node.members.length > 0 && (
         <ul className="flex flex-wrap gap-2">
           {node.members.map((u) => (
-            <li key={u.id} className="inline-flex items-center gap-2 px-2 py-1 rounded border text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <li key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${removed[u.id] ? 'opacity-50' : ''} bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5 rounded-full" />
               <span>{u.name || '—'}</span>
+              <button type="button" onClick={()=>toggleInvite(u.id)} className="px-1 py-0.5 rounded border text-[10px]">{removed[u.id] ? 'החזר' : 'הסר'}</button>
               <StatusPicker value={getStatus(u.id)} disabled={!canEdit(u.id)} onChange={(s)=> setStatus(u.id, s)} />
             </li>
           ))}
