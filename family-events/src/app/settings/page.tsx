@@ -40,6 +40,7 @@ export default async function SettingsIndexPage() {
           <Item href="/settings/prefs/theme">מצב תצוגה</Item>
           <Item href="/settings/prefs/location">מיקום ברירת מחדל לאירועים</Item>
           <Item href="/settings/prefs/notifications">התראות אימייל על RSVP</Item>
+          <Item href="/settings/prefs/calendar">לוח שנה וסנכרון</Item>
         </ul>
       </section>
 

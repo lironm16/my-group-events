@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import EventsSearch, { EventItem } from '@/components/EventsSearch';
+import CalendarMonth, { type CalendarEvent } from '@/components/CalendarMonth';
 
 type EventCard = {
   id: string;
@@ -17,10 +18,12 @@ type EventCard = {
 
 type TabKey = 'today' | 'week' | 'month' | 'all';
 type ScopeKey = 'mine' | 'all';
+type ViewKey = 'list' | 'calendar';
 
 export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [tab, setTab] = useState<TabKey>('today');
   const [scope, setScope] = useState<ScopeKey>('mine');
+  const [view, setView] = useState<ViewKey>('list');
   const [groupId, setGroupId] = useState<string>('');
   const [myUserId, setMyUserId] = useState<string>('');
   useEffect(() => {
@@ -55,12 +58,18 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   // Reset filtered when base changes (tab switch)
   useMemo(() => setFiltered(deferredBase), [deferredBase]);
 
+  const calItems: CalendarEvent[] = useMemo(
+    () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location })),
+    [filtered]
+  );
+
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <Tabs tab={tab} onChange={setTab} />
         <Scope scope={scope} onChange={setScope} />
         <GroupFilter onChange={(g)=>setGroupId(g)} />
+        <ViewToggle view={view} onChange={setView} />
       </div>
       <EventsSearch
         items={items}
@@ -70,7 +79,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
           setFiltered(next);
         }}
       />
-      <Cards list={filtered} />
+      {view === 'list' ? <Cards list={filtered} /> : <div className="mt-4"><CalendarMonth events={calItems} /></div>}
     </>
   );
 }
@@ -115,6 +124,27 @@ function Scope({ scope, onChange }: { scope: ScopeKey; onChange: (s: ScopeKey) =
     <div className="flex gap-2">
       {btn('mine', 'שלי')}
       {btn('all', 'כולם')}
+    </div>
+  );
+}
+
+function ViewToggle({ view, onChange }: { view: ViewKey; onChange: (v: ViewKey) => void }) {
+  const btn = (key: ViewKey, label: string) => (
+    <button
+      key={key}
+      onClick={() => onChange(key)}
+      className={[
+        'px-3 py-1 rounded border text-sm',
+        view === key ? 'bg-blue-600 text-white border-transparent' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800',
+      ].join(' ')}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <div className="flex gap-2 ml-auto">
+      {btn('list', 'רשימה')}
+      {btn('calendar', 'לוח שנה')}
     </div>
   );
 }
