@@ -189,24 +189,13 @@ function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus
         <div className="font-medium">{node.nickname}{level > 0 && <span className="text-xs text-gray-500"> · תת־קבוצה</span>}</div>
         <div className="flex items-center gap-2 text-xs">
           <select className="px-2 py-1 border rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" onChange={(e)=> onQuickApply(node.id, e.target.value as Status, true)} defaultValue="__">
-            <option value="__" disabled>החל על NA</option>
+            <option value="__" disabled>בחר</option>
             <option value="APPROVED">מגיע/ה</option>
             <option value="MAYBE">אולי</option>
             <option value="DECLINED">לא</option>
           </select>
           <button className="px-2 py-1 rounded border" onClick={()=> onQuickApply(node.id, 'NA', false)}>אפס</button>
         </div>
-      </div>
-      <div className="mb-2">
-        <input
-          className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-xs"
-          placeholder="הערה לקבוצה זו (אופציונלי) — תתווסף לכל המשתתפים ששיניתם"
-          onChange={(e)=> {
-            const val = e.target.value;
-            const users = node.members.map(m=>m.id);
-            onGroupNote(users, val);
-          }}
-        />
       </div>
       {node.members.length > 0 && (
         <ul className="flex flex-wrap gap-2">
@@ -227,6 +216,17 @@ function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus
           ))}
         </div>
       )}
+      <div className="mt-3">
+        <input
+          className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-xs"
+          placeholder="comment (optional)"
+          onChange={(e)=> {
+            const val = e.target.value;
+            const users = node.members.map(m=>m.id);
+            onGroupNote(users, val);
+          }}
+        />
+      </div>
     </div>
   );
 }
