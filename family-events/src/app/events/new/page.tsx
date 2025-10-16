@@ -229,10 +229,10 @@ function GuestSelector() {
   useEffect(() => {
     (async () => {
       try {
-        const m = await fetch('/api/users/me');
+        const m = await fetch('/api/users/me', { cache: 'no-store' });
         const mj = await m.json();
         setMe(mj.user);
-        const g = await fetch('/api/family/groups');
+        const g = await fetch('/api/family/groups', { cache: 'no-store' });
         const gj = await g.json();
         const nodes: GroupNode[] = (gj.groups || []).map((gr: any) => ({
           id: gr.id,

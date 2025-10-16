@@ -6,11 +6,11 @@ import { authOptions } from '@/auth';
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
-  if (code || process.env.VERCEL_ENV === 'preview') {
-    // Unauthenticated listing by invite code for signup step
-    const family = code ? await prisma.family.findUnique({ where: { inviteCode: code } }) : null;
+  if (code) {
+    // Unauthenticated listing by invite code for signup step (signup flow only)
+    const family = await prisma.family.findUnique({ where: { inviteCode: code } });
     if (!family) {
-      // Preview fallback: return mock groups for UI demos on Vercel preview
+      // Optional: preview-only mock for signup demos
       if (process.env.VERCEL_ENV === 'preview') {
         const mock = [
           { id: 'g1', nickname: 'הורים', members: [
