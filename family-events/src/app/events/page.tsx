@@ -13,6 +13,7 @@ type EventCard = {
   endAt: string | null;
   host: { name: string | null };
   hostId: string | null;
+  hostImage?: string | null;
   rsvps: { status: string; userId?: string }[];
 };
 
@@ -52,7 +53,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
       const rows = await prisma.event.findMany({
         where,
         orderBy: { startAt: 'asc' },
-        include: { rsvps: { select: { status: true, userId: true } }, host: { select: { name: true, id: true } } },
+        include: { rsvps: { select: { status: true, userId: true } }, host: { select: { name: true, id: true, image: true } } },
         skip: (page - 1) * pageSize,
         take: pageSize,
       });
@@ -65,6 +66,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
         endAt: r.endAt ? r.endAt.toISOString() : null,
         host: { name: r.host?.name ?? null },
         hostId: r.host?.id ?? null,
+        hostImage: (r.host as any)?.image ?? null,
         rsvps: r.rsvps.map(x => ({ status: x.status, userId: x.userId })),
       }));
     }
