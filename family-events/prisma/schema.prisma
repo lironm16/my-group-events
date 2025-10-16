@@ -117,6 +117,7 @@ enum RSVPStatus {
   APPROVED
   DECLINED
   MAYBE
+  NA
 }
 
 model Account {

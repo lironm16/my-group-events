@@ -18,12 +18,12 @@ type EventDetail = {
   holidayKey?: string | null;
   host: { id?: string; name: string | null };
   coHosts?: { id: string; name: string | null }[];
-  rsvps: { id: string; status: string; note: string | null; user: { id: string; name: string | null } }[];
+  rsvps: { id: string; status: string; note: string | null; user: { id: string; name: string | null; image?: string | null; groupId?: string | null; groupNickname?: string | null } }[];
   familyMembers?: { id: string; name: string | null }[];
 };
 
 async function fetchEvent(id: string): Promise<EventDetail | null> {
-  const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: true } }, host: true, family: { include: { members: true } }, coHosts: { include: { user: true } } } });
+  const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: { select: { id: true, name: true, image: true, groupId: true, group: { select: { id: true, nickname: true, parentId: true } } } } } }, host: true, family: { include: { members: true } }, coHosts: { include: { user: true } } } });
   if (!row) return null;
   return {
     id: row.id,
@@ -36,7 +36,7 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
     holidayKey: row.holidayKey ?? null,
     host: { id: row.hostId, name: row.host?.name ?? null },
     coHosts: (row.coHosts || []).map(h => ({ id: h.userId, name: h.user?.name ?? null })),
-    rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null } })),
+    rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null, image: (r.user as any)?.image ?? null, groupId: (r.user as any)?.groupId ?? null, groupNickname: (r.user as any)?.group?.nickname ?? null } })),
     familyMembers: (row.family?.members || []).map(m => ({ id: m.id, name: m.name ?? null })),
   };
 }
@@ -117,19 +117,48 @@ export default async function EventDetailPage({ params, searchParams }: { params
         </div>
       </div>
       <section>
-        <h2 className="font-semibold mb-2">אישורי הגעה</h2>
-        {event.rsvps.length === 0 ? (
-          <p className="text-gray-600 dark:text-gray-300">אין אישורים עדיין.</p>
-        ) : (
-          <ul className="space-y-2">
-            {event.rsvps.map((r) => (
-              <li key={r.id} className="flex items-center justify-between rounded border border-gray-200 dark:border-gray-800 p-2 bg-white dark:bg-gray-900">
-                <span>{r.user?.name ?? '—'}</span>
-                <span className="text-sm text-gray-600 dark:text-gray-400">{r.status}{r.note ? ` · ${r.note}` : ''}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <h2 className="font-semibold mb-2">מוזמנים לפי קבוצה</h2>
+        {(() => {
+          const byGroup = new Map<string, typeof event.rsvps>();
+          for (const r of event.rsvps) {
+            const key = r.user.groupNickname || 'ללא קבוצה';
+            if (!byGroup.has(key)) byGroup.set(key, [] as any);
+            (byGroup.get(key) as any).push(r);
+          }
+          const groups = Array.from(byGroup.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+          if (groups.length === 0) return <p className="text-gray-600 dark:text-gray-300">אין מוזמנים עדיין.</p>;
+          return (
+            <div className="space-y-4">
+              {groups.map(([gname, list]) => (
+                <div key={gname} className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
+                  <div className="font-medium mb-2">{gname}</div>
+                  <ul className="flex flex-wrap gap-2">
+                    {list.map((r) => (
+                      <li key={r.id} className="inline-flex items-center gap-2 px-2 py-1 rounded border text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={(r.user.image && r.user.image.startsWith('http')) ? r.user.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(r.user.name || 'user')}`}
+                          alt={r.user.name || ''}
+                          className="w-5 h-5 rounded-full"
+                        />
+                        <span>{r.user.name || '—'}</span>
+                        <span className={[
+                          'px-2 py-0.5 rounded text-xs',
+                          r.status === 'APPROVED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200' :
+                          r.status === 'DECLINED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200' :
+                          r.status === 'MAYBE' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-200' :
+                          'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                        ].join(' ')}>
+                          {r.status === 'NA' ? '—' : r.status}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </section>
       {isHost && pendingCount > 0 && (
         <>
