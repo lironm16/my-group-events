@@ -74,9 +74,9 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">אירועים</h1>
         {authorized ? (
-          <Link className="px-3 py-2 bg-blue-600 text-white rounded" href="/events/new">אירוע חדש</Link>
+          <a className="px-3 py-2 bg-blue-600 text-white rounded" href="/events/new">אירוע חדש</a>
         ) : (
-          <Link className="px-3 py-2 bg-blue-600 text-white rounded" href="/api/auth/signin">התחברות</Link>
+          <a className="px-3 py-2 bg-blue-600 text-white rounded" href="/api/auth/signin">התחברות</a>
         )}
       </div>
       {!authorized ? (

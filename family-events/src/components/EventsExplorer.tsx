@@ -56,7 +56,9 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const deferredBase = useDeferredValue(base);
 
   // Reset filtered when base changes (tab switch)
-  useMemo(() => setFiltered(deferredBase), [deferredBase]);
+  useEffect(() => {
+    setFiltered(deferredBase);
+  }, [deferredBase]);
 
   const calItems: CalendarEvent[] = useMemo(
     () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location })),
@@ -211,9 +213,9 @@ function Cards({ list }: { list: EventCard[] }) {
             <span className="text-gray-600 dark:text-gray-400">אישורים: {e.rsvps.length}</span>
           </div>
           <div className="mt-4 flex gap-2">
-            <Link className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800" href={`/events/${e.id}`}>
+            <a className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800" href={`/events/${e.id}`}>
               פרטים
-            </Link>
+            </a>
           </div>
         </li>
       ))}
