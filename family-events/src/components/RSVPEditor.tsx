@@ -219,7 +219,7 @@ function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus
       <div className="mt-3">
         <input
           className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-xs"
-          placeholder="comment (optional)"
+          placeholder="הערה (אופציונלי)"
           onChange={(e)=> {
             const val = e.target.value;
             const users = node.members.map(m=>m.id);
