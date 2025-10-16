@@ -9,6 +9,7 @@ type EventCard = {
   title: string;
   description: string | null;
   location: string | null;
+  image: string | null;
   startAt: string;
   endAt: string | null;
   host: { name: string | null };
@@ -62,6 +63,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
         title: r.title,
         description: r.description,
         location: r.location,
+        image: (r as any).image ?? null,
         startAt: r.startAt.toISOString(),
         endAt: r.endAt ? r.endAt.toISOString() : null,
         host: { name: r.host?.name ?? null },

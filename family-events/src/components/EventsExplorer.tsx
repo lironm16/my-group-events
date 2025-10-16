@@ -10,6 +10,7 @@ type EventCard = {
   title: string;
   description: string | null;
   location: string | null;
+  image: string | null;
   startAt: string;
   endAt: string | null;
   host: { name: string | null };
@@ -165,16 +166,25 @@ function GroupFilter({ value, groups, onChange }: { value: ScopeKey; groups: { i
 
 // Time tabs removed
 
-function filterByKey(events: EventCard[], key: ScopeKey, myUserId: string, groups: { id: string; memberIds: string[] }[]): EventCard[] {
+function filterByKey(
+  events: EventCard[],
+  key: ScopeKey,
+  myUserId: string,
+  groups: { id: string; memberIds: string[] }[]
+): EventCard[] {
   if (!myUserId) return events;
   if (key === 'all') return events;
-  if (key === 'mine') return events.filter((e) => e.hostId === myUserId || e.rsvps.some((r) => r.userId === myUserId));
+  if (key === 'mine') {
+    // Events I host or I'm invited to
+    return events.filter((e) => e.hostId === myUserId || e.rsvps.some((r) => r.userId === myUserId));
+  }
   if (key.startsWith('group:')) {
+    // IMPORTANT: Filter ONLY by host's current group membership, not invitees
     const gid = key.slice('group:'.length);
     const group = groups.find((g) => g.id === gid);
     if (!group) return events;
-    const set = new Set<string>([...group.memberIds]);
-    return events.filter((e) => e.hostId && set.has(e.hostId) || e.rsvps.some((r) => r.userId && set.has(r.userId!)));
+    const set = new Set<string>(group.memberIds);
+    return events.filter((e) => !!e.hostId && set.has(e.hostId));
   }
   return events;
 }
@@ -196,9 +206,9 @@ function Cards({ list }: { list: EventCard[] }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={(() => {
-                  const img = e.hostImage as string | undefined | null;
+                  const img = e.image as string | undefined | null;
                   if (img && /^https?:/i.test(img)) return img;
-                  const seed = encodeURIComponent(e.host?.name || e.title || 'event');
+                  const seed = encodeURIComponent(e.title || 'event');
                   return `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
                 })()}
                 alt={e.title}
@@ -207,7 +217,11 @@ function Cards({ list }: { list: EventCard[] }) {
             </div>
             {e.description && <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{e.description}</p>}
             <div className="mt-3 flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">מארח: {e.host?.name ?? '—'}</span>
+              <span className="text-gray-600 dark:text-gray-400 inline-flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={e.hostImage && /^https?:/i.test(e.hostImage) ? e.hostImage : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(e.host?.name || 'host')}`} alt="host" className="w-5 h-5 rounded-full" />
+                מארח: {e.host?.name ?? '—'}
+              </span>
               <span className="text-gray-600 dark:text-gray-400">אישורים: {e.rsvps.length}</span>
             </div>
           </a>
