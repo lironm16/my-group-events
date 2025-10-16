@@ -5,7 +5,7 @@ import DateTimePicker from '@/components/DateTimePicker';
 import Script from 'next/script';
 
 export default function NewEventPage() {
-  const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
+  const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '', image: '' });
   const [step, setStep] = useState<1 | 2>(1);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
@@ -84,6 +84,7 @@ export default function NewEventPage() {
           {(!form.description || !form.description.trim()) && <div className="text-xs text-gray-500 mb-1">כמה מילים על האירוע</div>}
           <textarea rows={3} className={inputCls} value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
         </div>
+        <EventImageInput value={form.image} onChange={(url)=>setForm({...form, image: url})} />
         <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
         <div>
           <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly timeToggle />
@@ -215,6 +216,45 @@ function PlacesInput({ value, onChange }: { value: string; onChange: (v: string)
 }
 
 // Holidays generator removed per request
+
+function EventImageInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  'use client';
+  const [url, setUrl] = useState<string>(value || '');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setUrl(value || ''), [value]);
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: form });
+      const j = await res.json();
+      if (res.ok && j?.url) {
+        setUrl(j.url);
+        onChange(j.url);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm text-gray-600">תמונת אירוע (אופציונלי)</label>
+      <div className="flex items-center gap-3">
+        <input type="file" accept="image/*" onChange={onPick} disabled={busy} />
+        <input className="flex-1 border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="או הדביקו כתובת תמונה" value={url} onChange={(e)=>{ setUrl(e.target.value); onChange(e.target.value); }} />
+      </div>
+      {url && (
+        <div className="mt-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt="event" className="w-full h-40 object-cover rounded" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 function GuestSelector() {
   'use client';
