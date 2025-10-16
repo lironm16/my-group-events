@@ -275,12 +275,14 @@ function GuestSelector() {
         setMe(mj.user);
         const g = await fetch('/api/family/groups', { cache: 'no-store' });
         const gj = await g.json();
-        const nodes: GroupNode[] = (gj.groups || []).map((gr: any) => ({
-          id: gr.id,
-          nickname: gr.nickname,
-          parentId: gr.parent?.id || null,
-          members: (gr.members || []).map((u: any) => ({ id: u.id, name: u.name || null, image: u.image || null })),
-        }));
+        const nodes: GroupNode[] = (gj.groups || [])
+          .map((gr: any) => ({
+            id: gr.id,
+            nickname: gr.nickname,
+            parentId: gr.parent?.id || null,
+            members: (gr.members || []).map((u: any) => ({ id: u.id, name: u.name || null, image: u.image || null })),
+          }))
+          .filter((g: GroupNode) => g.members.length > 0);
         setGroups(nodes);
       } finally {
         setLoading(false);
