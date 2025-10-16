@@ -6,6 +6,8 @@ import Script from 'next/script';
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '', image: '' });
+  const [me, setMe] = useState<{ id: string; name: string | null } | null>(null);
+  const [hostId, setHostId] = useState<string>('');
   const [step, setStep] = useState<1 | 2>(1);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
@@ -29,6 +31,7 @@ export default function NewEventPage() {
       const input = document.getElementById('guestSelection') as HTMLInputElement | null;
       if (input && input.value) body.guestSelection = input.value;
     } catch {}
+    if (hostId) body.hostId = hostId;
     if (repeatWeekly && repeatUntil) {
       body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
     }
@@ -48,6 +51,18 @@ export default function NewEventPage() {
 
   const inputCls = "w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800";
   const errorCls = "text-xs text-red-600";
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/api/users/me', { cache: 'no-store' });
+        const j = await r.json();
+        const my = { id: j?.user?.id || '', name: j?.user?.name || null };
+        setMe(my);
+        setHostId(my.id);
+      } catch {}
+    })();
+  }, []);
 
   return (
     <main className="container-page space-y-4">
@@ -84,6 +99,16 @@ export default function NewEventPage() {
         <div>
           {(!form.description || !form.description.trim()) && <div className="text-xs text-gray-500 mb-1">כמה מילים על האירוע</div>}
           <textarea rows={3} className={inputCls} value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <div className="text-xs text-gray-500 mb-1">יוצר</div>
+            <input className={inputCls} value={me?.name || '—'} readOnly />
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 mb-1">מארח</div>
+            <HostSelector value={hostId} onChange={setHostId} />
+          </div>
         </div>
         <EventImageInput value={form.image} onChange={(url)=>setForm({...form, image: url})} />
         <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
@@ -406,5 +431,38 @@ function GuestSelector() {
       </div>
     );
   }
+}
+
+function HostSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  'use client';
+  const [members, setMembers] = useState<{ id: string; name: string | null }[]>([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/api/users/family', { cache: 'no-store' });
+        // We don't have a direct members endpoint; fallback to building from groups list
+        const g = await fetch('/api/family/groups', { cache: 'no-store' });
+        const gj = await g.json();
+        const seen = new Set<string>();
+        const list: { id: string; name: string | null }[] = [];
+        (gj.groups || []).forEach((gr: any) => {
+          (gr.members || []).forEach((u: any) => {
+            if (seen.has(u.id)) return;
+            seen.add(u.id);
+            list.push({ id: u.id, name: u.name || null });
+          });
+        });
+        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        setMembers(list);
+      } catch {}
+    })();
+  }, []);
+  return (
+    <select className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" value={value} onChange={(e)=>onChange(e.target.value)}>
+      {members.map(m => (
+        <option key={m.id} value={m.id}>{m.name || m.id.slice(0,6)}</option>
+      ))}
+    </select>
+  );
 }
 
