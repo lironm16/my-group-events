@@ -179,6 +179,22 @@ function GroupItem({ node, level, byParent, onQuickApply, getStatus, setStatus, 
           <button className="px-2 py-1 rounded border" onClick={()=> onQuickApply(node.id, 'NA', false)}>אפס</button>
         </div>
       </div>
+      <div className="mb-2">
+        <input className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-xs" placeholder="הערה לקבוצה זו (אופציונלי) — תתווסף לכל המשתנים שנערכים כאן" onChange={(e)=> {
+          const val = e.target.value;
+          // Apply group note lazily: set note on any user already in changes, without altering status
+          // Users changed later will not inherit automatically (to avoid surprises)
+          // This keeps control simple and avoids unexpected propagation
+          const users = node.members.map(m=>m.id);
+          setChanges((c)=>{
+            const out = { ...c } as any;
+            for (const uid of users) {
+              if (out[uid]) out[uid] = { ...out[uid], note: val };
+            }
+            return out;
+          });
+        }} />
+      </div>
       {node.members.length > 0 && (
         <ul className="flex flex-wrap gap-2">
           {node.members.map((u) => (

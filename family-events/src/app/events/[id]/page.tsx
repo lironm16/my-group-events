@@ -111,11 +111,7 @@ export default async function EventDetailPage({ params, searchParams }: { params
         {event.description && (
           <p className="mt-4 text-gray-700 dark:text-gray-300">{event.description}</p>
         )}
-        <div className="mt-4">
-          <h3 className="font-semibold mb-2">אישור הגעה</h3>
-          {/* Initial status is the first RSVP (for the current user) if present; server API restricts data to family/users */}
-          <RSVPButtons eventId={event.id} initial={toRSVPStatus(myRsvp)} canGroup={true} canAll={isHost || (session?.user as any)?.role === 'admin'} />
-        </div>
+        {/* RSVP quick section removed; using grouped editor below */}
       </div>
       <RSVPEditor eventId={event.id} />
       {isHost && pendingCount > 0 && (
