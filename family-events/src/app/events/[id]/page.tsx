@@ -41,7 +41,7 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
   };
 }
 
-export default async function EventDetailPage({ params }: { params: { id: string } }) {
+export default async function EventDetailPage({ params, searchParams }: { params: { id: string }; searchParams?: { [key: string]: string | string[] | undefined } }) {
   const [event, session] = await Promise.all([
     fetchEvent(params.id),
     getServerSession(authOptions),
@@ -70,9 +70,10 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const dateText = new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
   const locText = event.location ? `במקום: ${event.location} ` : '';
   const pendForClient = (event.familyMembers || []).filter(p => (!userStatus.has(p.id) || userStatus.get(p.id) !== 'APPROVED'));
+  const from = typeof searchParams?.from === 'string' ? (searchParams!.from as string) : undefined;
   return (
     <main className="container-page space-y-4">
-      <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} />
+      <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} backHref={from || '/events'} />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
         <dl className="grid md:grid-cols-2 gap-4">
           <div>
@@ -140,16 +141,16 @@ export default async function EventDetailPage({ params }: { params: { id: string
   );
 }
 
-function HeaderActions({ id, wa, ics, isHost, event, shareUrl }: { id: string; wa: string; ics: string; isHost: boolean; event: any; shareUrl: string }) {
+function HeaderActions({ id, wa, ics, isHost, event, shareUrl, backHref }: { id: string; wa: string; ics: string; isHost: boolean; event: any; shareUrl: string; backHref: string }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <h1 className="text-2xl font-bold">פרטי אירוע</h1>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 w-full sm:w-auto">
         <WhatsAppShare eventId={id} title={event.title} startAtISO={event.startAt} location={event.location} typeKey={event.holidayKey ?? null} shareUrl={shareUrl} />
-        <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
-        {isHost && <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
+        <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
+        {isHost && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
         {isHost && <DeleteEventButton id={id} />}
-        <Link className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href="/events">חזרה</Link>
+        <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={backHref}>חזרה</Link>
       </div>
     </div>
   );
