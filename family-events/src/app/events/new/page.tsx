@@ -66,7 +66,8 @@ export default function NewEventPage() {
           location: tpl.location ?? '',
           startAt: tpl.startAt ?? '',
           endAt: tpl.endAt ?? '',
-          externalLink: ''
+          externalLink: '',
+          image: ''
         });
         (window as any).__holidayKey = tpl.holidayKey ?? null;
         setStep(2);
