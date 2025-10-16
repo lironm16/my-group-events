@@ -52,7 +52,7 @@ export default function CalendarMonth({ events }: { events: CalendarEvent[] }) {
           <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, -1))}>▶</button>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-800 rounded overflow-hidden">
+      <div className="grid grid-cols-7 sm:gap-px gap-[1px] bg-gray-200 dark:bg-gray-800 rounded overflow-hidden text-xs sm:text-sm">
         {WEEKDAY_LABELS.map((label) => (
           <div key={label} className="bg-white dark:bg-gray-900 p-2 text-xs font-medium text-center">
             {label}
@@ -63,25 +63,25 @@ export default function CalendarMonth({ events }: { events: CalendarEvent[] }) {
           const list = byDay.get(k) || [];
           const isCurrentMonth = d.date.getMonth() === cursor.getMonth();
           return (
-            <div key={k} className={["bg-white dark:bg-gray-900 min-h-[110px] p-2", isCurrentMonth ? "" : "opacity-50"].join(" ")}>
+            <div key={k} className={["bg-white dark:bg-gray-900 min-h-[80px] sm:min-h-[110px] p-1 sm:p-2", isCurrentMonth ? "" : "opacity-50"].join(" ")}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-500">{d.date.getDate()}</span>
+                <span className="text-[10px] sm:text-xs text-gray-500">{d.date.getDate()}</span>
                 {list.length > 0 && (
-                  <span className="text-[10px] px-1 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+                  <span className="text-[9px] sm:text-[10px] px-1 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
                     {list.length}
                   </span>
                 )}
               </div>
-              <ul className="space-y-1">
+              <ul className="space-y-0.5 sm:space-y-1">
                 {list.slice(0, 3).map((e) => (
                   <li key={e.id} className="truncate">
-                    <Link href={`/events/${e.id}`} className="inline-block max-w-full truncate text-[11px] px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800">
+                    <Link href={`/events/${e.id}`} className="inline-block max-w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800">
                       {new Date(e.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · {e.title}
                     </Link>
                   </li>
                 ))}
                 {list.length > 3 && (
-                  <li className="text-[11px] text-gray-500">+{list.length - 3} נוספים</li>
+                  <li className="text-[10px] sm:text-[11px] text-gray-500">+{list.length - 3} נוספים</li>
                 )}
               </ul>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import EventsSearch, { EventItem } from '@/components/EventsSearch';
 import CalendarMonth, { type CalendarEvent } from '@/components/CalendarMonth';
 
@@ -26,6 +27,9 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [view, setView] = useState<ViewKey>('list');
   const [groupId, setGroupId] = useState<string>('');
   const [myUserId, setMyUserId] = useState<string>('');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   useEffect(() => {
     // best-effort fetch to know current user id and group id
     (async () => {
@@ -59,6 +63,21 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   useEffect(() => {
     setFiltered(deferredBase);
   }, [deferredBase]);
+
+  // Initialize view from URL
+  useEffect(() => {
+    const v = (searchParams.get('view') || '').toLowerCase();
+    if (v === 'calendar') setView('calendar');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist view in URL (without scrolling)
+  useEffect(() => {
+    const sp = new URLSearchParams(searchParams.toString());
+    if (view === 'calendar') sp.set('view', 'calendar');
+    else sp.delete('view');
+    router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+  }, [view, router, pathname, searchParams]);
 
   const calItems: CalendarEvent[] = useMemo(
     () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location })),
@@ -131,22 +150,24 @@ function Scope({ scope, onChange }: { scope: ScopeKey; onChange: (s: ScopeKey) =
 }
 
 function ViewToggle({ view, onChange }: { view: ViewKey; onChange: (v: ViewKey) => void }) {
-  const btn = (key: ViewKey, label: string) => (
+  const btn = (key: ViewKey, icon: string, title: string) => (
     <button
       key={key}
       onClick={() => onChange(key)}
+      title={title}
+      aria-label={title}
       className={[
         'px-3 py-1 rounded border text-sm',
         view === key ? 'bg-blue-600 text-white border-transparent' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800',
       ].join(' ')}
     >
-      {label}
+      {icon}
     </button>
   );
   return (
     <div className="flex gap-2 ml-auto">
-      {btn('list', 'רשימה')}
-      {btn('calendar', 'לוח שנה')}
+      {btn('list', '🗒️', 'תצוגת רשימה')}
+      {btn('calendar', '📅', 'תצוגת לוח שנה')}
     </div>
   );
 }
