@@ -25,6 +25,10 @@ export default function NewEventPage() {
     if (Object.keys(errors).length > 0) return;
     setSaving(true);
     const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null };
+    try {
+      const input = document.getElementById('guestSelection') as HTMLInputElement | null;
+      if (input && input.value) body.guestSelection = input.value;
+    } catch {}
     if (repeatWeekly && repeatUntil) {
       body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
     }
@@ -214,11 +218,13 @@ function PlacesInput({ value, onChange }: { value: string; onChange: (v: string)
 
 function GuestSelector() {
   'use client';
+  type GroupNode = { id: string; nickname: string; parentId: string | null; members: { id: string; name: string | null; image: string | null }[] };
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<{ id: string; groupId: string | null } | null>(null);
-  const [groups, setGroups] = useState<{ id: string; nickname: string; members: { id: string; name: string | null; image: string | null }[] }[]>([]);
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [groups, setGroups] = useState<GroupNode[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<Record<string, boolean>>({});
   const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -228,31 +234,95 @@ function GuestSelector() {
         setMe(mj.user);
         const g = await fetch('/api/family/groups');
         const gj = await g.json();
-        setGroups(gj.groups || []);
-        // Default: select everyone (placeholder; apply opt-outs here later)
-        const sel: Record<string, boolean> = {};
-        (gj.groups || []).forEach((gr: any) => gr.members.forEach((u: any) => { sel[u.id] = true; }));
-        // Also select entire groups by default
-        const sg: Record<string, boolean> = {};
-        (gj.groups || []).forEach((gr: any) => { sg[gr.id] = true; });
-        setSelected(sel);
-        setSelectedGroups(sg);
+        const nodes: GroupNode[] = (gj.groups || []).map((gr: any) => ({
+          id: gr.id,
+          nickname: gr.nickname,
+          parentId: gr.parent?.id || null,
+          members: (gr.members || []).map((u: any) => ({ id: u.id, name: u.name || null, image: u.image || null })),
+        }));
+        setGroups(nodes);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  function toggleUser(id: string) {
-    setSelected((s) => ({ ...s, [id]: !s[id] }));
+  const byId = useMemo(() => {
+    const map = new Map<string, GroupNode>();
+    groups.forEach((g) => map.set(g.id, g));
+    return map;
+  }, [groups]);
+  const byParent = useMemo(() => {
+    const map = new Map<string | null, GroupNode[]>();
+    groups.forEach((g) => {
+      const key = g.parentId;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(g);
+    });
+    return map;
+  }, [groups]);
+  const roots = useMemo(() => byParent.get(null) || [], [byParent]);
+
+  function collectDescendantUserIds(groupId: string): string[] {
+    const res: string[] = [];
+    const stack: string[] = [groupId];
+    while (stack.length) {
+      const gid = stack.pop()!;
+      const node = byId.get(gid);
+      if (!node) continue;
+      node.members.forEach((u) => res.push(u.id));
+      const children = byParent.get(gid) || [];
+      children.forEach((c) => stack.push(c.id));
+    }
+    return res;
   }
-  function toggleGroup(id: string, members: { id: string }[]) {
-    setSelectedGroups((g) => ({ ...g, [id]: !g[id] }));
-    const on = !selectedGroups[id];
-    setSelected((s) => {
-      const ns = { ...s };
-      members.forEach((m) => { ns[m.id] = on; });
-      return ns;
+
+  // Initialize default selection once we have groups and user
+  useEffect(() => {
+    if (initialized || loading) return;
+    if (!groups.length) { setInitialized(true); return; }
+    const nextGroups: Record<string, boolean> = {};
+    const nextUsers: Record<string, boolean> = {};
+    // If user has an active group, select that root's subtree; otherwise select all
+    const myGroupId = me?.groupId || null;
+    let rootId: string | null = null;
+    if (myGroupId && byId.has(myGroupId)) {
+      let cursor: GroupNode | undefined = byId.get(myGroupId);
+      const visited = new Set<string>();
+      while (cursor && cursor.parentId && !visited.has(cursor.id)) {
+        visited.add(cursor.id);
+        cursor = byId.get(cursor.parentId);
+      }
+      rootId = cursor?.id || myGroupId;
+    }
+    if (rootId) {
+      nextGroups[rootId] = true;
+      for (const uid of collectDescendantUserIds(rootId)) nextUsers[uid] = true;
+    } else {
+      for (const g of groups) {
+        nextGroups[g.id] = true;
+        for (const u of g.members) nextUsers[u.id] = true;
+      }
+    }
+    setSelectedGroups(nextGroups);
+    setSelectedUsers(nextUsers);
+    setInitialized(true);
+  }, [initialized, loading, groups, me, byId, byParent]);
+
+  function toggleUser(userId: string) {
+    setSelectedUsers((s) => ({ ...s, [userId]: !s[userId] }));
+  }
+
+  function toggleGroupRecursive(groupId: string) {
+    setSelectedGroups((prev) => {
+      const on = !prev[groupId];
+      const userIds = collectDescendantUserIds(groupId);
+      setSelectedUsers((s) => {
+        const ns = { ...s };
+        for (const uid of userIds) ns[uid] = on;
+        return ns;
+      });
+      return { ...prev, [groupId]: on };
     });
   }
 
@@ -260,9 +330,9 @@ function GuestSelector() {
     // Serialize selection into hidden input for server
     const input = document.getElementById('guestSelection') as HTMLInputElement | null;
     if (!input) return;
-    const ids = Object.entries(selected).filter(([, v]) => v).map(([k]) => k);
+    const ids = Object.entries(selectedUsers).filter(([, v]) => v).map(([k]) => k);
     input.value = JSON.stringify(ids);
-  }, [selected]);
+  }, [selectedUsers]);
 
   if (loading) return <div className="text-sm text-gray-600 dark:text-gray-300">טוען קבוצות…</div>;
   if (!groups.length) return <div className="text-sm text-gray-600 dark:text-gray-300">אין קבוצות עדיין.</div>;
@@ -272,26 +342,43 @@ function GuestSelector() {
       <h3 className="font-semibold">מוזמנים</h3>
       <input type="hidden" id="guestSelection" name="guestSelection" />
       <div className="space-y-3">
-        {groups.map((g) => (
-          <div key={g.id} className="rounded border border-gray-200 dark:border-gray-800 p-3">
-            <label className="inline-flex items-center gap-2 mb-2">
-              <input type="checkbox" checked={!!selectedGroups[g.id]} onChange={() => toggleGroup(g.id, g.members)} />
-              <span className="font-medium">{g.nickname}</span>
-            </label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {g.members.map((u) => (
-                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-700 dark:border-blue-700 dark:text-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
-                  <span>{u.name || ''}</span>
-                  <input type="checkbox" className="ml-1" checked={!!selected[u.id]} onChange={() => toggleUser(u.id)} />
-                </label>
-              ))}
-            </div>
-          </div>
+        {roots.map((root) => (
+          <GroupItem key={root.id} node={root} level={0} byParent={byParent} selectedGroups={selectedGroups} onToggleGroup={toggleGroupRecursive} selectedUsers={selectedUsers} onToggleUser={toggleUser} />
         ))}
       </div>
     </div>
   );
+
+  function GroupItem({ node, level, byParent, selectedGroups, onToggleGroup, selectedUsers, onToggleUser }: { node: GroupNode; level: number; byParent: Map<string | null, GroupNode[]>; selectedGroups: Record<string, boolean>; onToggleGroup: (id: string) => void; selectedUsers: Record<string, boolean>; onToggleUser: (id: string) => void; }) {
+    const children = byParent.get(node.id) || [];
+    return (
+      <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
+        <label className="inline-flex items-center gap-2 mb-2">
+          <input type="checkbox" checked={!!selectedGroups[node.id]} onChange={() => onToggleGroup(node.id)} />
+          <span className="font-medium">{node.nickname}</span>
+          {level > 0 && <span className="text-xs text-gray-500">תת־קבוצה</span>}
+        </label>
+        {node.members.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {node.members.map((u) => (
+              <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selectedUsers[u.id] ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-700 dark:border-blue-700 dark:text-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
+                <span>{u.name || ''}</span>
+                <input type="checkbox" className="ml-1" checked={!!selectedUsers[u.id]} onChange={() => onToggleUser(u.id)} />
+              </label>
+            ))}
+          </div>
+        )}
+        {children.length > 0 && (
+          <div className="mt-3 space-y-3">
+            {children.map((c) => (
+              <GroupItem key={c.id} node={c} level={level + 1} byParent={byParent} selectedGroups={selectedGroups} onToggleGroup={onToggleGroup} selectedUsers={selectedUsers} onToggleUser={onToggleUser} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 }
 
