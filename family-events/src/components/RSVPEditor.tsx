@@ -250,7 +250,18 @@ function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus
       {children.length > 0 && (
         <div className="mt-3 space-y-3">
           {children.map((c) => (
-            <GroupItem key={c.id} node={c} level={level + 1} byParent={byParent} onQuickApply={onQuickApply} onGroupNote={onGroupNote} getStatus={getStatus} setStatus={setStatus} canEdit={canEdit} />
+            <GroupItem
+              key={c.id}
+              node={c}
+              level={level + 1}
+              byParent={byParent}
+              onQuickApply={onQuickApply}
+              onGroupNote={onGroupNote}
+              getStatus={getStatus}
+              getNote={getNote}
+              setStatus={setStatus}
+              canEdit={canEdit}
+            />
           ))}
         </div>
       )}
