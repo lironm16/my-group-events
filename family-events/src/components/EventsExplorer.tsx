@@ -217,13 +217,19 @@ function Cards({ list }: { list: EventCard[] }) {
                 <img src={e.hostImage && /^https?:/i.test(e.hostImage) ? e.hostImage : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(e.host?.name || 'host')}`} alt="host" className="w-5 h-5 rounded-full" />
                 מארח: {e.host?.name ?? '—'}
               </span>
-              <span className="text-gray-600 dark:text-gray-400">אישורים: {e.rsvps.length}</span>
+              <ApprovalSummary rsvps={e.rsvps} />
             </div>
           </a>
         </li>
       ))}
     </ul>
   );
+}
+
+function ApprovalSummary({ rsvps }: { rsvps: { status: string }[] }) {
+  const approved = rsvps.filter((r) => r.status === 'APPROVED').length;
+  const total = rsvps.length;
+  return <span className="text-gray-600 dark:text-gray-400">{approved}/{total} אישרו</span>;
 }
 
 function resolveEventTypeImage(holidayKey?: string | null, title?: string | null) {

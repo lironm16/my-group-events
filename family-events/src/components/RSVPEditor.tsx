@@ -176,11 +176,13 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
               level={0}
               byParent={byParent}
               onQuickApply={quickApply}
-              onGroupNote={(userIds, note) => {
+            onGroupNote={(userIds, note) => {
                 setChanges((c) => {
                   const out = { ...c } as Record<string, { status: Status; note?: string | null }>;
                   for (const uid of userIds) {
-                    if (out[uid]) out[uid] = { ...out[uid], note };
+                    const base = statusByUser.get(uid);
+                    const currentStatus = out[uid]?.status ?? base?.status ?? 'NA';
+                    out[uid] = { status: currentStatus, note };
                   }
                   return out;
                 });

@@ -11,7 +11,7 @@ export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { ev
   const [saving, setSaving] = useState(false);
 
   const save = useCallback(async () => {
-    if (!status) return;
+    if (!status && !note.trim()) return;
     setSaving(true);
     try {
       const res = await fetch('/api/rsvp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId, status, scope, note }) });
@@ -72,7 +72,7 @@ export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { ev
           value={note}
           onChange={(e)=>setNote(e.target.value)}
         />
-        <button disabled={saving} onClick={save} className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-60">שמירה</button>
+        <button disabled={saving || (!status && !note.trim())} onClick={save} className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-60">שמירה</button>
       </div>
     </div>
   );
