@@ -40,14 +40,15 @@ export default async function SettingsIndexPage() {
           <Item href="/settings/prefs/theme">מצב תצוגה</Item>
           <Item href="/settings/prefs/location">מיקום ברירת מחדל לאירועים</Item>
           <Item href="/settings/prefs/notifications">התראות אימייל על RSVP</Item>
+          <Item href="/settings/prefs/calendar">לוח שנה וסנכרון</Item>
         </ul>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">קבוצה</h2>
+        <h2 className="text-lg font-semibold">קבוצות</h2>
         <ul className="space-y-2">
           {hasFamily && <Item href="/settings/family/name">שם הקבוצה הראשית</Item>}
-          {hasFamily && <Item href="/settings/family/groups">בחירת/יצירת קבוצה</Item>}
+          {hasFamily && <Item href="/settings/family/groups">בחירת/יצירת קבוצה/תת־קבוצה</Item>}
           {isAdmin && hasFamily && <Item href="/settings/family/invite">קישור הזמנה לקבוצה</Item>}
           {isAdmin && hasFamily && <Item href="/settings/family/members">ניהול חברי קבוצה</Item>}
           {isAdmin && hasFamily && <Item href="/settings/family/approvals">בקשות הצטרפות</Item>}

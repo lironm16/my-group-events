@@ -2,25 +2,24 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-type RSVPStatus = "APPROVED" | "DECLINED" | "MAYBE";
+type RSVPStatus = "APPROVED" | "DECLINED" | "MAYBE" | "NA";
 
 export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { eventId: string; initial?: RSVPStatus | null; canGroup?: boolean; canAll?: boolean }) {
-  const [status, setStatus] = useState<RSVPStatus | null>(initial ?? null);
+  const [status, setStatus] = useState<RSVPStatus | null>(initial ?? 'NA');
   const [scope, setScope] = useState<'self' | 'group' | 'all'>('self');
   const [note, setNote] = useState<string>('');
   const [saving, setSaving] = useState(false);
 
-  const post = useCallback(async (next: RSVPStatus) => {
+  const save = useCallback(async () => {
+    if (!status) return;
     setSaving(true);
     try {
-      const res = await fetch('/api/rsvp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId, status: next, scope, note }) });
-      if (res.ok) {
-        setStatus(next);
-      }
+      const res = await fetch('/api/rsvp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId, status, scope, note }) });
+      if (!res.ok) return;
     } finally {
       setSaving(false);
     }
-  }, [eventId, scope, note]);
+  }, [eventId, scope, note, status]);
 
   const btnCls = (active: boolean, color: string) => [
     'px-3 py-1 rounded text-sm border transition-colors',
@@ -30,18 +29,22 @@ export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { ev
   const approvedActive = useMemo(() => status === 'APPROVED', [status]);
   const declinedActive = useMemo(() => status === 'DECLINED', [status]);
   const maybeActive = useMemo(() => status === 'MAYBE', [status]);
+  const naActive = useMemo(() => status === 'NA' || status == null, [status]);
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        <button disabled={saving} onClick={() => post('APPROVED')} className={btnCls(approvedActive, 'bg-green-600')}>
+        <button disabled={saving} onClick={() => setStatus('APPROVED')} className={btnCls(approvedActive, 'bg-green-600')}>
           מגיע/ה
         </button>
-        <button disabled={saving} onClick={() => post('DECLINED')} className={btnCls(declinedActive, 'bg-red-600')}>
+        <button disabled={saving} onClick={() => setStatus('DECLINED')} className={btnCls(declinedActive, 'bg-red-600')}>
           לא מגיע/ה
         </button>
-        <button disabled={saving} onClick={() => post('MAYBE')} className={btnCls(maybeActive, 'bg-yellow-500')}>
+        <button disabled={saving} onClick={() => setStatus('MAYBE')} className={btnCls(maybeActive, 'bg-yellow-500')}>
           אולי
+        </button>
+        <button disabled={saving} onClick={() => setStatus('NA')} className={btnCls(naActive, 'bg-gray-500')}>
+          —
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -62,12 +65,15 @@ export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { ev
           </label>
         )}
       </div>
-      <input
-        className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
-        placeholder="הערה (אופציונלי)"
-        value={note}
-        onChange={(e)=>setNote(e.target.value)}
-      />
+      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+        <input
+          className="flex-1 border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
+          placeholder="הערה (אופציונלי)"
+          value={note}
+          onChange={(e)=>setNote(e.target.value)}
+        />
+        <button disabled={saving} onClick={save} className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-60">שמירה</button>
+      </div>
     </div>
   );
 }

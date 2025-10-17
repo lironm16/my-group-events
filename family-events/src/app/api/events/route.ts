@@ -34,12 +34,13 @@ export async function POST(req: Request) {
       title: body.title,
       description: body.description ?? null,
       location: body.location ?? null,
+      image: body.image ?? null,
       startAt: new Date(body.startAt),
       endAt: body.endAt ? new Date(body.endAt) : null,
       externalLink: body.externalLink ?? null,
       isHolidayGenerated: body.holidayKey ? true : false,
       holidayKey: body.holidayKey ?? null,
-      hostId: user.id,
+      hostId: (body.hostId && typeof body.hostId === 'string') ? body.hostId : user.id,
       familyId: user.familyId ?? null,
     },
   });
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
     const guestIds: string[] = JSON.parse(String(body?.guestSelection || '[]'));
     if (Array.isArray(guestIds) && guestIds.length) {
       const unique = Array.from(new Set(guestIds));
-      await prisma.rSVP.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid, status: 'MAYBE' })) });
+      await prisma.rSVP.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid, status: 'NA' })) });
     }
   } catch {}
   // Handle weekly recurrence
@@ -73,6 +74,7 @@ export async function POST(req: Request) {
           title: body.title,
           description: body.description ?? null,
           location: body.location ?? null,
+          image: body.image ?? null,
           startAt: s.startAt,
           endAt: s.endAt,
           externalLink: body.externalLink ?? null,

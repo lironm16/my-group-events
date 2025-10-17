@@ -11,7 +11,8 @@ export default function DeleteEventButton({ id }: { id: string }) {
     const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
     setDeleting(false);
     if (res.ok) {
-      router.push('/events');
+      router.replace('/events');
+      router.refresh();
     }
   }
   return (

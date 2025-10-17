@@ -5,7 +5,9 @@ import DateTimePicker from '@/components/DateTimePicker';
 import Script from 'next/script';
 
 export default function NewEventPage() {
-  const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
+  const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '', image: '' });
+  const [me, setMe] = useState<{ id: string; name: string | null } | null>(null);
+  const [hostId, setHostId] = useState<string>('');
   const [step, setStep] = useState<1 | 2>(1);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
@@ -25,6 +27,11 @@ export default function NewEventPage() {
     if (Object.keys(errors).length > 0) return;
     setSaving(true);
     const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null };
+    try {
+      const input = document.getElementById('guestSelection') as HTMLInputElement | null;
+      if (input && input.value) body.guestSelection = input.value;
+    } catch {}
+    if (hostId) body.hostId = hostId;
     if (repeatWeekly && repeatUntil) {
       body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
     }
@@ -45,6 +52,18 @@ export default function NewEventPage() {
   const inputCls = "w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800";
   const errorCls = "text-xs text-red-600";
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/api/users/me', { cache: 'no-store' });
+        const j = await r.json();
+        const my = { id: j?.user?.id || '', name: j?.user?.name || null };
+        setMe(my);
+        setHostId(my.id);
+      } catch {}
+    })();
+  }, []);
+
   return (
     <main className="container-page space-y-4">
       {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && (
@@ -62,7 +81,8 @@ export default function NewEventPage() {
           location: tpl.location ?? '',
           startAt: tpl.startAt ?? '',
           endAt: tpl.endAt ?? '',
-          externalLink: ''
+          externalLink: '',
+          image: ''
         });
         (window as any).__holidayKey = tpl.holidayKey ?? null;
         setStep(2);
@@ -80,6 +100,11 @@ export default function NewEventPage() {
           {(!form.description || !form.description.trim()) && <div className="text-xs text-gray-500 mb-1">כמה מילים על האירוע</div>}
           <textarea rows={3} className={inputCls} value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
         </div>
+        <div>
+          <div className="text-xs text-gray-500 mb-1">מארח</div>
+          <HostSelector value={hostId} onChange={setHostId} />
+        </div>
+        <EventImageInput value={form.image} onChange={(url)=>setForm({...form, image: url})} />
         <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
         <div>
           <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly timeToggle />
@@ -212,47 +237,137 @@ function PlacesInput({ value, onChange }: { value: string; onChange: (v: string)
 
 // Holidays generator removed per request
 
+function EventImageInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  'use client';
+  const [url, setUrl] = useState<string>(value || '');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setUrl(value || ''), [value]);
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: form });
+      const j = await res.json();
+      if (res.ok && j?.url) {
+        setUrl(j.url);
+        onChange(j.url);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm text-gray-600">תמונת אירוע (אופציונלי)</label>
+      <div className="flex items-center gap-3">
+        <input type="file" accept="image/*" onChange={onPick} disabled={busy} />
+        <input className="flex-1 border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="או הדביקו כתובת תמונה" value={url} onChange={(e)=>{ setUrl(e.target.value); onChange(e.target.value); }} />
+      </div>
+      {url && (
+        <div className="mt-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt="event" className="w-full h-40 object-cover rounded" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GuestSelector() {
   'use client';
+  type GroupNode = { id: string; nickname: string; parentId: string | null; members: { id: string; name: string | null; image: string | null }[] };
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<{ id: string; groupId: string | null } | null>(null);
-  const [groups, setGroups] = useState<{ id: string; nickname: string; members: { id: string; name: string | null; image: string | null }[] }[]>([]);
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [groups, setGroups] = useState<GroupNode[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<Record<string, boolean>>({});
   const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const m = await fetch('/api/users/me');
+        const m = await fetch('/api/users/me', { cache: 'no-store' });
         const mj = await m.json();
         setMe(mj.user);
-        const g = await fetch('/api/family/groups');
+        const g = await fetch('/api/family/groups', { cache: 'no-store' });
         const gj = await g.json();
-        setGroups(gj.groups || []);
-        // Default: select everyone (placeholder; apply opt-outs here later)
-        const sel: Record<string, boolean> = {};
-        (gj.groups || []).forEach((gr: any) => gr.members.forEach((u: any) => { sel[u.id] = true; }));
-        // Also select entire groups by default
-        const sg: Record<string, boolean> = {};
-        (gj.groups || []).forEach((gr: any) => { sg[gr.id] = true; });
-        setSelected(sel);
-        setSelectedGroups(sg);
+        const nodes: GroupNode[] = (gj.groups || [])
+          .map((gr: any) => ({
+            id: gr.id,
+            nickname: gr.nickname,
+            parentId: gr.parent?.id || null,
+            members: (gr.members || []).map((u: any) => ({ id: u.id, name: u.name || null, image: u.image || null })),
+          }))
+          .filter((g: GroupNode) => g.members.length > 0);
+        setGroups(nodes);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  function toggleUser(id: string) {
-    setSelected((s) => ({ ...s, [id]: !s[id] }));
+  const byId = useMemo(() => {
+    const map = new Map<string, GroupNode>();
+    groups.forEach((g) => map.set(g.id, g));
+    return map;
+  }, [groups]);
+  const byParent = useMemo(() => {
+    const map = new Map<string | null, GroupNode[]>();
+    groups.forEach((g) => {
+      const key = g.parentId;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(g);
+    });
+    return map;
+  }, [groups]);
+  const roots = useMemo(() => byParent.get(null) || [], [byParent]);
+
+  function collectDescendantUserIds(groupId: string): string[] {
+    const res: string[] = [];
+    const stack: string[] = [groupId];
+    while (stack.length) {
+      const gid = stack.pop()!;
+      const node = byId.get(gid);
+      if (!node) continue;
+      node.members.forEach((u) => res.push(u.id));
+      const children = byParent.get(gid) || [];
+      children.forEach((c) => stack.push(c.id));
+    }
+    return res;
   }
-  function toggleGroup(id: string, members: { id: string }[]) {
-    setSelectedGroups((g) => ({ ...g, [id]: !g[id] }));
-    const on = !selectedGroups[id];
-    setSelected((s) => {
-      const ns = { ...s };
-      members.forEach((m) => { ns[m.id] = on; });
-      return ns;
+
+  // Initialize default selection: select ALL groups and ALL members
+  useEffect(() => {
+    if (initialized || loading) return;
+    if (!groups.length) { setInitialized(true); return; }
+    const nextGroups: Record<string, boolean> = {};
+    const nextUsers: Record<string, boolean> = {};
+    for (const g of groups) {
+      nextGroups[g.id] = true;
+      for (const u of g.members) nextUsers[u.id] = true;
+    }
+    setSelectedGroups(nextGroups);
+    setSelectedUsers(nextUsers);
+    setInitialized(true);
+  }, [initialized, loading, groups]);
+
+  function toggleUser(userId: string) {
+    setSelectedUsers((s) => ({ ...s, [userId]: !s[userId] }));
+  }
+
+  function toggleGroupRecursive(groupId: string) {
+    setSelectedGroups((prev) => {
+      const on = !prev[groupId];
+      const userIds = collectDescendantUserIds(groupId);
+      setSelectedUsers((s) => {
+        const ns = { ...s };
+        for (const uid of userIds) ns[uid] = on;
+        return ns;
+      });
+      return { ...prev, [groupId]: on };
     });
   }
 
@@ -260,9 +375,9 @@ function GuestSelector() {
     // Serialize selection into hidden input for server
     const input = document.getElementById('guestSelection') as HTMLInputElement | null;
     if (!input) return;
-    const ids = Object.entries(selected).filter(([, v]) => v).map(([k]) => k);
+    const ids = Object.entries(selectedUsers).filter(([, v]) => v).map(([k]) => k);
     input.value = JSON.stringify(ids);
-  }, [selected]);
+  }, [selectedUsers]);
 
   if (loading) return <div className="text-sm text-gray-600 dark:text-gray-300">טוען קבוצות…</div>;
   if (!groups.length) return <div className="text-sm text-gray-600 dark:text-gray-300">אין קבוצות עדיין.</div>;
@@ -272,26 +387,76 @@ function GuestSelector() {
       <h3 className="font-semibold">מוזמנים</h3>
       <input type="hidden" id="guestSelection" name="guestSelection" />
       <div className="space-y-3">
-        {groups.map((g) => (
-          <div key={g.id} className="rounded border border-gray-200 dark:border-gray-800 p-3">
-            <label className="inline-flex items-center gap-2 mb-2">
-              <input type="checkbox" checked={!!selectedGroups[g.id]} onChange={() => toggleGroup(g.id, g.members)} />
-              <span className="font-medium">{g.nickname}</span>
-            </label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {g.members.map((u) => (
-                <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected[u.id] ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-700 dark:border-blue-700 dark:text-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
-                  <span>{u.name || ''}</span>
-                  <input type="checkbox" className="ml-1" checked={!!selected[u.id]} onChange={() => toggleUser(u.id)} />
-                </label>
-              ))}
-            </div>
-          </div>
+        {roots.map((root) => (
+          <GroupItem key={root.id} node={root} level={0} byParent={byParent} selectedGroups={selectedGroups} onToggleGroup={toggleGroupRecursive} selectedUsers={selectedUsers} onToggleUser={toggleUser} />
         ))}
       </div>
     </div>
+  );
+
+  function GroupItem({ node, level, byParent, selectedGroups, onToggleGroup, selectedUsers, onToggleUser }: { node: GroupNode; level: number; byParent: Map<string | null, GroupNode[]>; selectedGroups: Record<string, boolean>; onToggleGroup: (id: string) => void; selectedUsers: Record<string, boolean>; onToggleUser: (id: string) => void; }) {
+    const children = byParent.get(node.id) || [];
+    return (
+      <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
+        <label className="inline-flex items-center gap-2 mb-2">
+          <input type="checkbox" checked={!!selectedGroups[node.id]} onChange={() => onToggleGroup(node.id)} />
+          <span className="font-medium">{node.nickname}</span>
+          {level > 0 && <span className="text-xs text-gray-500">תת־קבוצה</span>}
+        </label>
+        {node.members.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {node.members.map((u) => (
+              <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selectedUsers[u.id] ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-700 dark:border-blue-700 dark:text-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
+                <span>{u.name || ''}</span>
+                <input type="checkbox" className="ml-1" checked={!!selectedUsers[u.id]} onChange={() => onToggleUser(u.id)} />
+              </label>
+            ))}
+          </div>
+        )}
+        {children.length > 0 && (
+          <div className="mt-3 space-y-3">
+            {children.map((c) => (
+              <GroupItem key={c.id} node={c} level={level + 1} byParent={byParent} selectedGroups={selectedGroups} onToggleGroup={onToggleGroup} selectedUsers={selectedUsers} onToggleUser={onToggleUser} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+}
+
+function HostSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  'use client';
+  const [members, setMembers] = useState<{ id: string; name: string | null }[]>([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/api/users/family', { cache: 'no-store' });
+        // We don't have a direct members endpoint; fallback to building from groups list
+        const g = await fetch('/api/family/groups', { cache: 'no-store' });
+        const gj = await g.json();
+        const seen = new Set<string>();
+        const list: { id: string; name: string | null }[] = [];
+        (gj.groups || []).forEach((gr: any) => {
+          (gr.members || []).forEach((u: any) => {
+            if (seen.has(u.id)) return;
+            seen.add(u.id);
+            list.push({ id: u.id, name: u.name || null });
+          });
+        });
+        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        setMembers(list);
+      } catch {}
+    })();
+  }, []);
+  return (
+    <select className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" value={value} onChange={(e)=>onChange(e.target.value)}>
+      {members.map(m => (
+        <option key={m.id} value={m.id}>{m.name || m.id.slice(0,6)}</option>
+      ))}
+    </select>
   );
 }
 

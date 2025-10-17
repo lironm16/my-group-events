@@ -6,26 +6,10 @@ import { authOptions } from '@/auth';
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
-  if (code || process.env.VERCEL_ENV === 'preview') {
-    // Unauthenticated listing by invite code for signup step
-    const family = code ? await prisma.family.findUnique({ where: { inviteCode: code } }) : null;
-    if (!family) {
-      // Preview fallback: return mock groups for UI demos on Vercel preview
-      if (process.env.VERCEL_ENV === 'preview') {
-        const mock = [
-          { id: 'g1', nickname: 'הורים', members: [
-            { id: 'u1', name: 'אבא', image: null },
-            { id: 'u2', name: 'אמא', image: null },
-          ]},
-          { id: 'g2', nickname: 'ילדים', members: [
-            { id: 'u3', name: 'דני', image: null },
-            { id: 'u4', name: 'נועה', image: null },
-          ]},
-        ];
-        return NextResponse.json({ groups: mock });
-      }
-      return NextResponse.json({ groups: [] });
-    }
+  if (code) {
+    // Unauthenticated listing by invite code for signup step (signup flow only)
+    const family = await prisma.family.findUnique({ where: { inviteCode: code } });
+    if (!family) return NextResponse.json({ groups: [] });
     const groups = await prisma.group.findMany({
       where: { familyId: family.id },
       include: { members: { select: { id: true, name: true, image: true } }, parent: { select: { id: true, nickname: true } } },

@@ -13,6 +13,8 @@ type EventCard = {
   endAt: string | null;
   host: { name: string | null };
   hostId: string | null;
+  hostImage?: string | null;
+  holidayKey?: string | null;
   rsvps: { status: string; userId?: string }[];
 };
 
@@ -52,7 +54,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
       const rows = await prisma.event.findMany({
         where,
         orderBy: { startAt: 'asc' },
-        include: { rsvps: { select: { status: true, userId: true } }, host: { select: { name: true, id: true } } },
+        include: { rsvps: { select: { status: true, userId: true } }, host: { select: { name: true, id: true, image: true } } },
         skip: (page - 1) * pageSize,
         take: pageSize,
       });
@@ -65,6 +67,8 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
         endAt: r.endAt ? r.endAt.toISOString() : null,
         host: { name: r.host?.name ?? null },
         hostId: r.host?.id ?? null,
+        hostImage: (r.host as any)?.image ?? null,
+        holidayKey: (r as any).holidayKey ?? null,
         rsvps: r.rsvps.map(x => ({ status: x.status, userId: x.userId })),
       }));
     }
@@ -74,9 +78,9 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">אירועים</h1>
         {authorized ? (
-          <Link className="px-3 py-2 bg-blue-600 text-white rounded" href="/events/new">אירוע חדש</Link>
+          <a className="px-3 py-2 bg-blue-600 text-white rounded" href="/events/new">אירוע חדש</a>
         ) : (
-          <Link className="px-3 py-2 bg-blue-600 text-white rounded" href="/api/auth/signin">התחברות</Link>
+          <a className="px-3 py-2 bg-blue-600 text-white rounded" href="/api/auth/signin">התחברות</a>
         )}
       </div>
       {!authorized ? (
