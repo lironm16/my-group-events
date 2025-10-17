@@ -56,6 +56,29 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
     e.preventDefault();
     if (Object.keys(errors).length > 0) return;
     setSaving(true);
+    // Save invite changes first (if any)
+    try {
+      const selEl = document.getElementById('invitesSelection') as HTMLInputElement | null;
+      const initEl = document.getElementById('invitesInitial') as HTMLInputElement | null;
+      if (selEl && initEl) {
+        const selectedIds: string[] = JSON.parse(selEl.value || '[]');
+        const initialIds: string[] = JSON.parse(initEl.value || '[]');
+        const selectedSet = new Set<string>(selectedIds);
+        const initialSet = new Set<string>(initialIds);
+        const toAdd: string[] = [];
+        const toRemove: string[] = [];
+        for (const id of selectedSet) if (!initialSet.has(id)) toAdd.push(id);
+        for (const id of initialSet) if (!selectedSet.has(id)) toRemove.push(id);
+        if (toAdd.length || toRemove.length) {
+          const updates = toAdd.map((uid) => ({ userId: uid, status: 'NA' }));
+          await fetch('/api/rsvp/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eventId: params.id, updates, remove: toRemove }),
+          });
+        }
+      }
+    } catch {}
     const res = await fetch(`/api/events/${params.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     setSaving(false);
     if (res.ok) router.push(`/events/${params.id}`);
@@ -191,28 +214,16 @@ function InvitesEditor({ eventId }: { eventId: string }) {
     });
   }
 
-  async function saveInvites() {
-    setSaving(true);
-    try {
-      const selectedIds = new Set<string>(Object.entries(selectedUsers).filter(([, v]) => v).map(([k]) => k));
-      const toAdd: string[] = [];
-      const toRemove: string[] = [];
-      for (const id of selectedIds) if (!initialUserIds.has(id)) toAdd.push(id);
-      for (const id of initialUserIds) if (!selectedIds.has(id)) toRemove.push(id);
-      if (toAdd.length === 0 && toRemove.length === 0) return;
-      const updates = toAdd.map((uid) => ({ userId: uid, status: 'NA' }));
-      const res = await fetch('/api/rsvp/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId, updates, remove: toRemove }),
-      });
-      if (res.ok) {
-        setInitialUserIds(selectedIds);
-      }
-    } finally {
-      setSaving(false);
+  // Serialize selection to hidden inputs; the main save will process
+  useEffect(() => {
+    const selEl = document.getElementById('invitesSelection') as HTMLInputElement | null;
+    const initEl = document.getElementById('invitesInitial') as HTMLInputElement | null;
+    if (selEl) {
+      const ids = Object.entries(selectedUsers).filter(([, v]) => v).map(([k]) => k);
+      selEl.value = JSON.stringify(ids);
     }
-  }
+    if (initEl) initEl.value = JSON.stringify(Array.from(initialUserIds));
+  }, [selectedUsers, initialUserIds]);
 
   if (loading) return <div className="text-sm text-gray-600 dark:text-gray-300">טוען מוזמנים…</div>;
 
@@ -224,9 +235,8 @@ function InvitesEditor({ eventId }: { eventId: string }) {
           <GroupItem key={root.id} node={root} level={0} byParent={byParent} selectedGroups={selectedGroups} onToggleGroup={toggleGroup} selectedUsers={selectedUsers} onToggleUser={toggleUser} />
         ))}
       </div>
-      <div>
-        <button type="button" disabled={saving} onClick={saveInvites} className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">שמירת מוזמנים</button>
-      </div>
+      <input type="hidden" id="invitesSelection" />
+      <input type="hidden" id="invitesInitial" />
     </div>
   );
 
