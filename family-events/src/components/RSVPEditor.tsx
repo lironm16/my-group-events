@@ -95,6 +95,12 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
     return (changes[userId]?.status ?? statusByUser.get(userId)?.status ?? 'NA') as Status;
   }
 
+  function getUserNote(userId: string): string | null {
+    const c = changes[userId]?.note;
+    if (c != null) return c as string | null;
+    return statusByUser.get(userId)?.note ?? null;
+  }
+
   function setUserStatus(userId: string, next: Status) {
     setChanges((c) => ({ ...c, [userId]: { status: next, note: c[userId]?.note ?? statusByUser.get(userId)?.note ?? null } }));
   }
@@ -137,7 +143,11 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
     let n = 0;
     for (const [uid, change] of Object.entries(changes)) {
       const base = statusByUser.get(uid);
-      if (!base) { if (change.status !== 'NA') n++; continue; }
+      if (!base) {
+        // New RSVP row: count if status changed from implicit NA or if a note was added
+        if (change.status !== 'NA' || ((change.note ?? '').trim() !== '')) n++;
+        continue;
+      }
       if (base.status !== change.status || (base.note ?? '') !== (change.note ?? '')) n++;
     }
     return n;
@@ -149,7 +159,7 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
         const base = statusByUser.get(uid);
         return !base || base.status !== change.status || (base.note ?? '') !== (change.note ?? '');
       })
-      .map(([userId, change]) => ({ userId, status: change.status, note: change.note ?? null }));
+      .map(([userId, change]) => ({ userId, status: change.status, note: (change.note ?? null) as string | null }));
     if (updates.length === 0) { setOpen(false); return; }
     const res = await fetch('/api/rsvp/batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId, updates }) });
     if (res.ok) {
@@ -188,6 +198,7 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
                 });
               }}
               getStatus={getUserStatus}
+              getNote={getUserNote}
               setStatus={setUserStatus}
               canEdit={canEditUser}
             />
@@ -207,7 +218,7 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
   );
 }
 
-function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus, setStatus, canEdit }: { node: GroupNode; level: number; byParent: Map<string | null, GroupNode[]>; onQuickApply: (id: string, s: Status, onlyNA: boolean) => void; onGroupNote: (userIds: string[], note: string) => void; getStatus: (userId: string) => Status; setStatus: (userId: string, s: Status) => void; canEdit: (userId: string) => boolean }) {
+function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus, getNote, setStatus, canEdit }: { node: GroupNode; level: number; byParent: Map<string | null, GroupNode[]>; onQuickApply: (id: string, s: Status, onlyNA: boolean) => void; onGroupNote: (userIds: string[], note: string) => void; getStatus: (userId: string) => Status; getNote: (userId: string) => string | null; setStatus: (userId: string, s: Status) => void; canEdit: (userId: string) => boolean }) {
   const children = byParent.get(node.id) || [];
   return (
     <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
@@ -231,6 +242,7 @@ function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus
               <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5 rounded-full" />
               <span>{u.name || '—'}</span>
               <StatusPicker value={getStatus(u.id)} disabled={!canEdit(u.id)} onChange={(s)=> setStatus(u.id, s)} />
+              {(() => { const note = getNote(u.id); return note ? <span className="text-xs text-gray-500 italic truncate max-w-[12rem]">“{note}”</span> : null; })()}
             </li>
           ))}
         </ul>
