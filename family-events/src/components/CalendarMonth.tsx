@@ -66,7 +66,8 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
           <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, 1))}>▶</button>
         </div>
       </div>
-      <div className="grid grid-cols-7 sm:gap-px gap-[1px] bg-gray-200 dark:bg-gray-800 rounded overflow-hidden text-xs sm:text-sm">
+      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+        <div className="min-w-[840px] grid grid-cols-7 sm:gap-px gap-[1px] bg-gray-200 dark:bg-gray-800 rounded overflow-hidden text-xs sm:text-sm">
         {WEEKDAY_LABELS.map((label) => (
           <div key={label} className="bg-white dark:bg-gray-900 p-2 text-xs font-medium text-center">
             {label}
@@ -101,6 +102,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );
