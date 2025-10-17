@@ -32,19 +32,43 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
         ]);
         const meJ = await meRes.json();
         setMe({ id: meJ?.user?.id || '', groupId: meJ?.user?.groupId || null });
-        const gj = await grpRes.json();
-        const nodes: GroupNode[] = (gj.groups || []).map((gr: any) => ({
-          id: gr.id,
-          nickname: gr.nickname,
-          parentId: gr.parent?.id || null,
-          members: (gr.members || []).map((u: any) => ({ id: u.id, name: u.name || null, image: u.image || null })),
-        }));
-        setGroups(nodes);
         const ev = await evRes.json();
         const map = new Map<string, { status: Status; note: string | null }>();
         const rsvps = ((ev?.event?.rsvps || []) as any[]);
         for (const r of rsvps) map.set(r.userId, { status: (r.status as Status) || 'NA', note: r.note ?? null });
         setStatusByUser(map);
+        const invited = new Set<string>(rsvps.map((r: any) => r.userId));
+        const gj = await grpRes.json();
+        // Build group nodes, filtering members to only invited users (if any invites exist)
+        let nodes: GroupNode[] = (gj.groups || []).map((gr: any) => ({
+          id: gr.id,
+          nickname: gr.nickname,
+          parentId: gr.parent?.id || null,
+          members: (gr.members || [])
+            .filter((u: any) => invited.size === 0 || invited.has(u.id))
+            .map((u: any) => ({ id: u.id, name: u.name || null, image: u.image || null })),
+        }));
+        // Hide groups that have no invited members AND no invited members in any descendant
+        if (invited.size > 0) {
+          const byIdTemp = new Map<string, GroupNode>();
+          nodes.forEach((g) => byIdTemp.set(g.id, g));
+          const hasInvitedInSubtree = new Map<string, boolean>();
+          function check(gid: string): boolean {
+            if (hasInvitedInSubtree.has(gid)) return hasInvitedInSubtree.get(gid)!;
+            const node = byIdTemp.get(gid);
+            if (!node) return false;
+            if ((node.members || []).length > 0) { hasInvitedInSubtree.set(gid, true); return true; }
+            // Recursively check children
+            const children = nodes.filter((n) => n.parentId === gid);
+            const ok = children.some((c) => check(c.id));
+            hasInvitedInSubtree.set(gid, ok);
+            return ok;
+          }
+          const keepIds = new Set<string>();
+          nodes.forEach((g) => { if (check(g.id)) keepIds.add(g.id); });
+          nodes = nodes.filter((g) => keepIds.has(g.id));
+        }
+        setGroups(nodes);
       } finally {
         setLoading(false);
       }

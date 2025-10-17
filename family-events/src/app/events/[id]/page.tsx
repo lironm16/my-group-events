@@ -64,13 +64,10 @@ export default async function EventDetailPage({ params, searchParams }: { params
   const toRSVPStatus = (s: string | null): 'APPROVED' | 'DECLINED' | 'MAYBE' | null => {
     return s === 'APPROVED' || s === 'DECLINED' || s === 'MAYBE' ? s : null;
   };
-  const userStatus = new Map<string, string>();
-  for (const r of event.rsvps) userStatus.set(r.user.id, r.status);
-  const pendingCount = (event.familyMembers || []).filter(m => (!userStatus.has(m.id) || userStatus.get(m.id) !== 'APPROVED')).length;
+  const pendingCount = event.rsvps.filter(r => r.status !== 'APPROVED').length;
   const shareUrl = `${base}/events/${event.id}`;
   const dateText = new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
   const locText = event.location ? `במקום: ${event.location} ` : '';
-  const pendForClient = (event.familyMembers || []).filter(p => (!userStatus.has(p.id) || userStatus.get(p.id) !== 'APPROVED'));
   const from = typeof searchParams?.from === 'string' ? (searchParams!.from as string) : undefined;
   return (
     <main className="container-page space-y-4">
