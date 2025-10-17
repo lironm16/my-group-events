@@ -100,15 +100,9 @@ export default function NewEventPage() {
           {(!form.description || !form.description.trim()) && <div className="text-xs text-gray-500 mb-1">כמה מילים על האירוע</div>}
           <textarea rows={3} className={inputCls} value={form.description} onChange={e=>setForm({...form, description:e.target.value})} />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <div className="text-xs text-gray-500 mb-1">יוצר</div>
-            <input className={inputCls} value={me?.name || '—'} readOnly />
-          </div>
-          <div>
-            <div className="text-xs text-gray-500 mb-1">מארח</div>
-            <HostSelector value={hostId} onChange={setHostId} />
-          </div>
+        <div>
+          <div className="text-xs text-gray-500 mb-1">מארח</div>
+          <HostSelector value={hostId} onChange={setHostId} />
         </div>
         <EventImageInput value={form.image} onChange={(url)=>setForm({...form, image: url})} />
         <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
