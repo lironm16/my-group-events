@@ -6,7 +6,10 @@ import { authOptions } from '@/auth';
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const event = await prisma.event.findUnique({ where: { id: params.id }, include: { rsvps: { include: { user: true } }, host: true } });
+  const event = await prisma.event.findUnique({
+    where: { id: params.id },
+    include: { rsvps: { include: { user: true } }, host: true, coHosts: { include: { user: true } } },
+  });
   if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ event });
 }
