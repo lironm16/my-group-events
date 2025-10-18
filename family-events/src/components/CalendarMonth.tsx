@@ -66,7 +66,35 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
           <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, 1))}>▶</button>
         </div>
       </div>
-      <div className="-mx-4 sm:mx-0 overflow-x-auto">
+      <div className="block sm:hidden">
+        <ul className="divide-y divide-gray-200 dark:divide-gray-800 rounded border border-gray-200 dark:border-gray-800 overflow-hidden">
+          {days.filter(d => d.date.getMonth() === cursor.getMonth()).map((d) => {
+            const k = toKey(d.date);
+            const list = byDay.get(k) || [];
+            if (list.length === 0) return null;
+            return (
+              <li key={k} className="p-3">
+                <div className="flex items-baseline justify-between mb-2">
+                  <div className="font-medium text-gray-800 dark:text-gray-100">{d.date.toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' })}</div>
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">{list.length}</span>
+                </div>
+                <ul className="space-y-2">
+                  {list.map((e) => (
+                    <li key={e.id}>
+                      <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}`} className="block rounded border border-gray-200 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-900">
+                        <div className="text-xs text-gray-500 mb-1">{new Date(e.startAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className="text-sm leading-snug text-gray-900 dark:text-gray-100 whitespace-normal break-words">{e.title}</div>
+                        {e.location && <div className="text-xs text-gray-500 mt-0.5">{e.location}</div>}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      <div className="hidden sm:block sm:mx-0">
         <div className="min-w-[840px] grid grid-cols-7 sm:gap-px gap-[1px] bg-gray-200 dark:bg-gray-800 rounded overflow-hidden text-xs sm:text-sm">
         {WEEKDAY_LABELS.map((label) => (
           <div key={label} className="bg-white dark:bg-gray-900 p-2 text-xs font-medium text-center">
