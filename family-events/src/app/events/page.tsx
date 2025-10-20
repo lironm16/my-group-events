@@ -16,6 +16,8 @@ type EventCard = {
   hostImage?: string | null;
   holidayKey?: string | null;
   rsvps: { status: string; userId?: string }[];
+  recurrence?: any | null;
+  recurrenceExceptions?: string[] | null;
 };
 
 export default async function EventsPage({ searchParams }: { searchParams?: { page?: string; family?: string } }) {
@@ -58,19 +60,58 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
         skip: (page - 1) * pageSize,
         take: pageSize,
       });
-      events = rows.map(r => ({
-        id: r.id,
-        title: r.title,
-        description: r.description,
-        location: r.location,
-        startAt: r.startAt.toISOString(),
-        endAt: r.endAt ? r.endAt.toISOString() : null,
-        host: { name: r.host?.name ?? null },
-        hostId: r.host?.id ?? null,
-        hostImage: (r.host as any)?.image ?? null,
-        holidayKey: (r as any).holidayKey ?? null,
-        rsvps: r.rsvps.map(x => ({ status: x.status, userId: x.userId })),
-      }));
+      // Expand recurrence into virtual occurrences for display
+      const expanded: EventCard[] = [];
+      for (const r of rows as any[]) {
+        const base: EventCard = {
+          id: r.id,
+          title: r.title,
+          description: r.description,
+          location: r.location,
+          startAt: r.startAt.toISOString(),
+          endAt: r.endAt ? r.endAt.toISOString() : null,
+          host: { name: r.host?.name ?? null },
+          hostId: r.host?.id ?? null,
+          hostImage: (r.host as any)?.image ?? null,
+          holidayKey: r.holidayKey ?? null,
+          rsvps: r.rsvps.map((x: any) => ({ status: x.status, userId: x.userId })),
+          recurrence: r.recurrence ?? null,
+          recurrenceExceptions: (r.recurrenceExceptions as any) ?? null,
+        };
+        if (!r.recurrence?.freq) {
+          expanded.push(base);
+          continue;
+        }
+        // Always include the base instance
+        expanded.push(base);
+        // Generate weekly occurrences until limit
+        if (r.recurrence.freq === 'WEEKLY' && r.recurrence.until) {
+          const until = new Date(r.recurrence.until);
+          const skipHolidays = !!r.recurrence.skipHolidays;
+          const exceptions = new Set<string>(Array.isArray(r.recurrenceExceptions) ? r.recurrenceExceptions : []);
+          let cursor = new Date(r.startAt);
+          const durationMs = r.endAt ? (new Date(r.endAt).getTime() - new Date(r.startAt).getTime()) : 0;
+          // Cap to reasonable max occurrences to avoid huge expansions
+          let guard = 0;
+          while (true) {
+            cursor = new Date(cursor.getTime());
+            cursor.setDate(cursor.getDate() + 7);
+            if (cursor > until) break;
+            // Skip exceptions
+            const iso = cursor.toISOString();
+            if (exceptions.has(iso)) continue;
+            // Optional: could skip holidays at display time if desired. For now, do not fetch holidays on server here.
+            const startISO = iso;
+            const endISO = durationMs ? new Date(new Date(iso).getTime() + durationMs).toISOString() : null;
+            expanded.push({ ...base, startAt: startISO, endAt: endISO });
+            guard++;
+            if (guard > 260) break; // ~5 years cap
+          }
+        }
+      }
+      // Sort by startAt to keep consistent order
+      expanded.sort((a, b) => +new Date(a.startAt) - +new Date(b.startAt));
+      events = expanded;
     }
   }
   return (

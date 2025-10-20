@@ -7,6 +7,7 @@ export type CalendarEvent = {
   title: string;
   startAt: string; // ISO string
   location?: string | null;
+  occurrenceStartAt?: string; // if this is a virtual occurrence
 };
 
 function getStartOfMonth(date: Date) {
@@ -80,8 +81,8 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
                 </div>
                 <ul className="space-y-2">
                   {list.map((e) => (
-                    <li key={e.id}>
-                      <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}`} className="block rounded border border-gray-200 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-900">
+                    <li key={`${e.id}:${e.startAt}`}>
+                      <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}${e.occurrenceStartAt ? `&occurrenceStartAt=${encodeURIComponent(e.occurrenceStartAt)}` : ''}`} className="block rounded border border-gray-200 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-900">
                         <div className="text-xs text-gray-500 mb-1">{new Date(e.startAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</div>
                         <div className="text-sm leading-snug text-gray-900 dark:text-gray-100 whitespace-normal break-words">{e.title}</div>
                         {e.location && <div className="text-xs text-gray-500 mt-0.5">{e.location}</div>}
@@ -117,8 +118,8 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
               </div>
               <ul className="space-y-0.5 sm:space-y-1">
                 {list.slice(0, 3).map((e) => (
-                  <li key={e.id} className="truncate">
-                    <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}`} className="block w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer">
+                  <li key={`${e.id}:${e.startAt}`} className="truncate">
+                    <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}${e.occurrenceStartAt ? `&occurrenceStartAt=${encodeURIComponent(e.occurrenceStartAt)}` : ''}`} className="block w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer">
                       {new Date(e.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · {e.title}
                     </a>
                   </li>

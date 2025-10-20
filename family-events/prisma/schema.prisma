@@ -85,6 +85,10 @@ model Event {
   familyId           String?
   rsvps              RSVP[]
   coHosts            EventHost[]
+  /// Recurrence configuration JSON, e.g. {"freq":"WEEKLY","until":"2025-12-31T00:00:00.000Z","skipHolidays":true}
+  recurrence         Json?
+  /// ISO date strings of occurrence start times to skip (deleted instances)
+  recurrenceExceptions Json?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }

@@ -39,7 +39,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   return NextResponse.json({ event });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = await prisma.user.findFirst({ where: { email: session.user.email } });
@@ -47,6 +47,17 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   const existing = await prisma.event.findUnique({ where: { id: params.id } });
   if (!existing) return new NextResponse(null, { status: 204 });
   if (existing.hostId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  // If occurrenceStartAt is provided, record an exception instead of deleting the master
+  const { searchParams } = new URL(req.url);
+  const occ = searchParams.get('occurrenceStartAt');
+  if (occ) {
+    const iso = new Date(occ).toISOString();
+    const curr = (existing as any).recurrenceExceptions as string[] | null;
+    const next = Array.from(new Set([...(Array.isArray(curr) ? curr : []), iso]));
+    await prisma.event.update({ where: { id: params.id }, data: { recurrenceExceptions: next as any } });
+    return new NextResponse(null, { status: 204 });
+  }
+  // Otherwise delete the entire event
   await prisma.event.delete({ where: { id: params.id } });
   return new NextResponse(null, { status: 204 });
 }

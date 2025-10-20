@@ -29,6 +29,15 @@ export async function POST(req: Request) {
   const user = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
+  // Build recurrence configuration if provided
+  let recurrence: any = undefined;
+  if (body?.repeat?.weeklyUntil) {
+    recurrence = {
+      freq: 'WEEKLY',
+      until: new Date(body.repeat.weeklyUntil).toISOString(),
+      skipHolidays: !!body.repeat.skipHolidays,
+    };
+  }
   const created = await prisma.event.create({
     data: {
       title: body.title,
@@ -42,6 +51,8 @@ export async function POST(req: Request) {
       holidayKey: body.holidayKey ?? null,
       hostId: (body.hostId && typeof body.hostId === 'string') ? body.hostId : user.id,
       familyId: user.familyId ?? null,
+      recurrence,
+      recurrenceExceptions: undefined,
     },
   });
   // Create RSVPs for selected guests
@@ -52,40 +63,6 @@ export async function POST(req: Request) {
       await prisma.rSVP.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid, status: 'NA' })) });
     }
   } catch {}
-  // Handle weekly recurrence
-  if (body?.repeat?.weeklyUntil) {
-    const until = new Date(body.repeat.weeklyUntil);
-    const skipHolidays = !!body.repeat.skipHolidays;
-    const holidays = skipHolidays ? await fetchIsraelHolidays(created.startAt.getFullYear()) : [];
-    const series: { startAt: Date; endAt: Date | null }[] = [];
-    let cursor = new Date(created.startAt);
-    while (true) {
-      cursor = new Date(cursor.getTime());
-      cursor.setDate(cursor.getDate() + 7);
-      if (cursor > until) break;
-      if (skipHolidays && isHoliday(cursor, holidays)) continue;
-      const dur = created.endAt ? created.endAt.getTime() - created.startAt.getTime() : 0;
-      const endAt = created.endAt ? new Date(cursor.getTime() + dur) : null;
-      series.push({ startAt: new Date(cursor), endAt });
-    }
-    if (series.length) {
-      await prisma.event.createMany({
-        data: series.map(s => ({
-          title: body.title,
-          description: body.description ?? null,
-          location: body.location ?? null,
-          image: body.image ?? null,
-          startAt: s.startAt,
-          endAt: s.endAt,
-          externalLink: body.externalLink ?? null,
-          isHolidayGenerated: false,
-          holidayKey: null,
-          hostId: user.id,
-          familyId: user.familyId ?? null,
-        })),
-      });
-    }
-  }
   return NextResponse.json({ event: created }, { status: 201 });
 }
 

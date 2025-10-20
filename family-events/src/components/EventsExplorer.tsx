@@ -17,6 +17,8 @@ type EventCard = {
   hostImage?: string | null;
   holidayKey?: string | null;
   rsvps: { status: string; userId?: string }[];
+  recurrence?: any | null;
+  recurrenceExceptions?: string[] | null;
 };
 
 type ScopeKey = 'mine' | 'all' | `group:${string}`;
@@ -87,7 +89,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   }, [view, filterKey, router, pathname, searchParams]);
 
   const calItems: CalendarEvent[] = useMemo(
-    () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location })),
+    () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location, occurrenceStartAt: e.recurrence ? e.startAt : undefined })),
     [filtered]
   );
 
@@ -194,7 +196,7 @@ function Cards({ list }: { list: EventCard[] }) {
     <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => (
         <li key={e.id} className="rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow transition-shadow">
-          <a href={`/events/${e.id}`} className="block p-4">
+          <a href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-semibold text-lg">{e.title}</h3>
