@@ -1,25 +1,41 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type RSVPStatus = "APPROVED" | "DECLINED" | "MAYBE" | "NA";
 
 export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { eventId: string; initial?: RSVPStatus | null; canGroup?: boolean; canAll?: boolean }) {
+  const router = useRouter();
   const [status, setStatus] = useState<RSVPStatus | null>(initial ?? 'NA');
   const [scope, setScope] = useState<'self' | 'group' | 'all'>('self');
   const [note, setNote] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const initialStatusRef = useRef<RSVPStatus | null>(initial ?? 'NA');
 
   const save = useCallback(async () => {
-    if (!status) return;
+    const noteTrimmed = note.trim();
+    const statusChanged = status !== initialStatusRef.current;
+    const onlyCommentChange = !statusChanged && noteTrimmed.length > 0;
+    if (!status && noteTrimmed.length === 0) return;
     setSaving(true);
     try {
-      const res = await fetch('/api/rsvp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId, status, scope, note }) });
+      const payload: any = { eventId, scope };
+      if (onlyCommentChange) {
+        // Let server update note only without touching status
+        payload.status = null;
+        payload.note = noteTrimmed;
+      } else {
+        payload.status = status;
+        payload.note = noteTrimmed;
+      }
+      const res = await fetch('/api/rsvp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!res.ok) return;
+      try { router.refresh(); } catch {}
     } finally {
       setSaving(false);
     }
-  }, [eventId, scope, note, status]);
+  }, [eventId, scope, note, status, router]);
 
   const btnCls = (active: boolean, color: string) => [
     'px-3 py-1 rounded text-sm border transition-colors',
@@ -72,7 +88,7 @@ export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { ev
           value={note}
           onChange={(e)=>setNote(e.target.value)}
         />
-        <button disabled={saving} onClick={save} className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-60">שמירה</button>
+        <button disabled={saving || (!status && !note.trim())} onClick={save} className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-60">שמירה</button>
       </div>
     </div>
   );

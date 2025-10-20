@@ -10,8 +10,8 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
   const eventId: string = body.eventId;
-  const status: 'APPROVED' | 'DECLINED' | 'MAYBE' = body.status;
-  const note: string | null = body.note ?? null;
+  const status: 'APPROVED' | 'DECLINED' | 'MAYBE' | 'NA' | null = (body.status ?? null);
+  const note: string | null = body.note != null ? String(body.note) : null;
   const scope: 'self' | 'group' | 'all' = body.scope || 'self';
 
   // Load event and permissions
@@ -32,13 +32,24 @@ export async function POST(req: Request) {
     targetUserIds = members.map(m => m.id);
   }
 
-  // Apply RSVPs
+  // Apply RSVPs (allow comment-only updates)
   for (const uid of targetUserIds) {
-    await prisma.rSVP.upsert({
-      where: { eventId_userId: { eventId, userId: uid } },
-      create: { eventId, userId: uid, status, note },
-      update: { status, note },
-    });
+    if (!status) {
+      // No status change requested; only update note if RSVP exists
+      const existing = await prisma.rSVP.findUnique({ where: { eventId_userId: { eventId, userId: uid } } });
+      if (existing) {
+        await prisma.rSVP.update({ where: { eventId_userId: { eventId, userId: uid } }, data: { note } });
+      } else if (note != null && note.trim() !== '') {
+        // Create with NA to store a comment
+        await prisma.rSVP.create({ data: { eventId, userId: uid, status: 'NA', note } });
+      }
+    } else {
+      await prisma.rSVP.upsert({
+        where: { eventId_userId: { eventId, userId: uid } },
+        create: { eventId, userId: uid, status: status as any, note },
+        update: { status: status as any, note },
+      });
+    }
   }
   // Notify host by email if enabled
   try {

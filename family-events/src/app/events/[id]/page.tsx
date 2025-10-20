@@ -65,6 +65,14 @@ export default async function EventDetailPage({ params, searchParams }: { params
     return s === 'APPROVED' || s === 'DECLINED' || s === 'MAYBE' ? s : null;
   };
   const pendingCount = event.rsvps.filter(r => r.status !== 'APPROVED').length;
+  const approvedCount = event.rsvps.filter(r => r.status === 'APPROVED').length;
+  const maybeCount = event.rsvps.filter(r => r.status === 'MAYBE').length;
+  const declinedCount = event.rsvps.filter(r => r.status === 'DECLINED').length;
+  const waitingCount = event.rsvps.filter(r => r.status === 'NA').length;
+  const allHosts = [
+    ...(event.host?.name ? [{ id: event.host?.id || 'host', name: event.host?.name }] : []),
+    ...((event.coHosts || []))
+  ];
   const shareUrl = `${base}/events/${event.id}`;
   const dateText = new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
   const locText = event.location ? `במקום: ${event.location} ` : '';
@@ -86,18 +94,16 @@ export default async function EventDetailPage({ params, searchParams }: { params
             <dt className="text-sm text-gray-500">סיום</dt>
             <dd>{event.endAt ? new Date(event.endAt).toLocaleString('he-IL') : '—'}</dd>
           </div>
-          <div>
-            <dt className="text-sm text-gray-500">מארח</dt>
-            <dd>{event.host?.name ?? '—'}</dd>
+          <div className="md:col-span-2">
+            <dt className="text-sm text-gray-500">מארחים</dt>
+            <dd className="flex flex-wrap gap-2 mt-1 text-sm">
+              {allHosts.length === 0 ? (
+                <span>—</span>
+              ) : (
+                allHosts.map(h => (<span key={h.id} className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800">{h.name ?? String(h.id).slice(0,6)}</span>))
+              )}
+            </dd>
           </div>
-          {event.coHosts && event.coHosts.length > 0 && (
-            <div className="md:col-span-2">
-              <dt className="text-sm text-gray-500">מארחים נוספים</dt>
-              <dd className="flex flex-wrap gap-2 mt-1 text-sm">
-                {event.coHosts.map(h => (<span key={h.id} className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800">{h.name ?? h.id.slice(0,6)}</span>))}
-              </dd>
-            </div>
-          )}
           {event.externalLink && (
             <div className="md:col-span-2">
               <dt className="text-sm text-gray-500">קישור</dt>
@@ -109,6 +115,12 @@ export default async function EventDetailPage({ params, searchParams }: { params
           <p className="mt-4 text-gray-700 dark:text-gray-300">{event.description}</p>
         )}
         {/* RSVP quick section removed; using grouped editor below */}
+      </div>
+      {/* RSVP summary */}
+      <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
+        <div className="text-sm text-gray-700 dark:text-gray-200">
+          {approvedCount} מגיע/ה · {maybeCount} אולי · {declinedCount} לא · {waitingCount} ממתינים
+        </div>
       </div>
       <RSVPEditor eventId={event.id} />
       {isHost && pendingCount > 0 && (

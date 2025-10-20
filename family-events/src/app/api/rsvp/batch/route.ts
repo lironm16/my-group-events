@@ -19,7 +19,9 @@ export async function POST(req: Request) {
   if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const isAdmin = me.role === 'admin';
-  const isHost = event.hostId === me.id;
+  const isPrimaryHost = event.hostId === me.id;
+  const isCoHost = !!(await prisma.eventHost.findFirst({ where: { eventId, userId: me.id }, select: { id: true } }));
+  const isHost = isPrimaryHost || isCoHost;
 
   // Build allowed set: self + same subgroup; host/admin => everyone
   let allowedUserIds: Set<string>;

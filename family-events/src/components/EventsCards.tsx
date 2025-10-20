@@ -50,7 +50,9 @@ export default function EventsCards({ initial }: { initial: EventCard[] }) {
             {e.description && <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{e.description}</p>}
             <div className="mt-3 flex items-center justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-400">מארח: {e.host?.name ?? '—'}</span>
-              <span className="text-gray-600 dark:text-gray-400">אישורים: {e.rsvps.length}</span>
+              <span className="text-gray-600 dark:text-gray-400">
+                {e.rsvps.filter(r=>r.status==='APPROVED').length}/{e.rsvps.length} אישרו
+              </span>
             </div>
             <div className="mt-4 flex gap-2">
               <Link className="px-3 py-1 rounded bg-gray-100 dark:bg-gray-800" href={`/events/${e.id}`}>
