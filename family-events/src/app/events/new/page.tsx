@@ -240,31 +240,12 @@ function PlacesInput({ value, onChange }: { value: string; onChange: (v: string)
 function EventImageInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   'use client';
   const [url, setUrl] = useState<string>(value || '');
-  const [busy, setBusy] = useState(false);
   useEffect(() => setUrl(value || ''), [value]);
-  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setBusy(true);
-    try {
-      const form = new FormData();
-      form.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: form });
-      const j = await res.json();
-      if (res.ok && j?.url) {
-        setUrl(j.url);
-        onChange(j.url);
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
   return (
     <div className="space-y-2">
       <label className="block text-sm text-gray-600">תמונת אירוע (אופציונלי)</label>
       <div className="flex items-center gap-3">
-        <input type="file" accept="image/*" onChange={onPick} disabled={busy} />
-        <input className="flex-1 border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="או הדביקו כתובת תמונה" value={url} onChange={(e)=>{ setUrl(e.target.value); onChange(e.target.value); }} />
+        <input className="flex-1 border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="הדביקו כתובת תמונה (אופציונלי)" value={url} onChange={(e)=>{ setUrl(e.target.value); onChange(e.target.value); }} />
       </div>
       {url && (
         <div className="mt-2">
