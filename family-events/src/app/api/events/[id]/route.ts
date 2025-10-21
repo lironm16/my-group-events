@@ -57,8 +57,12 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     await prisma.event.update({ where: { id: params.id }, data: { recurrenceExceptions: next as any } });
     return new NextResponse(null, { status: 204 });
   }
-  // Otherwise delete the entire event
-  await prisma.event.delete({ where: { id: params.id } });
+  // Otherwise delete the entire event (cascade manually to avoid FK constraint errors)
+  await prisma.$transaction([
+    prisma.rSVP.deleteMany({ where: { eventId: params.id } }),
+    prisma.eventHost.deleteMany({ where: { eventId: params.id } }),
+    prisma.event.delete({ where: { id: params.id } }),
+  ]);
   return new NextResponse(null, { status: 204 });
 }
 
