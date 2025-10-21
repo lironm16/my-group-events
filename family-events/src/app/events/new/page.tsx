@@ -84,7 +84,7 @@ export default function NewEventPage() {
           startAt: tpl.startAt ?? '',
           endAt: tpl.endAt ?? '',
           externalLink: '',
-          image: ''
+          image: tpl.image ?? ''
         });
         (window as any).__holidayKey = tpl.holidayKey ?? null;
         setStep(2);
@@ -144,7 +144,7 @@ export default function NewEventPage() {
   );
 }
 
-type Template = { title: string; description?: string; location?: string; startAt?: string; endAt?: string; holidayKey?: string };
+type Template = { title: string; description?: string; location?: string; startAt?: string; endAt?: string; holidayKey?: string; image?: string };
 
 function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   const now = new Date();
