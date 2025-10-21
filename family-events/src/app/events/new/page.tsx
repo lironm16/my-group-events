@@ -8,6 +8,7 @@ export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '', image: '' });
   const [me, setMe] = useState<{ id: string; name: string | null } | null>(null);
   const [hostId, setHostId] = useState<string>('');
+  const [coHostIds, setCoHostIds] = useState<string[]>([]);
   const [step, setStep] = useState<1 | 2>(1);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
@@ -32,6 +33,7 @@ export default function NewEventPage() {
       if (input && input.value) body.guestSelection = input.value;
     } catch {}
     if (hostId) body.hostId = hostId;
+    if (Array.isArray(coHostIds) && coHostIds.length) body.coHostIds = coHostIds;
     if (repeatWeekly && repeatUntil) {
       body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
     }
@@ -104,7 +106,7 @@ export default function NewEventPage() {
           <div className="text-xs text-gray-500 mb-1">מארח</div>
           <HostSelector value={hostId} onChange={setHostId} />
         </div>
-        <EventImageInput value={form.image} onChange={(url)=>setForm({...form, image: url})} />
+        <CoHostsSelector selected={coHostIds} onChange={setCoHostIds} excludeId={hostId} />
         <PlacesInput value={form.location} onChange={(v)=>setForm({...form, location:v})} />
         <div>
           <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly timeToggle />
@@ -147,16 +149,12 @@ type Template = { title: string; description?: string; location?: string; startA
 function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   const now = new Date();
   const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-  const nextFriday = (() => {
-    const d = new Date(now);
-    const day = d.getDay();
-    const diff = (5 - day + 7) % 7 || 7; // next Friday
-    d.setDate(d.getDate() + diff);
-    d.setHours(19,0,0,0);
-    return d;
-  })();
-  const tonight = (()=>{ const d=new Date(now); d.setHours(19,0,0,0); return d; })();
-  const nextWeek = (()=>{ const d=new Date(now); d.setDate(d.getDate()+7); d.setHours(12,0,0,0); return d; })();
+  const toLocalNow = () => toLocal(now);
+  const withTime = (date: Date, timeRef: Date) => { const d = new Date(date); d.setHours(timeRef.getHours(), timeRef.getMinutes(), 0, 0); return d; };
+  const nextDOW = (dow: number) => { const d = new Date(now); const diff = (dow - d.getDay() + 7) % 7 || 7; d.setDate(d.getDate() + diff); return withTime(d, now); };
+  const nextFriday = nextDOW(5);
+  const nextSaturday = nextDOW(6);
+  const nextWeek = (()=>{ const d=new Date(now); d.setDate(d.getDate()+7); return withTime(d, now); })();
   // Use DiceBear shapes as an avatar-like background, overlay a relevant emoji icon
   const bg = (seed: string) => `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc&backgroundType=gradientLinear&radius=50`;
   const random = () => Math.random().toString(36).slice(2,6);
@@ -180,9 +178,9 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
     { cat: 'holidays', label: 'ל"ג בעומר', img: '/templates/lag-baomer.jpg', tpl: { title: 'ל"ג בעומר', description: 'מדורה משפחתית', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
     // Meals first in tabs; include lunch
     { cat: 'dinners', label: 'ערב שישי', img: '/templates/shishi-dinner.jpg', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
-    { cat: 'dinners', label: 'ארוחת צהריים', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת צהריים', description: 'מפגש צהריים', startAt: toLocal(tonight) } },
-    { cat: 'dinners', label: 'ארוחת ערב', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת ערב', description: 'מפגש משפחתי', startAt: toLocal(tonight) } },
-    { cat: 'dinners', label: 'ארוחת בוקר', img: '/templates/brekfast.jpg', tpl: { title: 'ארוחת בוקר', description: 'מפגש בוקר', startAt: toLocal(tonight) } },
+    { cat: 'dinners', label: 'ארוחת צהריים', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת צהריים', description: 'מפגש צהריים', startAt: toLocalNow() } },
+    { cat: 'dinners', label: 'ארוחת ערב', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת ערב', description: 'מפגש משפחתי', startAt: toLocalNow() } },
+    { cat: 'dinners', label: 'ארוחת בוקר', img: '/templates/brekfast.jpg', tpl: { title: 'ארוחת בוקר', description: 'מפגש בוקר', startAt: toLocalNow() } },
     { cat: 'other', label: 'יום הולדת', img: '/templates/birthday.jpg', tpl: { title: 'מסיבת יום הולדת', description: 'חוגגים יום הולדת', startAt: toLocal(nextWeek) } },
     { cat: 'outdoors', label: 'פיקניק', img: '/templates/picnic.jpg', tpl: { title: 'פיקניק משפחתי', description: 'בפארק', startAt: toLocal(nextWeek) } },
     { cat: 'outdoors', label: 'ים', img: '/templates/beach.jpg', tpl: { title: 'ים', description: 'יום כיף בים', startAt: toLocal(nextWeek) } },
@@ -202,7 +200,39 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {items.filter(i=>i.cat===cat).map((t)=> (
-          <button type="button" key={t.label} onClick={()=>onPick(t.tpl)} className="rounded-xl border border-gray-200 dark:border-gray-800 p-2 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
+          <button type="button" key={t.label} onClick={async()=>{
+            // Resolve start time according to rules
+            let startISO = t.tpl.startAt || toLocalNow();
+            if (t.cat === 'dinners' && /שישי/.test(t.label)) startISO = toLocal(nextFriday);
+            if (/שבת/.test(t.label)) startISO = toLocal(nextSaturday);
+            if (t.cat === 'holidays') {
+              try {
+                const year = now.getFullYear();
+                const urls = [
+                  `https://www.hebcal.com/hebcal?cfg=json&v=1&maj=on&min=on&mod=on&year=${year}&month=x&i=on&lg=h&d=on&tz=Asia/Jerusalem`,
+                  `https://www.hebcal.com/hebcal?cfg=json&v=1&maj=on&min=on&mod=on&year=${year+1}&month=x&i=on&lg=h&d=on&tz=Asia/Jerusalem`,
+                ];
+                let nextDate: string | null = null;
+                for (const u of urls) {
+                  const r = await fetch(u, { cache: 'no-store' });
+                  const j = await r.json();
+                  const items = (j?.items || []) as any[];
+                  const candidates = items.filter(x => typeof x?.title === 'string' && String(x.title).includes(t.label) && typeof x?.date === 'string');
+                  for (const c of candidates) {
+                    const d = new Date(c.date);
+                    if (d >= now) { nextDate = c.date; break; }
+                  }
+                  if (nextDate) break;
+                }
+                if (nextDate) {
+                  const base = new Date(nextDate);
+                  const withNowTime = withTime(base, now);
+                  startISO = toLocal(withNowTime);
+                }
+              } catch {}
+            }
+            onPick({ ...t.tpl, startAt: startISO, image: t.img });
+          }} className="rounded-xl border border-gray-200 dark:border-gray-800 p-2 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={t.img} alt="" className="w-32 h-24 object-cover rounded" />
             <div className="font-medium mt-2 text-sm text-center">{t.label}</div>
@@ -237,25 +267,7 @@ function PlacesInput({ value, onChange }: { value: string; onChange: (v: string)
 
 // Holidays generator removed per request
 
-function EventImageInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  'use client';
-  const [url, setUrl] = useState<string>(value || '');
-  useEffect(() => setUrl(value || ''), [value]);
-  return (
-    <div className="space-y-2">
-      <label className="block text-sm text-gray-600">תמונת אירוע (אופציונלי)</label>
-      <div className="flex items-center gap-3">
-        <input className="flex-1 border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" placeholder="הדביקו כתובת תמונה (אופציונלי)" value={url} onChange={(e)=>{ setUrl(e.target.value); onChange(e.target.value); }} />
-      </div>
-      {url && (
-        <div className="mt-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="event" className="w-full h-40 object-cover rounded" />
-        </div>
-      )}
-    </div>
-  );
-}
+// Image input removed per request; image is taken from selected template
 
 function GuestSelector() {
   'use client';
@@ -438,6 +450,48 @@ function HostSelector({ value, onChange }: { value: string; onChange: (v: string
         <option key={m.id} value={m.id}>{m.name || m.id.slice(0,6)}</option>
       ))}
     </select>
+  );
+}
+
+function CoHostsSelector({ selected, onChange, excludeId }: { selected: string[]; onChange: (ids: string[]) => void; excludeId?: string }) {
+  'use client';
+  const [members, setMembers] = useState<{ id: string; name: string | null }[]>([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const g = await fetch('/api/family/groups', { cache: 'no-store' });
+        const gj = await g.json();
+        const seen = new Set<string>();
+        const list: { id: string; name: string | null }[] = [];
+        (gj.groups || []).forEach((gr: any) => {
+          (gr.members || []).forEach((u: any) => {
+            if (seen.has(u.id)) return;
+            seen.add(u.id);
+            list.push({ id: u.id, name: u.name || null });
+          });
+        });
+        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        setMembers(list);
+      } catch {}
+    })();
+  }, []);
+  const toggle = (id: string) => {
+    if (id === excludeId) return; // avoid duplicate of host
+    if (selected.includes(id)) onChange(selected.filter((x) => x !== id));
+    else onChange([...selected, id]);
+  };
+  return (
+    <div className="space-y-2">
+      <div className="text-xs text-gray-500">מארחים נוספים (אופציונלי)</div>
+      <div className="flex flex-wrap gap-2">
+        {members.map((m) => (
+          <label key={m.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selected.includes(m.id) ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-700 dark:border-blue-700 dark:text-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+            <input type="checkbox" checked={selected.includes(m.id)} onChange={() => toggle(m.id)} disabled={m.id === excludeId} />
+            <span>{m.name || m.id.slice(0,6)}</span>
+          </label>
+        ))}
+      </div>
+    </div>
   );
 }
 
