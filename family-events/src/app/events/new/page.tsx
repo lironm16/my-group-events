@@ -10,6 +10,8 @@ export default function NewEventPage() {
   const [hostId, setHostId] = useState<string>('');
   const [coHostIds, setCoHostIds] = useState<string[]>([]);
   const [step, setStep] = useState<1 | 2>(1);
+  const [holidayMeta, setHolidayMeta] = useState<{ label: string; img: string } | null>(null);
+  const [pendingTpl, setPendingTpl] = useState<Template | null>(null);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
   const [skipHolidays, setSkipHolidays] = useState(true);
@@ -76,7 +78,12 @@ export default function NewEventPage() {
       )}
       <h1 className="text-2xl font-bold">אירוע חדש</h1>
       {step === 1 && (
-      <TemplatesTiles onPick={(tpl)=>{
+      <TemplatesTiles onPick={(tpl, meta)=>{
+        if (meta.cat === 'holidays') {
+          setHolidayMeta({ label: meta.label, img: meta.img });
+          setPendingTpl({ ...tpl, image: meta.img });
+          return;
+        }
         setForm({
           title: tpl.title,
           description: tpl.description ?? '',
@@ -90,6 +97,29 @@ export default function NewEventPage() {
         setStep(2);
         try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
       }} />
+      )}
+      {holidayMeta && step === 1 && (
+        <HolidayVariantStep
+          label={holidayMeta.label}
+          onCancel={() => { setHolidayMeta(null); setPendingTpl(null); }}
+          onChoose={(dateISO) => {
+            const tpl = pendingTpl || { title: '', description: '', location: '', startAt: '', endAt: '', holidayKey: 'holiday', image: holidayMeta.img };
+            setForm({
+              title: tpl.title,
+              description: tpl.description ?? '',
+              location: tpl.location ?? '',
+              startAt: dateISO,
+              endAt: tpl.endAt ?? '',
+              externalLink: '',
+              image: tpl.image ?? ''
+            });
+            (window as any).__holidayKey = tpl.holidayKey ?? 'holiday';
+            setHolidayMeta(null);
+            setPendingTpl(null);
+            setStep(2);
+            try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+          }}
+        />
       )}
       {step === 2 && (
       <form onSubmit={submit} className="space-y-3 max-w-xl">
@@ -143,10 +173,90 @@ export default function NewEventPage() {
     </main>
   );
 }
+function HolidayVariantStep({ label, onChoose, onCancel }: { label: string; onChoose: (dateISO: string) => void; onCancel: () => void }) {
+  'use client';
+  const [loading, setLoading] = useState(true);
+  const [options, setOptions] = useState<{ key: string; title: string; date: string }[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const now = new Date();
+        const year = now.getFullYear();
+        const urls = [
+          `https://www.hebcal.com/hebcal?cfg=json&v=1&maj=on&min=on&mod=on&year=${year}&month=x&i=on&lg=h&d=on&tz=Asia/Jerusalem`,
+          `https://www.hebcal.com/hebcal?cfg=json&v=1&maj=on&min=on&mod=on&year=${year+1}&month=x&i=on&lg=h&d=on&tz=Asia/Jerusalem`,
+        ];
+        const items: any[] = [];
+        for (const u of urls) {
+          const r = await fetch(u, { cache: 'no-store' });
+          if (!r.ok) continue;
+          const j = await r.json();
+          items.push(...(j?.items || []));
+        }
+        const candidates = items
+          .filter((x) => typeof x?.title === 'string' && x.title.includes(label) && typeof x?.date === 'string')
+          .map((x) => ({ key: x.hebrew || x.title, title: x.title as string, date: x.date as string }))
+          .filter((x) => new Date(x.date) >= new Date());
+        // Group by date/title and offer variants e.g. Erev, Day 1.., Hol Hamoed detected by title text
+        const unique: { [k: string]: { key: string; title: string; date: string } } = {};
+        for (const c of candidates) {
+          const k = `${c.title}__${c.date}`;
+          if (!unique[k]) unique[k] = c;
+        }
+        const list = Object.values(unique).sort((a, b) => +new Date(a.date) - +new Date(b.date));
+        setOptions(list.slice(0, 12));
+      } catch (e) {
+        setError('שגיאה בטעינת אפשרויות החג');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [label]);
+  const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  return (
+    <div className="space-y-3 max-w-2xl">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">בחרו סוג מועד עבור {label}</h2>
+        <button onClick={onCancel} className="px-3 py-1 rounded border">חזרה</button>
+      </div>
+      {loading ? (
+        <div className="text-sm text-gray-600 dark:text-gray-300">טוען אפשרויות…</div>
+      ) : error ? (
+        <div className="text-sm text-red-600">{error}</div>
+      ) : options.length === 0 ? (
+        <div className="text-sm text-gray-600 dark:text-gray-300">לא נמצאו אפשרויות. נסו שוב.</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {options.map((opt) => (
+            <button
+              key={`${opt.title}-${opt.date}`}
+              className="rounded border border-gray-200 dark:border-gray-800 p-3 text-left bg-white dark:bg-gray-900 hover:shadow"
+              type="button"
+              onClick={() => {
+                // Use date of chosen option, keep current time
+                const base = new Date(opt.date);
+                const now = new Date();
+                base.setHours(now.getHours(), now.getMinutes(), 0, 0);
+                onChoose(toLocal(base));
+              }}
+            >
+              <div className="font-medium">{opt.title}</div>
+              <div className="text-xs text-gray-600">{new Date(opt.date).toLocaleDateString('he-IL', { weekday: 'long', month: 'short', day: '2-digit' })}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 type Template = { title: string; description?: string; location?: string; startAt?: string; endAt?: string; holidayKey?: string; image?: string };
+type TemplateMeta = { cat: 'dinners' | 'holidays' | 'outdoors' | 'other'; label: string; img: string };
 
-function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
+function TemplatesTiles({ onPick }: { onPick: (tpl: Template, meta: TemplateMeta) => void }) {
   const now = new Date();
   const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
   const toLocalNow = () => toLocal(now);
@@ -231,7 +341,7 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
                 }
               } catch {}
             }
-            onPick({ ...t.tpl, startAt: startISO, image: t.img });
+            onPick({ ...t.tpl, startAt: startISO, image: t.img }, { cat: t.cat, label: t.label, img: t.img });
           }} className="rounded-xl border border-gray-200 dark:border-gray-800 p-2 bg-white dark:bg-gray-900 hover:shadow flex flex-col items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={t.img} alt="" className="w-32 h-24 object-cover rounded" />
