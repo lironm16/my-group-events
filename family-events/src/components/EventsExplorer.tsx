@@ -255,11 +255,12 @@ function resolveEventTypeImage(holidayKey?: string | null, title?: string | null
 }
 
 function formatDateMaybeDateOnly(iso: string) {
-  const d = new Date(iso);
-  // if time is 00:00, treat as date only
-  if (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0) {
+  // If stored as date-only, our API returns UTC midnight (..T00:00:00.000Z)
+  if (/T00:00:00\.000Z$/.test(iso)) {
+    const d = new Date(iso);
     return d.toLocaleDateString('he-IL', { dateStyle: 'full' });
   }
+  const d = new Date(iso);
   return d.toLocaleString('he-IL');
 }
 
