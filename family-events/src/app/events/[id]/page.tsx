@@ -74,7 +74,11 @@ export default async function EventDetailPage({ params, searchParams }: { params
     ...((event.coHosts || []))
   ];
   const shareUrl = `${base}/events/${event.id}`;
-  const dateText = new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+  const dateText = (() => {
+    const d = new Date(event.startAt);
+    if (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0) return d.toLocaleDateString('he-IL', { dateStyle: 'full' });
+    return d.toLocaleString('he-IL');
+  })();
   const locText = event.location ? `במקום: ${event.location} ` : '';
   const from = typeof searchParams?.from === 'string' ? (searchParams!.from as string) : undefined;
   const occurrenceStartAt = typeof searchParams?.occurrenceStartAt === 'string' ? (searchParams!.occurrenceStartAt as string) : undefined;
@@ -89,11 +93,11 @@ export default async function EventDetailPage({ params, searchParams }: { params
           </div>
           <div>
             <dt className="text-sm text-gray-500">התחלה</dt>
-            <dd>{new Date(event.startAt).toLocaleString('he-IL')}</dd>
+            <dd>{(() => { const d=new Date(event.startAt); return (d.getHours()||d.getMinutes()||d.getSeconds()) ? d.toLocaleString('he-IL') : d.toLocaleDateString('he-IL', { dateStyle: 'full' }); })()}</dd>
           </div>
           <div>
             <dt className="text-sm text-gray-500">סיום</dt>
-            <dd>{event.endAt ? new Date(event.endAt).toLocaleString('he-IL') : '—'}</dd>
+            <dd>{event.endAt ? (() => { const d=new Date(event.endAt!); return (d.getHours()||d.getMinutes()||d.getSeconds()) ? d.toLocaleString('he-IL') : d.toLocaleDateString('he-IL', { dateStyle: 'full' }); })() : '—'}</dd>
           </div>
           <div className="md:col-span-2">
             <dt className="text-sm text-gray-500">מארחים</dt>

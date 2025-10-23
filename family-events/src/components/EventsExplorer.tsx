@@ -19,6 +19,7 @@ type EventCard = {
   rsvps: { status: string; userId?: string }[];
   recurrence?: any | null;
   recurrenceExceptions?: string[] | null;
+  coHosts?: { id: string; name: string | null }[];
 };
 
 type ScopeKey = 'mine' | 'all' | `group:${string}`;
@@ -202,7 +203,7 @@ function Cards({ list }: { list: EventCard[] }) {
                 <h3 className="font-semibold text-lg">{e.title}</h3>
                 {e.location && <p className="text-sm text-gray-600 dark:text-gray-400">{e.location}</p>}
               </div>
-              <span className="text-xs text-gray-500">{new Date(e.startAt).toLocaleString('he-IL')}</span>
+                <span className="text-xs text-gray-500">{formatDateMaybeDateOnly(e.startAt)}</span>
             </div>
             <div className="mt-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -217,7 +218,7 @@ function Cards({ list }: { list: EventCard[] }) {
               <span className="text-gray-600 dark:text-gray-400 inline-flex items-center gap-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={e.hostImage && /^https?:/i.test(e.hostImage) ? e.hostImage : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(e.host?.name || 'host')}`} alt="host" className="w-5 h-5 rounded-full" />
-                מארח: {e.host?.name ?? '—'}
+                מארחים: {[e.host?.name, ...(e.coHosts || []).map(h => h.name)].filter(Boolean).join(', ') || '—'}
               </span>
               <ApprovalSummary rsvps={e.rsvps} />
             </div>
@@ -251,5 +252,14 @@ function resolveEventTypeImage(holidayKey?: string | null, title?: string | null
   if (/פורים/.test(t)) return '/templates/purim.jpg';
   if (/פסח/.test(t)) return '/templates/passover.jpg';
   return '/templates/party.jpg';
+}
+
+function formatDateMaybeDateOnly(iso: string) {
+  const d = new Date(iso);
+  // if time is 00:00, treat as date only
+  if (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0) {
+    return d.toLocaleDateString('he-IL', { dateStyle: 'full' });
+  }
+  return d.toLocaleString('he-IL');
 }
 

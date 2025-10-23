@@ -18,6 +18,7 @@ type EventCard = {
   rsvps: { status: string; userId?: string }[];
   recurrence?: any | null;
   recurrenceExceptions?: string[] | null;
+  coHosts?: { id: string; name: string | null }[];
 };
 
 export default async function EventsPage({ searchParams }: { searchParams?: { page?: string; family?: string } }) {
@@ -56,7 +57,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
       const rows = await prisma.event.findMany({
         where,
         orderBy: { startAt: 'asc' },
-        include: { rsvps: { select: { status: true, userId: true } }, host: { select: { name: true, id: true, image: true } } },
+        include: { rsvps: { select: { status: true, userId: true } }, host: { select: { name: true, id: true, image: true } }, coHosts: { include: { user: { select: { id: true, name: true } } } } },
         skip: (page - 1) * pageSize,
         take: pageSize,
       });
@@ -77,6 +78,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
           rsvps: r.rsvps.map((x: any) => ({ status: x.status, userId: x.userId })),
           recurrence: r.recurrence ?? null,
           recurrenceExceptions: (r.recurrenceExceptions as any) ?? null,
+          coHosts: (r.coHosts || []).map((h: any) => ({ id: h.userId, name: h.user?.name ?? null })),
         };
         if (!r.recurrence?.freq) {
           expanded.push(base);
