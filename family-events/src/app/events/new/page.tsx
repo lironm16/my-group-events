@@ -10,6 +10,7 @@ export default function NewEventPage() {
   const [hostId, setHostId] = useState<string>('');
   const [coHostIds, setCoHostIds] = useState<string[]>([]);
   const [step, setStep] = useState<1 | 2>(1);
+  const [hasEnd, setHasEnd] = useState<boolean>(false);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
   const [skipHolidays, setSkipHolidays] = useState(true);
@@ -86,6 +87,7 @@ export default function NewEventPage() {
           externalLink: '',
           image: tpl.image ?? ''
         });
+        setHasEnd(!!tpl.endAt);
         (window as any).__holidayKey = tpl.holidayKey ?? null;
         setStep(2);
         try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
@@ -112,9 +114,21 @@ export default function NewEventPage() {
           <DateTimePicker label="תאריך התחלה" value={form.startAt} onChange={(v)=>setForm({...form, startAt:v})} allowDateOnly timeToggle />
           {errors.startAt && <p className={errorCls}>{errors.startAt}</p>}
         </div>
-        <div>
-          <DateTimePicker label="תאריך סיום (אופציונלי)" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly timeToggle />
-          {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
+        <div className="space-y-2">
+          <label className="inline-flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={hasEnd}
+              onChange={(e)=>{ const on=e.target.checked; setHasEnd(on); if (!on) setForm({ ...form, endAt: '' }); }}
+            />
+            <span>להוסיף תאריך סיום</span>
+          </label>
+          {hasEnd && (
+            <div>
+              <DateTimePicker label="תאריך סיום (אופציונלי)" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly timeToggle />
+              {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
+            </div>
+          )}
         </div>
         <div className="mt-4 space-y-2">
           <label className="inline-flex items-center gap-2">
