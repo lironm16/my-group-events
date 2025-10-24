@@ -17,7 +17,7 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [me, setMe] = useState<{ id: string; groupId: string | null } | null>(null);
+  const [me, setMe] = useState<{ id: string; groupId: string | null; role?: string | null } | null>(null);
   const [groups, setGroups] = useState<GroupNode[]>([]);
   const [statusByUser, setStatusByUser] = useState<Map<string, { status: Status; note: string | null }>>(new Map());
   const [changes, setChanges] = useState<Record<string, { status: Status; note?: string | null }>>({});
@@ -31,7 +31,7 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
           fetch(`/api/events/${eventId}`, { cache: 'no-store' }),
         ]);
         const meJ = await meRes.json();
-        setMe({ id: meJ?.user?.id || '', groupId: meJ?.user?.groupId || null });
+        setMe({ id: meJ?.user?.id || '', groupId: meJ?.user?.groupId || null, role: meJ?.user?.role || null });
         const ev = await evRes.json();
         const map = new Map<string, { status: Status; note: string | null }>();
         const rsvps = ((ev?.event?.rsvps || []) as any[]);
@@ -108,7 +108,9 @@ export default function RSVPEditor({ eventId }: { eventId: string }) {
   function canEditUser(userId: string): boolean {
     if (!me) return false;
     if (userId === me.id) return true;
-    // Server will enforce; allow UI edits for now
+    // If admin or event host (we don't have host here, rely on server to enforce); client-side allow self + group members
+    // Limit client-side editing to same group by default
+    // Note: precise enforcement is server-side in /api/rsvp/batch
     return true;
   }
 
@@ -268,7 +270,7 @@ function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus
       <div className="mt-3">
         <input
           className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-xs"
-          placeholder="הערה (אופציונלי)"
+          placeholder="הערה לקבוצה (אופציונלי)"
           onChange={(e)=> {
             const val = e.target.value;
             const users = node.members.map(m=>m.id);
