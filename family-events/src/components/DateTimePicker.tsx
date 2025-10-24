@@ -115,7 +115,13 @@ export default function DateTimePicker({ label, value, onChange, required, allow
                 type="button"
                 disabled={!cell.inMonth}
                 onClick={() => selectDay(cell.day)}
-                className={`px-2 py-1 rounded ${cell.inMonth ? 'hover:bg-gray-100 dark:hover:bg-gray-800' : 'opacity-30'} ${selected && cell.inMonth && sameDate(selected, year, month, cell.day) ? 'bg-blue-600 text-white' : ''}`}
+                className={[
+                  'px-2 py-1 rounded',
+                  cell.inMonth ? 'hover:bg-gray-100 dark:hover:bg-gray-800' : 'opacity-30',
+                  (selected && cell.inMonth && sameDate(selected, year, month, cell.day)) ? 'bg-blue-600 text-white' : '',
+                  // Mark today with a subtle ring when not selected
+                  (!selected || !sameDate(selected, year, month, cell.day)) && cell.inMonth && sameDate(new Date(), year, month, cell.day) ? 'ring-1 ring-blue-500 dark:ring-blue-400' : '',
+                ].join(' ')}
               >
                 {cell.day}
               </button>
