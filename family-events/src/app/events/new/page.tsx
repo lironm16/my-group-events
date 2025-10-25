@@ -15,6 +15,7 @@ export default function NewEventPage() {
   const [repeatUntil, setRepeatUntil] = useState('');
   const [skipHolidays, setSkipHolidays] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [createdModal, setCreatedModal] = useState<{ id: string; startAt: string } | null>(null);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
     if (!form.title.trim()) errs.title = 'יש להזין כותרת';
@@ -42,13 +43,7 @@ export default function NewEventPage() {
     setSaving(false);
     if (res.ok) {
       const { event } = await res.json();
-      try {
-        const base = (process.env.NEXT_PUBLIC_APP_URL || window.location.origin);
-        const shareUrl = `${base}/events/${event.id}`;
-        const text = `🎉 נוצר אירוע חדש: ${form.title}\nאישור הגעה: ${shareUrl}`;
-        if (navigator.share) await navigator.share({ text });
-      } catch {}
-      window.location.href = '/events';
+      setCreatedModal({ id: event.id, startAt: event.startAt });
     }
   }
 
@@ -75,7 +70,10 @@ export default function NewEventPage() {
           strategy="afterInteractive"
         />
       )}
-      <h1 className="text-2xl font-bold">אירוע חדש</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">אירוע חדש</h1>
+        <a href="/events" className="px-3 py-2 rounded border text-sm">חזרה</a>
+      </div>
       {step === 1 && (
       <TemplatesTiles onPick={(tpl)=>{
         setForm({
@@ -154,7 +152,48 @@ export default function NewEventPage() {
       </form>
       )}
       {/* Holidays generator removed per request */}
+      {createdModal && (
+        <SuccessModal
+          title={form.title}
+          location={form.location}
+          eventId={createdModal.id}
+          startAtISO={String(createdModal.startAt)}
+          onSend={() => {
+            try {
+              const base = (process.env.NEXT_PUBLIC_APP_URL || window.location.origin);
+              const shareUrl = `${base}/events/${createdModal.id}`;
+              const dateText = /T00:00:00\.000Z$/.test(String(createdModal.startAt))
+                ? new Date(String(createdModal.startAt)).toLocaleDateString('he-IL', { dateStyle: 'full' })
+                : new Date(String(createdModal.startAt)).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+              const locLine = form.location ? `\nבמקום: ${form.location}` : '';
+              const text = `🎉 נוצר אירוע: ${form.title}\n🗓️ ${dateText}${locLine}\n${shareUrl}`;
+              const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+              window.open(wa, '_blank');
+            } catch {}
+            window.location.href = '/events';
+          }}
+          onLater={() => {
+            setCreatedModal(null);
+            window.location.href = '/events';
+          }}
+        />
+      )}
     </main>
+  );
+}
+function SuccessModal({ title, location, eventId, startAtISO, onSend, onLater }: { title: string; location: string; eventId: string; startAtISO: string; onSend: () => void; onLater: () => void }) {
+  'use client';
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800 w-[90%] max-w-md text-center">
+        <div className="text-xl font-semibold mb-2">האירוע נוצר!</div>
+        <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">{title}{location ? ` · ${location}` : ''}</div>
+        <div className="flex gap-2 justify-center">
+          <button onClick={onSend} className="px-3 py-2 rounded bg-green-600 text-white">שליחה בוואטסאפ</button>
+          <button onClick={onLater} className="px-3 py-2 rounded border">אשלח מאוחר יותר</button>
+        </div>
+      </div>
+    </div>
   );
 }
 // Holiday variant step removed
