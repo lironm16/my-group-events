@@ -261,6 +261,6 @@ function formatDateMaybeDateOnly(iso: string) {
     return d.toLocaleDateString('he-IL', { dateStyle: 'full' });
   }
   const d = new Date(iso);
-  return d.toLocaleString('he-IL');
+  return d.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
 }
 

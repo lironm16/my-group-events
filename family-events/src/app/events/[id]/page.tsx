@@ -93,11 +93,11 @@ export default async function EventDetailPage({ params, searchParams }: { params
           </div>
           <div>
             <dt className="text-sm text-gray-500">התחלה</dt>
-            <dd>{(() => { const d=new Date(event.startAt); return (d.getHours()||d.getMinutes()||d.getSeconds()) ? d.toLocaleString('he-IL') : d.toLocaleDateString('he-IL', { dateStyle: 'full' }); })()}</dd>
+            <dd>{(() => { const d=new Date(event.startAt); return (d.getHours()||d.getMinutes()) ? d.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' }) : d.toLocaleDateString('he-IL', { dateStyle: 'full' }); })()}</dd>
           </div>
           <div>
             <dt className="text-sm text-gray-500">סיום</dt>
-            <dd>{event.endAt ? (() => { const d=new Date(event.endAt!); return (d.getHours()||d.getMinutes()||d.getSeconds()) ? d.toLocaleString('he-IL') : d.toLocaleDateString('he-IL', { dateStyle: 'full' }); })() : '—'}</dd>
+            <dd>{event.endAt ? (() => { const d=new Date(event.endAt!); return (d.getHours()||d.getMinutes()) ? d.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' }) : d.toLocaleDateString('he-IL', { dateStyle: 'full' }); })() : '—'}</dd>
           </div>
           <div className="md:col-span-2">
             <dt className="text-sm text-gray-500">מארחים</dt>

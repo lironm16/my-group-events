@@ -72,7 +72,7 @@ export default function NewEventPage() {
       )}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">אירוע חדש</h1>
-        <a href="/events" className="px-3 py-2 rounded border text-sm">חזרה</a>
+        <button type="button" onClick={() => { if (step === 2) { setStep(1); return; } window.location.href = '/events'; }} className="px-3 py-2 rounded border text-sm">חזרה</button>
       </div>
       {step === 1 && (
       <TemplatesTiles onPick={(tpl)=>{
@@ -161,13 +161,9 @@ export default function NewEventPage() {
           onSend={() => {
             try {
               const base = (process.env.NEXT_PUBLIC_APP_URL || window.location.origin);
-              const shareUrl = `${base}/events/${createdModal.id}`;
-              const dateText = /T00:00:00\.000Z$/.test(String(createdModal.startAt))
-                ? new Date(String(createdModal.startAt)).toLocaleDateString('he-IL', { dateStyle: 'full' })
-                : new Date(String(createdModal.startAt)).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
-              const locLine = form.location ? `\nבמקום: ${form.location}` : '';
-              const text = `🎉 נוצר אירוע: ${form.title}\n🗓️ ${dateText}${locLine}\n${shareUrl}`;
-              const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+              const url = `${base}/events/${createdModal.id}`;
+              // Mirror event page's WhatsAppShare: open share URL with minimal text
+              const wa = `https://wa.me/?text=${encodeURIComponent(url)}`;
               window.open(wa, '_blank');
             } catch {}
             window.location.href = '/events';

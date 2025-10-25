@@ -115,8 +115,8 @@ export default function DateTimePicker({ label, value, onChange, required, allow
           <div className="grid grid-cols-7 gap-1 text-center">
             {days.map((cell, idx) => {
               const today = new Date(); today.setHours(0,0,0,0);
-              const cellDate = new Date(year, month, cell.day, 0,0,0,0);
-              const isPast = cellDate < today;
+              const cellDate = new Date(year, month, cell.day || 1, 0,0,0,0);
+              const isPast = cell.inMonth && cellDate < today;
               const active = draft ?? selected;
               return (
                 <button
@@ -131,7 +131,7 @@ export default function DateTimePicker({ label, value, onChange, required, allow
                     (!active || !sameDate(active, year, month, cell.day)) && cell.inMonth && sameDate(new Date(), year, month, cell.day) ? 'ring-1 ring-blue-500 dark:ring-blue-400' : '',
                   ].join(' ')}
                 >
-                  {cell.day}
+                  {cell.inMonth ? cell.day : ''}
                 </button>
               );
             })}
