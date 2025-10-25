@@ -17,6 +17,7 @@ export default function DateTimePicker({ label, value, onChange, required, allow
   const [time, setTime] = useState<string>(() => (value.includes('T') ? formatTime(new Date(value)) : ''));
   const [timeEnabled, setTimeEnabled] = useState<boolean>(() => (time ? true : false));
   const selected = value ? new Date(value) : undefined;
+  const [draft, setDraft] = useState<Date | undefined>(selected);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,19 +30,12 @@ export default function DateTimePicker({ label, value, onChange, required, allow
   }, []);
 
   const days = useMemo(() => buildMonthGrid(year, month), [year, month]);
-  const display = selected ? formatDisplay(selected, !!time) : '';
+  const display = selected ? formatDisplay(selected, !!time && timeEnabled) : '';
 
   function selectDay(d: number) {
-    if (allowDateOnly && !time) {
-      const dt = new Date(year, month, d, 0, 0, 0, 0);
-      onChange(toLocalDateISO(dt));
-      setOpen(false);
-      return;
-    }
-    const [hh, mm] = (time || '00:00').split(':').map(Number);
+    const [hh, mm] = (time ? time : '00:00').split(':').map(Number);
     const dt = new Date(year, month, d, hh, mm, 0, 0);
-    onChange(toLocalISO(dt));
-    setOpen(false);
+    setDraft(dt);
   }
 
   function prevMonth() {
@@ -62,40 +56,50 @@ export default function DateTimePicker({ label, value, onChange, required, allow
 
   function onTimeChange(v: string) {
     setTime(v);
-    if (!v) {
-      if (allowDateOnly && selected) {
-        onChange(toLocalDateISO(selected));
-      }
-      return;
-    }
-    const [hh, mm] = v.split(':').map(Number);
-    const base = selected ?? new Date(year, month, new Date().getDate());
+    const [hh, mm] = v ? v.split(':').map(Number) : [0, 0];
+    const base = draft ?? selected ?? new Date(year, month, new Date().getDate());
     const dt = new Date(base);
     dt.setHours(hh, mm, 0, 0);
-    onChange(toLocalISO(dt));
+    setDraft(dt);
   }
 
   function onToggleTime(next: boolean) {
     setTimeEnabled(next);
     if (!next) {
-      // strip time from current value if any
-      if (selected) onChange(toLocalDateISO(selected));
       setTime('');
+      if (draft) {
+        const d = new Date(draft);
+        d.setHours(0, 0, 0, 0);
+        setDraft(d);
+      }
     } else {
-      // enable time with default 19:00 if none selected
-      const base = selected ?? new Date(year, month, new Date().getDate());
+      if (!time) setTime('19:00');
+      const base = draft ?? selected ?? new Date(year, month, new Date().getDate());
       const dt = new Date(base);
       const [hh, mm] = (time || '19:00').split(':').map(Number);
       dt.setHours(hh, mm, 0, 0);
-      onChange(toLocalISO(dt));
-      if (!time) setTime('19:00');
+      setDraft(dt);
     }
   }
 
   return (
     <div className="w-full" ref={ref} dir="rtl">
       {label && <label className="block text-sm text-gray-600 mb-1">{label}{required ? ' *' : ''}</label>}
-      <button type="button" className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-right" onClick={() => setOpen((o) => !o)}>
+      <button
+        type="button"
+        className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-right"
+        onClick={() => {
+          if (!open) {
+            const curr = value ? new Date(value) : new Date();
+            setDraft(curr);
+            setMonth(curr.getMonth());
+            setYear(curr.getFullYear());
+            setTime(value && value.includes('T') ? formatTime(curr) : '');
+            setTimeEnabled(value ? value.includes('T') : false);
+          }
+          setOpen((o) => !o);
+        }}
+      >
         {display || 'בחר תאריך ושעה'}
       </button>
       {open && (
@@ -109,23 +113,28 @@ export default function DateTimePicker({ label, value, onChange, required, allow
             {heWeekdays.map((d) => (<div key={d} className="text-gray-500">{d}</div>))}
           </div>
           <div className="grid grid-cols-7 gap-1 text-center">
-            {days.map((cell, idx) => (
-              <button
-                key={idx}
-                type="button"
-                disabled={!cell.inMonth}
-                onClick={() => selectDay(cell.day)}
-                className={[
-                  'px-2 py-1 rounded',
-                  cell.inMonth ? 'hover:bg-gray-100 dark:hover:bg-gray-800' : 'opacity-30',
-                  (selected && cell.inMonth && sameDate(selected, year, month, cell.day)) ? 'bg-blue-600 text-white' : '',
-                  // Mark today with a subtle ring when not selected
-                  (!selected || !sameDate(selected, year, month, cell.day)) && cell.inMonth && sameDate(new Date(), year, month, cell.day) ? 'ring-1 ring-blue-500 dark:ring-blue-400' : '',
-                ].join(' ')}
-              >
-                {cell.day}
-              </button>
-            ))}
+            {days.map((cell, idx) => {
+              const today = new Date(); today.setHours(0,0,0,0);
+              const cellDate = new Date(year, month, cell.day, 0,0,0,0);
+              const isPast = cellDate < today;
+              const active = draft ?? selected;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  disabled={!cell.inMonth || isPast}
+                  onClick={() => selectDay(cell.day)}
+                  className={[
+                    'px-2 py-1 rounded',
+                    cell.inMonth && !isPast ? 'hover:bg-gray-100 dark:hover:bg-gray-800' : 'opacity-30',
+                    (active && cell.inMonth && sameDate(active, year, month, cell.day)) ? 'bg-blue-600 text-white' : '',
+                    (!active || !sameDate(active, year, month, cell.day)) && cell.inMonth && sameDate(new Date(), year, month, cell.day) ? 'ring-1 ring-blue-500 dark:ring-blue-400' : '',
+                  ].join(' ')}
+                >
+                  {cell.day}
+                </button>
+              );
+            })}
           </div>
           {allowDateOnly && timeToggle && (
             <label className="mt-3 inline-flex items-center gap-2 text-sm">
@@ -138,6 +147,10 @@ export default function DateTimePicker({ label, value, onChange, required, allow
               {allowDateOnly && <option value="">ללא שעה</option>}
               {buildTimes().map((t) => (<option key={t} value={t}>{t}</option>))}
             </select>
+          </div>
+          <div className="mt-3 flex items-center justify-end gap-2">
+            <button type="button" className="px-3 py-1 rounded border" onClick={() => { const curr = value ? new Date(value) : undefined; setDraft(curr); setTime(value && value.includes('T') ? formatTime(new Date(value)) : ''); setTimeEnabled(value ? value.includes('T') : false); setOpen(false); }}>ביטול</button>
+            <button type="button" className="px-3 py-1 rounded bg-blue-600 text-white" onClick={() => { const base = draft ?? selected ?? new Date(); if (allowDateOnly && timeToggle && !timeEnabled) { const d = new Date(base); d.setHours(0,0,0,0); onChange(toLocalDateISO(d)); } else { onChange(toLocalISO(base)); } setOpen(false); }}>שמירה</button>
           </div>
         </div>
       )}

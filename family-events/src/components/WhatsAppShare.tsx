@@ -13,7 +13,13 @@ type Props = {
 export default function WhatsAppShare({ eventId, title, startAtISO, location, typeKey, shareUrl }: Props) {
   const [idx, setIdx] = useState(0);
 
-  const dateText = useMemo(() => new Date(startAtISO).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' }), [startAtISO]);
+  const dateText = useMemo(() => {
+    // If the event has no time (date-only), avoid adding a time in the message
+    if (/T00:00:00\.000Z$/.test(startAtISO)) {
+      return new Date(startAtISO).toLocaleDateString('he-IL', { dateStyle: 'full' });
+    }
+    return new Date(startAtISO).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+  }, [startAtISO]);
   const locText = location ? `במקום: ${location}\n` : '';
 
   const variants = useMemo(() => buildTemplates({ title, dateText, locText, shareUrl, typeKey }), [title, dateText, locText, shareUrl, typeKey]);
