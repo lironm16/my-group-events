@@ -188,6 +188,7 @@ function SuccessModal({ title, location, eventId, startAtISO, onLater }: { title
                 location={location || null}
                 typeKey={typeKey}
                 shareUrl={shareUrl}
+                hasResponders={false}
               />
             );
           })()}

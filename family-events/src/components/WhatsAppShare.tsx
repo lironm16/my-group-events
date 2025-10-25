@@ -8,9 +8,10 @@ type Props = {
   location: string | null;
   typeKey: string | null;
   shareUrl: string; // full URL to the event page
+  hasResponders?: boolean; // when true, hide non-responders reminder variants
 };
 
-export default function WhatsAppShare({ eventId, title, startAtISO, location, typeKey, shareUrl }: Props) {
+export default function WhatsAppShare({ eventId, title, startAtISO, location, typeKey, shareUrl, hasResponders = true }: Props) {
   const [idx, setIdx] = useState(0);
 
   const dateText = useMemo(() => {
@@ -22,7 +23,7 @@ export default function WhatsAppShare({ eventId, title, startAtISO, location, ty
   }, [startAtISO]);
   const locText = location ? `במקום: ${location}\n` : '';
 
-  const variants = useMemo(() => buildTemplates({ title, dateText, locText, shareUrl, typeKey }), [title, dateText, locText, shareUrl, typeKey]);
+  const variants = useMemo(() => buildTemplates({ title, dateText, locText, shareUrl, typeKey, hasResponders }), [title, dateText, locText, shareUrl, typeKey, hasResponders]);
   const text = variants[idx] ?? variants[0];
 
   const waHref = `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -52,7 +53,7 @@ export default function WhatsAppShare({ eventId, title, startAtISO, location, ty
   );
 }
 
-function buildTemplates({ title, dateText, locText, shareUrl, typeKey }: { title: string; dateText: string; locText: string; shareUrl: string; typeKey: string | null }) {
+function buildTemplates({ title, dateText, locText, shareUrl, typeKey, hasResponders }: { title: string; dateText: string; locText: string; shareUrl: string; typeKey: string | null; hasResponders: boolean }) {
   const base = [
     `📅 ${title}\n🕒 ${dateText}\n${locText}\nהצטרפו/אשרו כאן:\n${shareUrl}`,
     `🎉 היי! מוזמנים ל"${title}" ביום ${dateText.split(',')[0]} בשעה ${dateText.split(' ')[dateText.split(' ').length-1]}\n${locText}פרטים ואישור הגעה: ${shareUrl}`,
@@ -65,12 +66,15 @@ function buildTemplates({ title, dateText, locText, shareUrl, typeKey }: { title
   } else if (typeKey === 'holiday') {
     base.unshift(`🌟 חג – ${title}\n🗓️ ${dateText}\n${locText}אישור הגעה: ${shareUrl}`);
   }
-  // Add reminder-oriented variants for invitees who haven't responded yet
-  const reminders = [
-    `⏰ תזכורת קצרה לאישור הגעה ל"${title}"\n🗓️ ${dateText}\n${locText}לאישור במהירות: ${shareUrl}`,
-    `🙂 רק בודקים שלא פספסתם – נשמח לאישור הגעה ל"${title}"\n${locText}פרטים ואישור: ${shareUrl}`,
-    `📣 למי שעדיין לא אישר/ה: מחכים לכם ב"${title}"\n🗓️ ${dateText}\n${locText}אישור כאן: ${shareUrl}`,
-  ];
-  return [...base, ...reminders].slice(0, 6);
+  // Add reminder-oriented variants only when there are no responders yet
+  if (!hasResponders) {
+    const reminders = [
+      `⏰ תזכורת קצרה לאישור הגעה ל"${title}"\n🗓️ ${dateText}\n${locText}לאישור במהירות: ${shareUrl}`,
+      `🙂 רק בודקים שלא פספסתם – נשמח לאישור הגעה ל"${title}"\n${locText}פרטים ואישור: ${shareUrl}`,
+      `📣 למי שעדיין לא אישר/ה: מחכים לכם ב"${title}"\n🗓️ ${dateText}\n${locText}אישור כאן: ${shareUrl}`,
+    ];
+    return [...base, ...reminders].slice(0, 6);
+  }
+  return base.slice(0, 4);
 }
 
