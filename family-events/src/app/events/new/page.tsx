@@ -2,6 +2,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import EventTypeIcon from '@/components/EventTypeIcon';
 import DateTimePicker from '@/components/DateTimePicker';
+import WhatsAppShare from '@/components/WhatsAppShare';
 import Script from 'next/script';
 
 export default function NewEventPage() {
@@ -158,16 +159,6 @@ export default function NewEventPage() {
           location={form.location}
           eventId={createdModal.id}
           startAtISO={String(createdModal.startAt)}
-          onSend={() => {
-            try {
-              const base = (process.env.NEXT_PUBLIC_APP_URL || window.location.origin);
-              const url = `${base}/events/${createdModal.id}`;
-              // Mirror event page's WhatsAppShare: open share URL with minimal text
-              const wa = `https://wa.me/?text=${encodeURIComponent(url)}`;
-              window.open(wa, '_blank');
-            } catch {}
-            window.location.href = '/events';
-          }}
           onLater={() => {
             setCreatedModal(null);
             window.location.href = '/events';
@@ -177,15 +168,29 @@ export default function NewEventPage() {
     </main>
   );
 }
-function SuccessModal({ title, location, eventId, startAtISO, onSend, onLater }: { title: string; location: string; eventId: string; startAtISO: string; onSend: () => void; onLater: () => void }) {
+function SuccessModal({ title, location, eventId, startAtISO, onLater }: { title: string; location: string; eventId: string; startAtISO: string; onLater: () => void }) {
   'use client';
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800 w-[90%] max-w-md text-center">
         <div className="text-xl font-semibold mb-2">האירוע נוצר!</div>
         <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">{title}{location ? ` · ${location}` : ''}</div>
-        <div className="flex gap-2 justify-center">
-          <button onClick={onSend} className="px-3 py-2 rounded bg-green-600 text-white">שליחה בוואטסאפ</button>
+        <div className="flex flex-col items-center gap-3">
+          {(() => {
+            const base = (process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')) as string;
+            const shareUrl = `${base}/events/${eventId}`;
+            const typeKey = (typeof window !== 'undefined' ? (window as any).__holidayKey : null) ?? null;
+            return (
+              <WhatsAppShare
+                eventId={eventId}
+                title={title}
+                startAtISO={startAtISO}
+                location={location || null}
+                typeKey={typeKey}
+                shareUrl={shareUrl}
+              />
+            );
+          })()}
           <button onClick={onLater} className="px-3 py-2 rounded border">אשלח מאוחר יותר</button>
         </div>
       </div>
