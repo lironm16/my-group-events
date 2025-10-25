@@ -17,6 +17,9 @@ type EventCard = {
   hostImage?: string | null;
   holidayKey?: string | null;
   rsvps: { status: string; userId?: string }[];
+  recurrence?: any | null;
+  recurrenceExceptions?: string[] | null;
+  coHosts?: { id: string; name: string | null }[];
 };
 
 type ScopeKey = 'mine' | 'all' | `group:${string}`;
@@ -87,7 +90,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   }, [view, filterKey, router, pathname, searchParams]);
 
   const calItems: CalendarEvent[] = useMemo(
-    () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location })),
+    () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location, occurrenceStartAt: e.recurrence ? e.startAt : undefined })),
     [filtered]
   );
 
@@ -194,13 +197,13 @@ function Cards({ list }: { list: EventCard[] }) {
     <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => (
         <li key={e.id} className="rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow transition-shadow">
-          <a href={`/events/${e.id}`} className="block p-4">
+          <a href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-semibold text-lg">{e.title}</h3>
                 {e.location && <p className="text-sm text-gray-600 dark:text-gray-400">{e.location}</p>}
               </div>
-              <span className="text-xs text-gray-500">{new Date(e.startAt).toLocaleString('he-IL')}</span>
+                <span className="text-xs text-gray-500">{formatDateMaybeDateOnly(e.startAt)}</span>
             </div>
             <div className="mt-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -215,7 +218,7 @@ function Cards({ list }: { list: EventCard[] }) {
               <span className="text-gray-600 dark:text-gray-400 inline-flex items-center gap-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={e.hostImage && /^https?:/i.test(e.hostImage) ? e.hostImage : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(e.host?.name || 'host')}`} alt="host" className="w-5 h-5 rounded-full" />
-                מארח: {e.host?.name ?? '—'}
+                מארחים: {[e.host?.name, ...(e.coHosts || []).map(h => h.name)].filter(Boolean).join(', ') || '—'}
               </span>
               <ApprovalSummary rsvps={e.rsvps} />
             </div>
@@ -249,5 +252,15 @@ function resolveEventTypeImage(holidayKey?: string | null, title?: string | null
   if (/פורים/.test(t)) return '/templates/purim.jpg';
   if (/פסח/.test(t)) return '/templates/passover.jpg';
   return '/templates/party.jpg';
+}
+
+function formatDateMaybeDateOnly(iso: string) {
+  // If stored as date-only, our API returns UTC midnight (..T00:00:00.000Z)
+  if (/T00:00:00\.000Z$/.test(iso)) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('he-IL', { dateStyle: 'full' });
+  }
+  const d = new Date(iso);
+  return d.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
 }
 

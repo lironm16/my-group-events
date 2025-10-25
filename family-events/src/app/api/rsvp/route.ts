@@ -17,12 +17,13 @@ export async function POST(req: Request) {
   // Load event and permissions
   const event = await prisma.event.findUnique({ where: { id: eventId }, select: { hostId: true, familyId: true } });
   if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  const isHost = event.hostId === user.id;
+  const isHost = event.hostId === user.id || !!(await prisma.eventHost.findFirst({ where: { eventId, userId: user.id }, select: { id: true } }));
   const isAdmin = user.role === 'admin';
 
   // Determine target user ids
   let targetUserIds: string[] = [user.id];
-  if ((scope === 'group') && user.groupId) {
+  if (scope === 'group') {
+    if (!user.groupId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     const members = await prisma.user.findMany({ where: { groupId: user.groupId }, select: { id: true } });
     targetUserIds = members.map(m => m.id);
   }

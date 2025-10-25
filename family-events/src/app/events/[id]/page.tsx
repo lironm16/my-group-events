@@ -74,12 +74,17 @@ export default async function EventDetailPage({ params, searchParams }: { params
     ...((event.coHosts || []))
   ];
   const shareUrl = `${base}/events/${event.id}`;
-  const dateText = new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+  const dateText = (() => {
+    const d = new Date(event.startAt);
+    if (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0) return d.toLocaleDateString('he-IL', { dateStyle: 'full' });
+    return d.toLocaleString('he-IL');
+  })();
   const locText = event.location ? `במקום: ${event.location} ` : '';
   const from = typeof searchParams?.from === 'string' ? (searchParams!.from as string) : undefined;
+  const occurrenceStartAt = typeof searchParams?.occurrenceStartAt === 'string' ? (searchParams!.occurrenceStartAt as string) : undefined;
   return (
     <main className="container-page space-y-4">
-      <HeaderActions id={event.id} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} backHref={from || '/events'} />
+      <HeaderActions id={event.id} occurrenceStartAt={occurrenceStartAt} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} backHref={from || '/events'} />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
         <dl className="grid md:grid-cols-2 gap-4">
           <div>
@@ -88,11 +93,11 @@ export default async function EventDetailPage({ params, searchParams }: { params
           </div>
           <div>
             <dt className="text-sm text-gray-500">התחלה</dt>
-            <dd>{new Date(event.startAt).toLocaleString('he-IL')}</dd>
+            <dd>{(() => { const d=new Date(event.startAt); return (d.getHours()||d.getMinutes()) ? d.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' }) : d.toLocaleDateString('he-IL', { dateStyle: 'full' }); })()}</dd>
           </div>
           <div>
             <dt className="text-sm text-gray-500">סיום</dt>
-            <dd>{event.endAt ? new Date(event.endAt).toLocaleString('he-IL') : '—'}</dd>
+            <dd>{event.endAt ? (() => { const d=new Date(event.endAt!); return (d.getHours()||d.getMinutes()) ? d.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' }) : d.toLocaleDateString('he-IL', { dateStyle: 'full' }); })() : '—'}</dd>
           </div>
           <div className="md:col-span-2">
             <dt className="text-sm text-gray-500">מארחים</dt>
@@ -133,7 +138,7 @@ export default async function EventDetailPage({ params, searchParams }: { params
   );
 }
 
-function HeaderActions({ id, wa, ics, isHost, event, shareUrl, backHref }: { id: string; wa: string; ics: string; isHost: boolean; event: any; shareUrl: string; backHref: string }) {
+function HeaderActions({ id, occurrenceStartAt, wa, ics, isHost, event, shareUrl, backHref }: { id: string; occurrenceStartAt?: string; wa: string; ics: string; isHost: boolean; event: any; shareUrl: string; backHref: string }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <h1 className="text-2xl font-bold">פרטי אירוע</h1>
@@ -141,7 +146,7 @@ function HeaderActions({ id, wa, ics, isHost, event, shareUrl, backHref }: { id:
         <WhatsAppShare eventId={id} title={event.title} startAtISO={event.startAt} location={event.location} typeKey={event.holidayKey ?? null} shareUrl={shareUrl} />
         <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
         {isHost && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
-        {isHost && <DeleteEventButton id={id} />}
+        {isHost && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} />}
         <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={backHref}>חזרה</Link>
       </div>
     </div>
