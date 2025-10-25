@@ -13,19 +13,24 @@ type Props = {
 
 export default function DateTimePicker({ label, value, onChange, required, allowDateOnly, timeToggle, min }: Props) {
   const [open, setOpen] = useState(false);
-  const [month, setMonth] = useState<number>(() => (value ? new Date(value).getMonth() : new Date().getMonth()));
-  const [year, setYear] = useState<number>(() => (value ? new Date(value).getFullYear() : new Date().getFullYear()));
-  const [time, setTime] = useState<string>(() => (value.includes('T') ? formatTime(new Date(value)) : ''));
+  const [month, setMonth] = useState<number>(() => (value ? parseLocalDateOrDateTime(value).getMonth() : new Date().getMonth()));
+  const [year, setYear] = useState<number>(() => (value ? parseLocalDateOrDateTime(value).getFullYear() : new Date().getFullYear()));
+  const [time, setTime] = useState<string>(() => (value && value.includes('T') ? formatTime(parseLocalDateOrDateTime(value)) : ''));
   const [timeEnabled, setTimeEnabled] = useState<boolean>(() => (time ? true : false));
-  const selected = value ? new Date(value) : undefined;
+  const selected = value ? parseLocalDateOrDateTime(value) : undefined;
   const [draft, setDraft] = useState<Date | undefined>(selected);
   const ref = useRef<HTMLDivElement>(null);
   const minDay = useMemo(() => {
     if (!min) return null as Date | null;
-    const d = new Date(min);
+    const d = parseLocalDateOrDateTime(min);
     if (isNaN(d.getTime())) return null as Date | null;
     d.setHours(0, 0, 0, 0);
     return d;
+  }, [min]);
+  const minDateTime = useMemo(() => {
+    if (!min) return null as Date | null;
+    const d = parseLocalDateOrDateTime(min);
+    return isNaN(d.getTime()) ? null : d;
   }, [min]);
 
   useEffect(() => {
@@ -98,7 +103,7 @@ export default function DateTimePicker({ label, value, onChange, required, allow
         className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-right"
         onClick={() => {
           if (!open) {
-            const curr = value ? new Date(value) : new Date();
+            const curr = value ? parseLocalDateOrDateTime(value) : new Date();
             setDraft(curr);
             setMonth(curr.getMonth());
             setYear(curr.getFullYear());
@@ -152,14 +157,58 @@ export default function DateTimePicker({ label, value, onChange, required, allow
             </label>
           )}
           <div className="mt-3">
-            <select dir="rtl" disabled={allowDateOnly && timeToggle ? !timeEnabled : false} className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-right disabled:opacity-60" value={time} onChange={(e) => onTimeChange(e.target.value)}>
+            <select
+              dir="rtl"
+              disabled={allowDateOnly && timeToggle ? !timeEnabled : false}
+              className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-right disabled:opacity-60"
+              value={time}
+              onChange={(e) => {
+                const v = e.target.value;
+                // Clamp to minimum time when same day
+                const base = (draft ?? selected);
+                if (minDateTime && base && sameYMD(base, minDateTime) && v && v < formatTime(minDateTime)) {
+                  onTimeChange(formatTime(minDateTime));
+                  return;
+                }
+                onTimeChange(v);
+              }}
+            >
               {allowDateOnly && <option value="">ללא שעה</option>}
-              {buildTimes().map((t) => (<option key={t} value={t}>{t}</option>))}
+              {buildTimes().map((t) => {
+                const base = draft ?? selected;
+                const disabled = !!(minDateTime && base && sameYMD(base, minDateTime) && t < formatTime(minDateTime));
+                return (
+                  <option key={t} value={t} disabled={disabled}>{t}</option>
+                );
+              })}
             </select>
           </div>
           <div className="mt-3 flex items-center justify-end gap-2">
-            <button type="button" className="px-3 py-1 rounded border" onClick={() => { const curr = value ? new Date(value) : undefined; setDraft(curr); setTime(value && value.includes('T') ? formatTime(new Date(value)) : ''); setTimeEnabled(value ? value.includes('T') : false); setOpen(false); }}>ביטול</button>
-            <button type="button" className="px-3 py-1 rounded bg-blue-600 text-white" onClick={() => { const base = draft ?? selected ?? new Date(); if (allowDateOnly && timeToggle && !timeEnabled) { const d = new Date(base); d.setHours(0,0,0,0); onChange(toLocalDateISO(d)); } else { onChange(toLocalISO(base)); } setOpen(false); }}>שמירה</button>
+            <button type="button" className="px-3 py-1 rounded border" onClick={() => { const curr = value ? parseLocalDateOrDateTime(value) : undefined; setDraft(curr); setTime(value && value.includes('T') ? formatTime(parseLocalDateOrDateTime(value)) : ''); setTimeEnabled(value ? value.includes('T') : false); setOpen(false); }}>ביטול</button>
+            <button
+              type="button"
+              className="px-3 py-1 rounded bg-blue-600 text-white"
+              onClick={() => {
+                let base = draft ?? selected ?? new Date();
+                if (allowDateOnly && timeToggle && !timeEnabled) {
+                  const d = new Date(base);
+                  d.setHours(0, 0, 0, 0);
+                  onChange(toLocalDateISO(d));
+                } else {
+                  if (minDateTime && base < minDateTime) {
+                    // If same calendar day, clamp to min time; otherwise clamp to min datetime
+                    if (sameYMD(base, minDateTime)) {
+                      base = new Date(base);
+                      base.setHours(minDateTime.getHours(), minDateTime.getMinutes(), 0, 0);
+                    } else {
+                      base = new Date(minDateTime);
+                    }
+                  }
+                  onChange(toLocalISO(base));
+                }
+                setOpen(false);
+              }}
+            >שמירה</button>
           </div>
         </div>
       )}
@@ -211,6 +260,10 @@ function sameDate(a: Date, y: number, m: number, d: number) {
   return a.getFullYear() === y && a.getMonth() === m && a.getDate() === d;
 }
 
+function sameYMD(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
 const heMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const heWeekdays = ['ב׳','ג׳','ד׳','ה׳','ו׳','ש׳','א׳'];
 
@@ -220,5 +273,23 @@ function buildTimes() {
     for (let m = 0; m < 60; m += 15) arr.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
   }
   return arr;
+}
+
+// Ensure consistent local parsing for strings like "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm"
+function parseLocalDateOrDateTime(input: string): Date {
+  if (!input) return new Date(NaN);
+  // Only digits and dashes with optional time
+  const m = input.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/);
+  if (m) {
+    const [, ys, ms, ds, hs, mis] = m;
+    const y = Number(ys);
+    const mo = Number(ms) - 1;
+    const d = Number(ds);
+    const h = hs ? Number(hs) : 0;
+    const mi = mis ? Number(mis) : 0;
+    return new Date(y, mo, d, h, mi, 0, 0);
+  }
+  // Fallback to Date for other formats
+  return new Date(input);
 }
 

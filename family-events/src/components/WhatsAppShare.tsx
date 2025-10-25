@@ -65,6 +65,12 @@ function buildTemplates({ title, dateText, locText, shareUrl, typeKey }: { title
   } else if (typeKey === 'holiday') {
     base.unshift(`🌟 חג – ${title}\n🗓️ ${dateText}\n${locText}אישור הגעה: ${shareUrl}`);
   }
-  return base.slice(0, 4);
+  // Add reminder-oriented variants for invitees who haven't responded yet
+  const reminders = [
+    `⏰ תזכורת קצרה לאישור הגעה ל"${title}"\n🗓️ ${dateText}\n${locText}לאישור במהירות: ${shareUrl}`,
+    `🙂 רק בודקים שלא פספסתם – נשמח לאישור הגעה ל"${title}"\n${locText}פרטים ואישור: ${shareUrl}`,
+    `📣 למי שעדיין לא אישר/ה: מחכים לכם ב"${title}"\n🗓️ ${dateText}\n${locText}אישור כאן: ${shareUrl}`,
+  ];
+  return [...base, ...reminders].slice(0, 6);
 }
 
