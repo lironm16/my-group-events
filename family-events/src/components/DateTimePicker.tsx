@@ -8,9 +8,10 @@ type Props = {
   required?: boolean;
   allowDateOnly?: boolean; // when true, user can leave time empty
   timeToggle?: boolean; // when true, show a checkbox to enable/disable time selection
+  min?: string; // minimum selectable date (YYYY-MM-DD or ISO)
 };
 
-export default function DateTimePicker({ label, value, onChange, required, allowDateOnly, timeToggle }: Props) {
+export default function DateTimePicker({ label, value, onChange, required, allowDateOnly, timeToggle, min }: Props) {
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState<number>(() => (value ? new Date(value).getMonth() : new Date().getMonth()));
   const [year, setYear] = useState<number>(() => (value ? new Date(value).getFullYear() : new Date().getFullYear()));
@@ -19,6 +20,13 @@ export default function DateTimePicker({ label, value, onChange, required, allow
   const selected = value ? new Date(value) : undefined;
   const [draft, setDraft] = useState<Date | undefined>(selected);
   const ref = useRef<HTMLDivElement>(null);
+  const minDay = useMemo(() => {
+    if (!min) return null as Date | null;
+    const d = new Date(min);
+    if (isNaN(d.getTime())) return null as Date | null;
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, [min]);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -116,17 +124,18 @@ export default function DateTimePicker({ label, value, onChange, required, allow
             {days.map((cell, idx) => {
               const today = new Date(); today.setHours(0,0,0,0);
               const cellDate = new Date(year, month, cell.day || 1, 0,0,0,0);
-              const isPast = cell.inMonth && cellDate < today;
+              const limit = minDay ?? today;
+              const isBeforeLimit = cell.inMonth && cellDate < limit;
               const active = draft ?? selected;
               return (
                 <button
                   key={idx}
                   type="button"
-                  disabled={!cell.inMonth || isPast}
+                  disabled={!cell.inMonth || isBeforeLimit}
                   onClick={() => selectDay(cell.day)}
                   className={[
                     'px-2 py-1 rounded',
-                    cell.inMonth && !isPast ? 'hover:bg-gray-100 dark:hover:bg-gray-800' : 'opacity-30',
+                    cell.inMonth && !isBeforeLimit ? 'hover:bg-gray-100 dark:hover:bg-gray-800' : 'opacity-30',
                     (active && cell.inMonth && sameDate(active, year, month, cell.day)) ? 'bg-blue-600 text-white' : '',
                     (!active || !sameDate(active, year, month, cell.day)) && cell.inMonth && sameDate(new Date(), year, month, cell.day) ? 'ring-1 ring-blue-500 dark:ring-blue-400' : '',
                   ].join(' ')}

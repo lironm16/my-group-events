@@ -81,7 +81,7 @@ export default function NewEventPage() {
           title: tpl.title,
           description: tpl.description ?? '',
           location: tpl.location ?? '',
-          startAt: tpl.startAt ?? '',
+          startAt: tpl.startAt ?? new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16),
           endAt: tpl.endAt ?? '',
           externalLink: '',
           image: tpl.image ?? ''
@@ -124,7 +124,7 @@ export default function NewEventPage() {
           </label>
           {hasEnd && (
             <div>
-              <DateTimePicker label="תאריך סיום (אופציונלי)" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly timeToggle />
+              <DateTimePicker label="תאריך סיום (אופציונלי)" value={form.endAt} onChange={(v)=>setForm({...form, endAt:v})} allowDateOnly timeToggle min={form.startAt || undefined} />
               {errors.endAt && <p className={errorCls}>{errors.endAt}</p>}
             </div>
           )}
