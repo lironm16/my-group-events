@@ -117,7 +117,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
           setFiltered(next);
         }}
       />
-      {view === 'list' ? <Cards list={filtered} /> : <div className="mt-4"><CalendarMonth events={calItems} /></div>}
+      {view === 'list' ? <Cards list={filtered} /> : <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>}
     </>
   );
 }
@@ -190,8 +190,8 @@ function TimeFilter({ value, onChange }: { value: TimeKey; onChange: (v: TimeKey
           key={opt.key}
           onClick={() => onChange(opt.key)}
           className={[
-            'px-2 py-1 rounded',
-            value === opt.key ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+            'px-2 py-1 rounded transition-all',
+            value === opt.key ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:-translate-y-0.5 active:translate-y-px'
           ].join(' ')}
           aria-pressed={value === opt.key}
         >{opt.label}</button>
@@ -261,18 +261,18 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
 
 function Cards({ list }: { list: EventCard[] }) {
   return (
-    <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => {
         const approved = e.rsvps.filter(r => r.status === 'APPROVED').length;
         const total = e.rsvps.length || 1;
         const ratio = Math.min(100, Math.round((approved / total) * 100));
         const iconType = e.holidayKey === 'shabat_eve' ? 'shabat_eve' : e.holidayKey?.includes('eve') ? 'holiday_eve' : e.holidayKey ? 'holiday' : 'custom';
         return (
-          <li key={e.id} className="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-lg transition-shadow">
+          <li key={e.id} className="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
             <a href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block">
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-40 object-cover" />
+                <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-90" />
                 <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700">
                   {formatDateMaybeDateOnly(e.startAt)}
@@ -304,7 +304,7 @@ function Cards({ list }: { list: EventCard[] }) {
                 </div>
                 <div className="mt-2">
                   <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-green-500" style={{ width: `${ratio}%` }} />
+                    <div className="h-full bg-gradient-to-r from-emerald-500 to-green-500 transition-[width] duration-300" style={{ width: `${ratio}%` }} />
                   </div>
                 </div>
               </div>

@@ -119,7 +119,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
   return (
     <main className="container-page space-y-6">
       {/* Playful hero */}
-      <section className="rounded-2xl border bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-blue-500/10 border-white/50 dark:border-white/10 p-5 sm:p-7">
+      <section className="rounded-2xl border bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-blue-500/10 border-white/50 dark:border-white/10 p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow backdrop-blur-sm">
         <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
           <div className="flex-1 space-y-1">
             <h1 className="text-3xl font-extrabold tracking-tight">כל האירועים המשפחתיים – במקום אחד 🎉</h1>
@@ -128,11 +128,11 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
           <div className="flex items-center gap-2">
             {authorized ? (
               <>
-                <a className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors" href="/events/new">אירוע חדש</a>
-                <a className="px-4 py-2 rounded border bg-white/70 dark:bg-gray-900/60 border-gray-200 dark:border-gray-800 hover:bg-white transition-colors" href="/events?view=calendar">לוח שנה</a>
+                <a className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-all hover:-translate-y-0.5 active:translate-y-px shadow-sm hover:shadow-md" href="/events/new">אירוע חדש</a>
+                <a className="px-4 py-2 rounded border bg-white/70 dark:bg-gray-900/60 border-gray-200 dark:border-gray-800 hover:bg-white transition-all hover:-translate-y-0.5 active:translate-y-px" href="/events?view=calendar">לוח שנה</a>
               </>
             ) : (
-              <a className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors" href="/api/auth/signin">התחברות</a>
+              <a className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-all hover:-translate-y-0.5 active:translate-y-px shadow-sm hover:shadow-md" href="/api/auth/signin">התחברות</a>
             )}
           </div>
         </div>
