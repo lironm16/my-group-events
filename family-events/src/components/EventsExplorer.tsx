@@ -34,7 +34,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [filterKey, setFilterKey] = useState<ScopeKey>('mine');
   const [view, setView] = useState<ViewKey>('list');
   const [timeKey, setTimeKey] = useState<TimeKey>('upcoming');
-  const [metricMode, setMetricMode] = useState<MetricMode>('percent');
+  const [metricMode, setMetricMode] = useState<MetricMode>('count');
   const [myUserId, setMyUserId] = useState<string>('');
   const [groupOptions, setGroupOptions] = useState<{ id: string; nickname: string; memberIds: string[] }[]>([]);
   const searchParams = useSearchParams();
@@ -100,7 +100,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     if (filterKey) sp.set('filter', filterKey);
     if (timeKey && timeKey !== 'upcoming') sp.set('time', timeKey);
     else sp.delete('time');
-    if (metricMode && metricMode !== 'percent') sp.set('metric', metricMode);
+    if (metricMode && metricMode !== 'count') sp.set('metric', metricMode);
     else sp.delete('metric');
     router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
   }, [view, filterKey, timeKey, metricMode, router, pathname, searchParams]);
