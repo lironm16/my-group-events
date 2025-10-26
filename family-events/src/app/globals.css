@@ -77,3 +77,19 @@ textarea:-webkit-autofill {
   animation: fade-in 220ms ease-out both;
 }
 
+/* Confetti animations */
+@keyframes confetti-fall {
+  to { transform: translateY(110vh) rotate(1turn); opacity: 0.9; }
+}
+@keyframes confetti-rotate {
+  to { transform: rotate(3turn); }
+}
+
+/* Back to top floating button base */
+.back-to-top-btn {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+}
+

@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import EventsExplorer from '@/components/EventsExplorer';
+import dynamic from 'next/dynamic';
+const launchEmojiConfetti = (typeof window !== 'undefined') ? (require('@/components/confetti') as any).launchEmojiConfetti : (()=>{}) as any;
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -128,7 +130,11 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
           <div className="flex items-center gap-2">
             {authorized ? (
               <>
-                <a className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-all hover:-translate-y-0.5 active:translate-y-px shadow-sm hover:shadow-md" href="/events/new">אירוע חדש</a>
+                <a
+                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-all hover:-translate-y-0.5 active:translate-y-px shadow-sm hover:shadow-md"
+                  href="/events/new"
+                  onClick={(e)=>{ try { launchEmojiConfetti(); } catch {} }}
+                >אירוע חדש</a>
                 <a className="px-4 py-2 rounded border bg-white/70 dark:bg-gray-900/60 border-gray-200 dark:border-gray-800 hover:bg-white transition-all hover:-translate-y-0.5 active:translate-y-px" href="/events?view=calendar">לוח שנה</a>
               </>
             ) : (
@@ -146,7 +152,7 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
           <div className="text-5xl mb-3">🗓️</div>
           <h2 className="text-xl font-semibold mb-1">עדיין אין אירועים</h2>
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">התחילו את החגיגה הראשונה שלכם – זה מהיר וכיף!</p>
-          <a className="inline-block px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors" href="/events/new">יצירת אירוע ראשון</a>
+          <a className="inline-block px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors" href="/events/new" onClick={()=>{ try { launchEmojiConfetti({ count: 36 }); } catch {} }}>יצירת אירוע ראשון</a>
         </section>
       ) : (
         <EventsExplorer initial={events} />
