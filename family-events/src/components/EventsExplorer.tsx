@@ -325,19 +325,29 @@ function Cards({ list }: { list: EventCard[] }) {
                   </span>
                   <ApprovalSummary rsvps={e.rsvps} />
                 </div>
-                <div className="mt-2">
-                  <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div className="flex h-full w-full">
-                      {totalCount > 0 ? (
-                        <>
-                          {approvedCount > 0 && <div className="h-full bg-green-500" style={{ width: `${(approvedCount / totalCount) * 100}%` }} />}
-                          {maybeCount > 0 && <div className="h-full bg-yellow-400" style={{ width: `${(maybeCount / totalCount) * 100}%` }} />}
-                          {declinedCount > 0 && <div className="h-full bg-red-500" style={{ width: `${(declinedCount / totalCount) * 100}%` }} />}
-                          {naCount > 0 && <div className="h-full bg-gray-300 dark:bg-gray-700" style={{ width: `${(naCount / totalCount) * 100}%` }} />}
-                        </>
-                      ) : null}
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex-1">
+                    <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div className="flex h-full w-full">
+                        {totalCount > 0 ? (
+                          <>
+                            {approvedCount > 0 && <div className="h-full bg-green-500" style={{ width: `${(approvedCount / totalCount) * 100}%` }} />}
+                            {maybeCount > 0 && <div className="h-full bg-yellow-400" style={{ width: `${(maybeCount / totalCount) * 100}%` }} />}
+                            {declinedCount > 0 && <div className="h-full bg-red-500" style={{ width: `${(declinedCount / totalCount) * 100}%` }} />}
+                            {naCount > 0 && <div className="h-full bg-gray-300 dark:bg-gray-700" style={{ width: `${(naCount / totalCount) * 100}%` }} />}
+                          </>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
+                  {totalCount > 0 && (
+                    <div className="text-xs text-gray-600 dark:text-gray-400 inline-flex items-center gap-2 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{approvedCount}</span>
+                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />{maybeCount}</span>
+                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{declinedCount}</span>
+                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 inline-block" />{naCount}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </Link>
