@@ -312,7 +312,7 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
 
 function Cards({ list, metricMode, onToggleMetric }: { list: EventCard[]; metricMode: MetricMode; onToggleMetric: () => void }) {
   return (
-    <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="mt-4 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => {
         const approvedCount = e.rsvps.filter(r => r.status === 'APPROVED').length;
         const maybeCount = e.rsvps.filter(r => r.status === 'MAYBE').length;
@@ -329,32 +329,32 @@ function Cards({ list, metricMode, onToggleMetric }: { list: EventCard[]; metric
             <Link href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block">
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-40 object-cover transition-transform duration-300 sm:group-hover:scale-[1.03]" />
+                <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-44 sm:h-40 object-cover transition-transform duration-300 sm:group-hover:scale-[1.03]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-90" />
                 <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700">
                   {formatDateMaybeDateOnly(e.startAt)}
                 </div>
               </div>
-              <div className="p-4">
+              <div className="p-4 sm:p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <EventTypeIcon type={iconType as any} size={18} />
-                      <h3 className="font-semibold text-lg truncate" title={e.title}>{e.title}</h3>
+                      <EventTypeIcon type={iconType as any} size={20} />
+                      <h3 className="font-semibold text-[1.05rem] sm:text-lg truncate" title={e.title}>{e.title}</h3>
                     </div>
                     {e.location && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 inline-flex items-center gap-1">
+                      <p className="text-[0.8rem] sm:text-xs text-gray-600 dark:text-gray-400 inline-flex items-center gap-1">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                         {e.location}
                       </p>
                     )}
                   </div>
                 </div>
-                {e.description && <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{e.description}</p>}
+                {e.description && <p className="mt-2 text-[0.9rem] sm:text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{e.description}</p>}
                 <div className="mt-3 flex items-center justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400 inline-flex items-center gap-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={e.hostImage && /^https?:/i.test(e.hostImage) ? e.hostImage : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(e.host?.name || 'host')}`} alt="host" className="w-5 h-5 rounded-full" />
+                    <img src={e.hostImage && /^https?:/i.test(e.hostImage) ? e.hostImage : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(e.host?.name || 'host')}`} alt="host" className="w-6 h-6 sm:w-5 sm:h-5 rounded-full" />
                     מארחים: {[e.host?.name, ...(e.coHosts || []).map(h => h.name)].filter(Boolean).join(', ') || '—'}
                   </span>
                 </div>
