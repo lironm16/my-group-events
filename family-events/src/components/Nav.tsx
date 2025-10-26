@@ -12,6 +12,14 @@ export default function Nav() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = (href: string) => {
+    setMenuOpen(false);
+    try {
+      router.push(href);
+    } catch (e) {
+      try { window.location.href = href; } catch {}
+    }
+  };
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -62,29 +70,33 @@ export default function Nav() {
               <ul className="text-sm">
                 <li>
                   <button
+                    type="button"
                     className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    onClick={() => { setMenuOpen(false); router.push(status === 'authenticated' ? '/events' : '/'); }}
+                    onClick={() => navigate(status === 'authenticated' ? '/events' : '/')}
                   >בית</button>
                 </li>
                 <li>
                   <button
+                    type="button"
                     className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    onClick={() => { setMenuOpen(false); router.push('/family'); }}
+                    onClick={() => navigate('/family')}
                   >קבוצות</button>
                 </li>
                 {status === 'authenticated' && (
                   <li>
                     <button
+                      type="button"
                       className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-green-700 dark:text-green-400"
-                      onClick={() => { setMenuOpen(false); router.push('/events/new'); }}
+                      onClick={() => navigate('/events/new')}
                     >יצירת אירוע</button>
                   </li>
                 )}
                 {status === 'authenticated' && (
                   <li>
                     <button
+                      type="button"
                       className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      onClick={() => { setMenuOpen(false); router.push('/settings'); }}
+                      onClick={() => navigate('/settings')}
                     >הגדרות</button>
                   </li>
                 )}
@@ -92,13 +104,14 @@ export default function Nav() {
                 {status !== 'authenticated' ? (
                   <li>
                     <button
+                      type="button"
                       className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      onClick={() => { setMenuOpen(false); router.push('/signin'); }}
+                      onClick={() => navigate('/signin')}
                     >התחברות</button>
                   </li>
                 ) : (
                   <li>
-                    <button className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => { setMenuOpen(false); signOut({ callbackUrl: '/' }); }}>התנתקות</button>
+                    <button type="button" className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => { setMenuOpen(false); signOut({ callbackUrl: '/' }); }}>התנתקות</button>
                   </li>
                 )}
               </ul>
