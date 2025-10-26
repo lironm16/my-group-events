@@ -125,12 +125,26 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
       {!authorized ? (
         <p className="text-gray-600 dark:text-gray-300">התחברו כדי לראות וליצור אירועים.</p>
       ) : events.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 text-center">
-          <div className="text-5xl mb-3">🗓️</div>
-          <h2 className="text-xl font-semibold mb-1">עדיין אין אירועים</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">התחילו את החגיגה הראשונה שלכם – זה מהיר וכיף!</p>
-          <ConfettiLink className="inline-block px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors" href="/events/new" confettiCount={36}>יצירת אירוע ראשון</ConfettiLink>
-        </section>
+        <>
+          {/* Minimal hero for empty state only */}
+          <section className="rounded-2xl border bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-blue-500/10 border-white/50 dark:border-white/10 p-5 sm:p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <div className="flex-1 space-y-1">
+                <h1 className="text-2xl font-extrabold tracking-tight">כל אירועי הקבוצה – במקום אחד 🎉</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-300">התחילו עם האירוע הראשון שלכם.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <ConfettiLink className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors" href="/events/new" confettiCount={36}>אירוע חדש</ConfettiLink>
+              </div>
+            </div>
+          </section>
+          <section className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 text-center">
+            <div className="text-5xl mb-3">🗓️</div>
+            <h2 className="text-xl font-semibold mb-1">עדיין אין אירועים</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">התחילו את החגיגה הראשונה שלכם – זה מהיר וכיף!</p>
+            <ConfettiLink className="inline-block px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors" href="/events/new" confettiCount={36}>יצירת אירוע ראשון</ConfettiLink>
+          </section>
+        </>
       ) : (
         <EventsExplorer initial={events} />
       )}
