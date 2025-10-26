@@ -143,7 +143,7 @@ function HeaderActions({ id, occurrenceStartAt, wa, ics, isHost, event, shareUrl
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <h1 className="text-2xl font-bold">פרטי אירוע</h1>
       <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-        <WhatsAppShare eventId={id} title={event.title} startAtISO={event.startAt} location={event.location} typeKey={event.holidayKey ?? null} shareUrl={shareUrl} />
+        <WhatsAppShare eventId={id} title={event.title} startAtISO={event.startAt} location={event.location} typeKey={event.holidayKey ?? null} shareUrl={shareUrl} hasResponders={(event.rsvps || []).some((r: any) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED')} />
         <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
         {isHost && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
         {isHost && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} />}
