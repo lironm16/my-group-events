@@ -28,11 +28,13 @@ type EventCard = {
 type ScopeKey = 'mine' | 'all' | `group:${string}`;
 type ViewKey = 'list' | 'calendar';
 type TimeKey = 'upcoming' | 'today' | 'week' | 'month' | 'past';
+type MetricMode = 'count' | 'percent';
 
 export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [filterKey, setFilterKey] = useState<ScopeKey>('mine');
   const [view, setView] = useState<ViewKey>('list');
   const [timeKey, setTimeKey] = useState<TimeKey>('upcoming');
+  const [metricMode, setMetricMode] = useState<MetricMode>('percent');
   const [myUserId, setMyUserId] = useState<string>('');
   const [groupOptions, setGroupOptions] = useState<{ id: string; nickname: string; memberIds: string[] }[]>([]);
   const searchParams = useSearchParams();
@@ -85,6 +87,8 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     if (fk === 'mine' || fk === 'all' || (fk && fk.startsWith('group:'))) setFilterKey(fk as ScopeKey);
     const tk = (searchParams.get('time') || '').toLowerCase();
     if (tk === 'today' || tk === 'week' || tk === 'month' || tk === 'past' || tk === 'upcoming') setTimeKey(tk as TimeKey);
+    const mk = (searchParams.get('metric') || '').toLowerCase();
+    if (mk === 'count' || mk === 'percent') setMetricMode(mk as MetricMode);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -96,8 +100,10 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     if (filterKey) sp.set('filter', filterKey);
     if (timeKey && timeKey !== 'upcoming') sp.set('time', timeKey);
     else sp.delete('time');
+    if (metricMode && metricMode !== 'percent') sp.set('metric', metricMode);
+    else sp.delete('metric');
     router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
-  }, [view, filterKey, timeKey, router, pathname, searchParams]);
+  }, [view, filterKey, timeKey, metricMode, router, pathname, searchParams]);
 
   const calItems: CalendarEvent[] = useMemo(
     () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location, occurrenceStartAt: e.recurrence ? e.startAt : undefined })),
@@ -110,6 +116,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         <GroupFilter value={filterKey} groups={groupOptions} onChange={(v)=>setFilterKey(v)} />
         <TimeFilter value={timeKey} onChange={setTimeKey} />
         <ViewToggle view={view} onChange={setView} />
+        <MetricToggle mode={metricMode} onChange={setMetricMode} />
       </div>
       <EventsSearch
         items={items}
@@ -119,7 +126,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
           setFiltered(next);
         }}
       />
-      {view === 'list' ? <Cards list={filtered} /> : <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>}
+      {view === 'list' ? <Cards list={filtered} metricMode={metricMode} onToggleMetric={() => setMetricMode(m => m === 'percent' ? 'count' : 'percent')} /> : <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>}
       <BackToTop />
     </>
   );
@@ -221,6 +228,29 @@ function TimeFilter({ value, onChange }: { value: TimeKey; onChange: (v: TimeKey
   );
 }
 
+function MetricToggle({ mode, onChange }: { mode: MetricMode; onChange: (m: MetricMode) => void }) {
+  return (
+    <div className="flex gap-1 bg-white/60 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-md p-1 text-sm ml-auto">
+      <button
+        onClick={() => onChange('percent')}
+        className={[
+          'px-2 py-1 rounded',
+          mode === 'percent' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+        ].join(' ')}
+        aria-pressed={mode === 'percent'}
+      >אחוזים</button>
+      <button
+        onClick={() => onChange('count')}
+        className={[
+          'px-2 py-1 rounded',
+          mode === 'count' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+        ].join(' ')}
+        aria-pressed={mode === 'count'}
+      >כמות</button>
+    </div>
+  );
+}
+
 
 // Time tabs removed
 
@@ -280,7 +310,7 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
   return events;
 }
 
-function Cards({ list }: { list: EventCard[] }) {
+function Cards({ list, metricMode, onToggleMetric }: { list: EventCard[]; metricMode: MetricMode; onToggleMetric: () => void }) {
   return (
     <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => {
@@ -345,12 +375,23 @@ function Cards({ list }: { list: EventCard[] }) {
                     </div>
                   </div>
                   {totalCount > 0 && (
-                    <div className="text-xs text-gray-600 dark:text-gray-400 inline-flex flex-wrap items-center gap-x-3 gap-y-1 whitespace-normal">
-                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />אישרו {approvedPct}%</span>
-                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />אולי {maybePct}%</span>
-                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />לא {declinedPct}%</span>
-                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 inline-block" />לא השיבו {naPct}%</span>
-                    </div>
+                    <button type="button" onClick={onToggleMetric} className="text-xs text-gray-600 dark:text-gray-400 inline-flex flex-wrap items-center gap-x-3 gap-y-1 whitespace-normal hover:underline">
+                      {metricMode === 'percent' ? (
+                        <>
+                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />אישרו {approvedPct}%</span>
+                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />אולי {maybePct}%</span>
+                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />לא {declinedPct}%</span>
+                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 inline-block" />לא השיבו {naPct}%</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />אישרו {approvedCount}</span>
+                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />אולי {maybeCount}</span>
+                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />לא {declinedCount}</span>
+                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 inline-block" />לא השיבו {naCount}</span>
+                        </>
+                      )}
+                    </button>
                   )}
                 </div>
               </div>
