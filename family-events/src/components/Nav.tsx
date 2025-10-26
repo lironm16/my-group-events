@@ -24,6 +24,7 @@ export default function Nav() {
     <nav className="sticky top-0 z-40 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Left side: Menu button */}
+        {status === 'authenticated' && (
         <div className="relative" ref={menuRef}>
           <button
             type="button"
@@ -51,7 +52,7 @@ export default function Nav() {
             <div className="absolute mt-2 right-0 min-w-[180px] rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
               <ul className="text-sm">
                 <li>
-                  <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" href={status === 'authenticated' ? '/events' : '/'} onClick={() => setMenuOpen(false)}>בית</Link>
+                  <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" href={'/events'} onClick={() => setMenuOpen(false)}>בית</Link>
                 </li>
                 <li>
                   <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" href="/family" onClick={() => setMenuOpen(false)}>קבוצות</Link>
@@ -80,6 +81,7 @@ export default function Nav() {
             </div>
           )}
         </div>
+        )}
 
         {/* Right side: Keep only group selector and theme toggle */}
         <div className="flex items-center gap-3">

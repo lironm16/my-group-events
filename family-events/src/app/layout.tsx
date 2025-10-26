@@ -3,7 +3,8 @@ import './globals.css';
 import Nav from '@/components/Nav';
 import ThemeProvider from '@/components/ThemeProvider';
 import AuthProvider from '@/components/AuthProvider';
-import AuthLoading from '@/components/AuthLoading';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/auth';
 
 export const metadata: Metadata = {
   title: 'אירועי משפחת מתתיהו',
@@ -11,12 +12,13 @@ export const metadata: Metadata = {
   icons: { icon: '/templates/party.jpg' },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await getServerSession(authOptions);
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <AuthProvider>
+          <AuthProvider session={session}>
             <Nav />
             <div className="max-w-6xl mx-auto px-4">
               {children}
