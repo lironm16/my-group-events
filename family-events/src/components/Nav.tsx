@@ -1,5 +1,6 @@
 "use client";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
 import { useSession, signOut } from 'next-auth/react';
 import FamilyMenu from '@/components/FamilyMenu';
@@ -8,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 export default function Nav() {
   const { data: session, status } = useSession();
   const { theme, toggle } = useTheme();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -16,8 +18,15 @@ export default function Nav() {
       if (!menuRef.current) return;
       if (!menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     };
+    const onRoute = () => setMenuOpen(false);
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    window.addEventListener('hashchange', onRoute);
+    window.addEventListener('popstate', onRoute);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('hashchange', onRoute);
+      window.removeEventListener('popstate', onRoute);
+    };
   }, []);
 
   return (
@@ -49,30 +58,43 @@ export default function Nav() {
             )}
           </button>
           {menuOpen && (
-            <div className="absolute mt-2 right-0 min-w-[180px] rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
+            <div className="absolute z-50 mt-2 right-0 min-w-[180px] rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
               <ul className="text-sm">
-                {(() => { const homeHref = status === 'authenticated' ? '/events' : '/'; return (
                 <li>
-                  <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" href={homeHref} onClick={() => setMenuOpen(false)}>בית</Link>
+                  <button
+                    className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => { setMenuOpen(false); router.push(status === 'authenticated' ? '/events' : '/'); }}
+                  >בית</button>
                 </li>
-                ); })()}
                 <li>
-                  <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" href="/family" onClick={() => setMenuOpen(false)}>קבוצות</Link>
+                  <button
+                    className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => { setMenuOpen(false); router.push('/family'); }}
+                  >קבוצות</button>
                 </li>
                 {status === 'authenticated' && (
                   <li>
-                    <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-green-700 dark:text-green-400" href="/events/new" onClick={() => setMenuOpen(false)}>יצירת אירוע</Link>
+                    <button
+                      className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-green-700 dark:text-green-400"
+                      onClick={() => { setMenuOpen(false); router.push('/events/new'); }}
+                    >יצירת אירוע</button>
                   </li>
                 )}
                 {status === 'authenticated' && (
                   <li>
-                    <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" href="/settings" onClick={() => setMenuOpen(false)}>הגדרות</Link>
+                    <button
+                      className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      onClick={() => { setMenuOpen(false); router.push('/settings'); }}
+                    >הגדרות</button>
                   </li>
                 )}
                 <li className="border-t border-gray-200 dark:border-gray-800" />
                 {status !== 'authenticated' ? (
                   <li>
-                    <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" href="/signin" onClick={() => setMenuOpen(false)}>התחברות</Link>
+                    <button
+                      className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      onClick={() => { setMenuOpen(false); router.push('/signin'); }}
+                    >התחברות</button>
                   </li>
                 ) : (
                   <li>
