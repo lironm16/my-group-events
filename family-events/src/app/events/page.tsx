@@ -117,19 +117,37 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
     }
   }
   return (
-    <main className="container-page space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">אירועים</h1>
-        {authorized ? (
-          <a className="px-3 py-2 bg-blue-600 text-white rounded" href="/events/new">אירוע חדש</a>
-        ) : (
-          <a className="px-3 py-2 bg-blue-600 text-white rounded" href="/api/auth/signin">התחברות</a>
-        )}
-      </div>
+    <main className="container-page space-y-6">
+      {/* Playful hero */}
+      <section className="rounded-2xl border bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-blue-500/10 border-white/50 dark:border-white/10 p-5 sm:p-7">
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+          <div className="flex-1 space-y-1">
+            <h1 className="text-3xl font-extrabold tracking-tight">כל האירועים המשפחתיים – במקום אחד 🎉</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-300">צרו, חפשו ותכננו יחד. רשימה או לוח שנה – לבחירתכם.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {authorized ? (
+              <>
+                <a className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors" href="/events/new">אירוע חדש</a>
+                <a className="px-4 py-2 rounded border bg-white/70 dark:bg-gray-900/60 border-gray-200 dark:border-gray-800 hover:bg-white transition-colors" href="/events?view=calendar">לוח שנה</a>
+              </>
+            ) : (
+              <a className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors" href="/api/auth/signin">התחברות</a>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Content */}
       {!authorized ? (
         <p className="text-gray-600 dark:text-gray-300">התחברו כדי לראות וליצור אירועים.</p>
       ) : events.length === 0 ? (
-        <p className="text-gray-600 dark:text-gray-300">אין אירועים להצגה כרגע.</p>
+        <section className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 text-center">
+          <div className="text-5xl mb-3">🗓️</div>
+          <h2 className="text-xl font-semibold mb-1">עדיין אין אירועים</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">התחילו את החגיגה הראשונה שלכם – זה מהיר וכיף!</p>
+          <a className="inline-block px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors" href="/events/new">יצירת אירוע ראשון</a>
+        </section>
       ) : (
         <EventsExplorer initial={events} />
       )}
