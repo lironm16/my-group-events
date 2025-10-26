@@ -39,7 +39,7 @@ export default function EventsCards({ initial }: { initial: EventCard[] }) {
       />
       <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((e) => (
-          <li key={e.id} className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
+          <li key={e.id} className="relative rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-semibold text-lg">{e.title}</h3>
@@ -59,6 +59,9 @@ export default function EventsCards({ initial }: { initial: EventCard[] }) {
                 פרטים
               </Link>
             </div>
+            <Link href={`/events/${e.id}`} className="absolute inset-0 z-10 block" aria-label={e.title}>
+              <span className="sr-only">{e.title}</span>
+            </Link>
           </li>
         ))}
       </ul>
