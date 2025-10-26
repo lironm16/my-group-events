@@ -51,9 +51,11 @@ export default function Nav() {
           {menuOpen && (
             <div className="absolute mt-2 right-0 min-w-[180px] rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
               <ul className="text-sm">
+                {(() => { const homeHref = status === 'authenticated' ? '/events' : '/'; return (
                 <li>
-                  <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" href={'/events'} onClick={() => setMenuOpen(false)}>בית</Link>
+                  <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" href={homeHref} onClick={() => setMenuOpen(false)}>בית</Link>
                 </li>
+                ); })()}
                 <li>
                   <Link className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800" href="/family" onClick={() => setMenuOpen(false)}>קבוצות</Link>
                 </li>
