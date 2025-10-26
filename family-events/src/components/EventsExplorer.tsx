@@ -288,6 +288,7 @@ function Cards({ list }: { list: EventCard[] }) {
         const maybeCount = e.rsvps.filter(r => r.status === 'MAYBE').length;
         const declinedCount = e.rsvps.filter(r => r.status === 'DECLINED').length;
         const totalCount = e.rsvps.length;
+        const naCount = Math.max(0, totalCount - approvedCount - maybeCount - declinedCount);
         const iconType = e.holidayKey === 'shabat_eve' ? 'shabat_eve' : e.holidayKey?.includes('eve') ? 'holiday_eve' : e.holidayKey ? 'holiday' : 'custom';
         return (
           <li key={e.id} className="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200">
@@ -329,9 +330,10 @@ function Cards({ list }: { list: EventCard[] }) {
                     <div className="flex h-full w-full">
                       {totalCount > 0 ? (
                         <>
-                          {approvedCount > 0 && <div className="h-full bg-green-500" style={{ width: `${Math.round((approvedCount / totalCount) * 100)}%` }} />}
-                          {maybeCount > 0 && <div className="h-full bg-yellow-400" style={{ width: `${Math.round((maybeCount / totalCount) * 100)}%` }} />}
-                          {declinedCount > 0 && <div className="h-full bg-red-500" style={{ width: `${Math.round((declinedCount / totalCount) * 100)}%` }} />}
+                          {approvedCount > 0 && <div className="h-full bg-green-500" style={{ width: `${(approvedCount / totalCount) * 100}%` }} />}
+                          {maybeCount > 0 && <div className="h-full bg-yellow-400" style={{ width: `${(maybeCount / totalCount) * 100}%` }} />}
+                          {declinedCount > 0 && <div className="h-full bg-red-500" style={{ width: `${(declinedCount / totalCount) * 100}%` }} />}
+                          {naCount > 0 && <div className="h-full bg-gray-300 dark:bg-gray-700" style={{ width: `${(naCount / totalCount) * 100}%` }} />}
                         </>
                       ) : null}
                     </div>
@@ -347,8 +349,11 @@ function Cards({ list }: { list: EventCard[] }) {
 }
 
 function ApprovalSummary({ rsvps }: { rsvps: { status: string }[] }) {
-  const responded = rsvps.filter((r) => r.status && r.status !== 'NA').length;
+  const approved = rsvps.filter(r => r.status === 'APPROVED').length;
+  const maybe = rsvps.filter(r => r.status === 'MAYBE').length;
+  const declined = rsvps.filter(r => r.status === 'DECLINED').length;
   const total = rsvps.length;
+  const responded = approved + maybe + declined;
   return <span className="text-gray-600 dark:text-gray-400">{responded}/{total} השיבו</span>;
 }
 
