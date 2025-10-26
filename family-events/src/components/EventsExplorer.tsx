@@ -283,6 +283,7 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
 }
 
 function Cards({ list }: { list: EventCard[] }) {
+  const router = useRouter();
   return (
     <ul className="mt-4 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => {
@@ -292,8 +293,15 @@ function Cards({ list }: { list: EventCard[] }) {
         const totalCount = e.rsvps.length;
         const naCount = Math.max(0, totalCount - approvedCount - maybeCount - declinedCount);
         const iconType = e.holidayKey === 'shabat_eve' ? 'shabat_eve' : e.holidayKey?.includes('eve') ? 'holiday_eve' : e.holidayKey ? 'holiday' : 'custom';
+        const href = `/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`;
         return (
-          <li key={e.id} className="group relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200">
+          <li
+            key={e.id}
+            role="link"
+            aria-label={e.title}
+            onClick={() => { try { router.push(href); } catch {} }}
+            className="group relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200 cursor-pointer"
+          >
             <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-44 sm:h-40 object-cover transition-transform duration-300 sm:group-hover:scale-[1.03]" />
@@ -343,9 +351,6 @@ function Cards({ list }: { list: EventCard[] }) {
                 {/* RSVP labels removed for mobile focus; details moved to event page */}
               </div>
             </div>
-            <Link href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="absolute inset-0 z-10 block cursor-pointer" aria-label={e.title}>
-              <span className="sr-only">{e.title}</span>
-            </Link>
           </li>
         );
       })}
