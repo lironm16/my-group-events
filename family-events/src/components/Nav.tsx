@@ -15,9 +15,9 @@ export default function Nav() {
   const navigate = (href: string) => {
     setMenuOpen(false);
     try {
-      router.push(href);
+      window.location.assign(href);
     } catch {
-      try { window.location.assign(href); } catch {}
+      try { window.location.href = href; } catch {}
     }
   };
 
