@@ -6,7 +6,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import EventsSearch, { EventItem } from '@/components/EventsSearch';
 import CalendarMonth, { type CalendarEvent } from '@/components/CalendarMonth';
 import EventTypeIcon from '@/components/EventTypeIcon';
-import ConfettiLink from '@/components/ConfettiLink';
+// Confetti removed from tiles to improve tap behavior
 
 type EventCard = {
   id: string;
@@ -284,16 +284,17 @@ function Cards({ list }: { list: EventCard[] }) {
   return (
     <ul className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => {
-        const approved = e.rsvps.filter(r => r.status === 'APPROVED').length;
-        const total = e.rsvps.length || 1;
-        const ratio = Math.min(100, Math.round((approved / total) * 100));
+        const approvedCount = e.rsvps.filter(r => r.status === 'APPROVED').length;
+        const maybeCount = e.rsvps.filter(r => r.status === 'MAYBE').length;
+        const declinedCount = e.rsvps.filter(r => r.status === 'DECLINED').length;
+        const totalCount = e.rsvps.length;
         const iconType = e.holidayKey === 'shabat_eve' ? 'shabat_eve' : e.holidayKey?.includes('eve') ? 'holiday_eve' : e.holidayKey ? 'holiday' : 'custom';
         return (
-          <li key={e.id} className="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
-            <ConfettiLink href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block" confettiCount={20} confettiDurationMs={900}>
+          <li key={e.id} className="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200">
+            <Link href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block">
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+                <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-40 object-cover transition-transform duration-300 sm:group-hover:scale-[1.03]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-90" />
                 <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700">
                   {formatDateMaybeDateOnly(e.startAt)}
@@ -325,11 +326,19 @@ function Cards({ list }: { list: EventCard[] }) {
                 </div>
                 <div className="mt-2">
                   <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-emerald-500 to-green-500 transition-[width] duration-300" style={{ width: `${ratio}%` }} />
+                    <div className="flex h-full w-full">
+                      {totalCount > 0 ? (
+                        <>
+                          {approvedCount > 0 && <div className="h-full bg-green-500" style={{ width: `${Math.round((approvedCount / totalCount) * 100)}%` }} />}
+                          {maybeCount > 0 && <div className="h-full bg-yellow-400" style={{ width: `${Math.round((maybeCount / totalCount) * 100)}%` }} />}
+                          {declinedCount > 0 && <div className="h-full bg-red-500" style={{ width: `${Math.round((declinedCount / totalCount) * 100)}%` }} />}
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </div>
-            </ConfettiLink>
+            </Link>
           </li>
         );
       })}
@@ -338,9 +347,9 @@ function Cards({ list }: { list: EventCard[] }) {
 }
 
 function ApprovalSummary({ rsvps }: { rsvps: { status: string }[] }) {
-  const approved = rsvps.filter((r) => r.status === 'APPROVED').length;
+  const responded = rsvps.filter((r) => r.status && r.status !== 'NA').length;
   const total = rsvps.length;
-  return <span className="text-gray-600 dark:text-gray-400">{approved}/{total} אישרו</span>;
+  return <span className="text-gray-600 dark:text-gray-400">{responded}/{total} השיבו</span>;
 }
 
 function resolveEventTypeImage(holidayKey?: string | null, title?: string | null) {
