@@ -32,7 +32,7 @@ export default function EventsSearch({ items, onFilter }: { items: EventItem[]; 
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        className="w-full border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800"
+        className="w-full border p-3 sm:p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-shadow shadow-sm text-base sm:text-sm"
         placeholder="חיפוש אירועים..."
       />
     </div>

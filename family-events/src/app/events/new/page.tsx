@@ -4,6 +4,7 @@ import EventTypeIcon from '@/components/EventTypeIcon';
 import DateTimePicker from '@/components/DateTimePicker';
 import WhatsAppShare from '@/components/WhatsAppShare';
 import Script from 'next/script';
+import ConfettiLink from '@/components/ConfettiLink';
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '', image: '' });
@@ -194,7 +195,10 @@ function SuccessModal({ title, location, eventId, startAtISO, onLater }: { title
               />
             );
           })()}
-          <button onClick={onLater} className="px-3 py-2 rounded border">אשלח מאוחר יותר</button>
+          <div className="flex gap-2">
+            <ConfettiLink href={`/events/${eventId}`} className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors">לפרטי האירוע</ConfettiLink>
+            <ConfettiLink href="/events" className="px-3 py-2 rounded border">אשלח מאוחר יותר</ConfettiLink>
+          </div>
         </div>
       </div>
     </div>

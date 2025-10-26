@@ -7,6 +7,7 @@ import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import PendingWhatsApp from '@/components/PendingWhatsApp';
 import RSVPEditor from '@/components/RSVPEditor';
+import RsvpSummary from '@/components/RsvpSummary';
 
 type EventDetail = {
   id: string;
@@ -69,6 +70,8 @@ export default async function EventDetailPage({ params, searchParams }: { params
   const maybeCount = event.rsvps.filter(r => r.status === 'MAYBE').length;
   const declinedCount = event.rsvps.filter(r => r.status === 'DECLINED').length;
   const waitingCount = event.rsvps.filter(r => r.status === 'NA').length;
+  const totalCount = event.rsvps.length;
+  const responded = approvedCount + maybeCount + declinedCount;
   const allHosts = [
     ...(event.host?.name ? [{ id: event.host?.id || 'host', name: event.host?.name }] : []),
     ...((event.coHosts || []))
@@ -121,12 +124,8 @@ export default async function EventDetailPage({ params, searchParams }: { params
         )}
         {/* RSVP quick section removed; using grouped editor below */}
       </div>
-      {/* RSVP summary */}
-      <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
-        <div className="text-sm text-gray-700 dark:text-gray-200">
-          {approvedCount} מגיע/ה · {maybeCount} אולי · {declinedCount} לא · {waitingCount} ממתינים
-        </div>
-      </div>
+      {/* RSVP summary (with toggle) */}
+      <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />
       <RSVPEditor eventId={event.id} />
       {isHost && pendingCount > 0 && (
         <>
@@ -137,6 +136,8 @@ export default async function EventDetailPage({ params, searchParams }: { params
     </main>
   );
 }
+
+// RsvpSummary moved to client component
 
 function HeaderActions({ id, occurrenceStartAt, wa, ics, isHost, event, shareUrl, backHref }: { id: string; occurrenceStartAt?: string; wa: string; ics: string; isHost: boolean; event: any; shareUrl: string; backHref: string }) {
   return (

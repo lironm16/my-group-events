@@ -1,9 +1,12 @@
 "use client";
+"use client";
 import Link from 'next/link';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import EventsSearch, { EventItem } from '@/components/EventsSearch';
 import CalendarMonth, { type CalendarEvent } from '@/components/CalendarMonth';
+import EventTypeIcon from '@/components/EventTypeIcon';
+// Confetti removed from tiles to improve tap behavior
 
 type EventCard = {
   id: string;
@@ -24,10 +27,14 @@ type EventCard = {
 
 type ScopeKey = 'mine' | 'all' | `group:${string}`;
 type ViewKey = 'list' | 'calendar';
+type TimeKey = 'upcoming' | 'today' | 'week' | 'month' | 'past';
+type MetricMode = 'count' | 'percent';
 
 export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [filterKey, setFilterKey] = useState<ScopeKey>('mine');
   const [view, setView] = useState<ViewKey>('list');
+  const [timeKey, setTimeKey] = useState<TimeKey>('upcoming');
+  const [metricMode, setMetricMode] = useState<MetricMode>('count');
   const [myUserId, setMyUserId] = useState<string>('');
   const [groupOptions, setGroupOptions] = useState<{ id: string; nickname: string; memberIds: string[] }[]>([]);
   const searchParams = useSearchParams();
@@ -50,26 +57,27 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   }, []);
   const baseAll = initial;
   const base = useMemo(() => filterByKey(baseAll, filterKey, myUserId, groupOptions), [baseAll, filterKey, myUserId, groupOptions]);
+  const scoped = useMemo(() => filterByTime(base, timeKey), [base, timeKey]);
 
   const items: EventItem[] = useMemo(
     () =>
-      base.map((e) => ({
+      scoped.map((e) => ({
         id: e.id,
         title: e.title,
         description: e.description,
         location: e.location,
         startAt: e.startAt,
       })),
-    [base]
+    [scoped]
   );
 
-  const [filtered, setFiltered] = useState<EventCard[]>(base);
-  const deferredBase = useDeferredValue(base);
+  const [filtered, setFiltered] = useState<EventCard[]>(scoped);
+  const deferredScoped = useDeferredValue(scoped);
 
   // Reset filtered when base changes (tab switch)
   useEffect(() => {
-    setFiltered(deferredBase);
-  }, [deferredBase]);
+    setFiltered(deferredScoped);
+  }, [deferredScoped]);
 
   // Initialize view/filter from URL
   useEffect(() => {
@@ -77,6 +85,10 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     if (v === 'calendar') setView('calendar');
     const fk = searchParams.get('filter');
     if (fk === 'mine' || fk === 'all' || (fk && fk.startsWith('group:'))) setFilterKey(fk as ScopeKey);
+    const tk = (searchParams.get('time') || '').toLowerCase();
+    if (tk === 'today' || tk === 'week' || tk === 'month' || tk === 'past' || tk === 'upcoming') setTimeKey(tk as TimeKey);
+    const mk = (searchParams.get('metric') || '').toLowerCase();
+    if (mk === 'count' || mk === 'percent') setMetricMode(mk as MetricMode);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -86,8 +98,12 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     if (view === 'calendar') sp.set('view', 'calendar');
     else sp.delete('view');
     if (filterKey) sp.set('filter', filterKey);
+    if (timeKey && timeKey !== 'upcoming') sp.set('time', timeKey);
+    else sp.delete('time');
+    if (metricMode && metricMode !== 'count') sp.set('metric', metricMode);
+    else sp.delete('metric');
     router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
-  }, [view, filterKey, router, pathname, searchParams]);
+  }, [view, filterKey, timeKey, metricMode, router, pathname, searchParams]);
 
   const calItems: CalendarEvent[] = useMemo(
     () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location, occurrenceStartAt: e.recurrence ? e.startAt : undefined })),
@@ -98,18 +114,39 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     <>
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <GroupFilter value={filterKey} groups={groupOptions} onChange={(v)=>setFilterKey(v)} />
+        <TimeFilter value={timeKey} onChange={setTimeKey} />
         <ViewToggle view={view} onChange={setView} />
+        <MetricToggle mode={metricMode} onChange={setMetricMode} />
       </div>
       <EventsSearch
         items={items}
         onFilter={(f) => {
           const ids = new Set(f.map((x) => x.id));
-          let next = base.filter((e) => ids.has(e.id));
+          let next = scoped.filter((e) => ids.has(e.id));
           setFiltered(next);
         }}
       />
-      {view === 'list' ? <Cards list={filtered} /> : <div className="mt-4"><CalendarMonth events={calItems} /></div>}
+      {view === 'list' ? <Cards list={filtered} metricMode={metricMode} onToggleMetric={() => setMetricMode(m => m === 'percent' ? 'count' : 'percent')} /> : <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>}
+      <BackToTop />
     </>
+  );
+}
+function BackToTop() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShow(window.scrollY > 300);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  if (!show) return null;
+  return (
+    <button
+      type="button"
+      className="back-to-top-btn px-3 py-2 rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-all hover:-translate-y-0.5"
+      aria-label="חזרה לראש הדף"
+      onClick={() => { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }}
+    >⬆️</button>
   );
 }
 
@@ -166,6 +203,54 @@ function GroupFilter({ value, groups, onChange }: { value: ScopeKey; groups: { i
     </select>
   );
 }
+function TimeFilter({ value, onChange }: { value: TimeKey; onChange: (v: TimeKey) => void }) {
+  const options: { key: TimeKey; label: string }[] = [
+    { key: 'upcoming', label: 'קרובים' },
+    { key: 'today', label: 'היום' },
+    { key: 'week', label: 'השבוע' },
+    { key: 'month', label: 'החודש' },
+    { key: 'past', label: 'עבר' },
+  ];
+  return (
+    <div className="flex gap-1 bg-white/60 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-md p-1 text-sm">
+      {options.map((opt) => (
+        <button
+          key={opt.key}
+          onClick={() => onChange(opt.key)}
+          className={[
+            'px-2 py-1 rounded transition-all',
+            value === opt.key ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:-translate-y-0.5 active:translate-y-px'
+          ].join(' ')}
+          aria-pressed={value === opt.key}
+        >{opt.label}</button>
+      ))}
+    </div>
+  );
+}
+
+function MetricToggle({ mode, onChange }: { mode: MetricMode; onChange: (m: MetricMode) => void }) {
+  return (
+    <div className="flex gap-1 bg-white/60 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-md p-1 text-sm ml-auto">
+      <button
+        onClick={() => onChange('percent')}
+        className={[
+          'px-2 py-1 rounded',
+          mode === 'percent' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+        ].join(' ')}
+        aria-pressed={mode === 'percent'}
+      >אחוזים</button>
+      <button
+        onClick={() => onChange('count')}
+        className={[
+          'px-2 py-1 rounded',
+          mode === 'count' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+        ].join(' ')}
+        aria-pressed={mode === 'count'}
+      >כמות</button>
+    </div>
+  );
+}
+
 
 // Time tabs removed
 
@@ -192,47 +277,120 @@ function filterByKey(
   return events;
 }
 
-function Cards({ list }: { list: EventCard[] }) {
+function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
+  const now = new Date();
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
+
+  const endOfWeek = new Date(startOfToday);
+  // Assuming week ends on Saturday in IL (RTL), add days until Saturday (6)
+  const day = startOfToday.getDay(); // 0=Sun .. 6=Sat
+  const addToSat = (6 - day + 7) % 7;
+  endOfWeek.setDate(endOfWeek.getDate() + addToSat);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const endOfMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  if (key === 'upcoming') return events.filter(e => new Date(e.startAt) >= startOfToday);
+  if (key === 'today') return events.filter(e => {
+    const d = new Date(e.startAt);
+    return d >= startOfToday && d <= endOfToday;
+  });
+  if (key === 'week') return events.filter(e => {
+    const d = new Date(e.startAt);
+    return d >= startOfToday && d <= endOfWeek;
+  });
+  if (key === 'month') return events.filter(e => {
+    const d = new Date(e.startAt);
+    return d >= startOfToday && d <= endOfMonth;
+  });
+  if (key === 'past') return events.filter(e => new Date(e.startAt) < startOfToday);
+  return events;
+}
+
+function Cards({ list, metricMode, onToggleMetric }: { list: EventCard[]; metricMode: MetricMode; onToggleMetric: () => void }) {
   return (
-    <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {list.map((e) => (
-        <li key={e.id} className="rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow transition-shadow">
-          <a href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="font-semibold text-lg">{e.title}</h3>
-                {e.location && <p className="text-sm text-gray-600 dark:text-gray-400">{e.location}</p>}
-              </div>
-                <span className="text-xs text-gray-500">{formatDateMaybeDateOnly(e.startAt)}</span>
-            </div>
-            <div className="mt-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={resolveEventTypeImage(e.holidayKey, e.title)}
-                alt={e.title}
-                className="w-full h-36 object-cover rounded"
-              />
-            </div>
-            {e.description && <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{e.description}</p>}
-            <div className="mt-3 flex items-center justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400 inline-flex items-center gap-2">
+    <ul className="mt-4 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {list.map((e) => {
+        const approvedCount = e.rsvps.filter(r => r.status === 'APPROVED').length;
+        const maybeCount = e.rsvps.filter(r => r.status === 'MAYBE').length;
+        const declinedCount = e.rsvps.filter(r => r.status === 'DECLINED').length;
+        const totalCount = e.rsvps.length;
+        const naCount = Math.max(0, totalCount - approvedCount - maybeCount - declinedCount);
+        const approvedPct = totalCount ? Math.round((approvedCount / totalCount) * 100) : 0;
+        const maybePct = totalCount ? Math.round((maybeCount / totalCount) * 100) : 0;
+        const declinedPct = totalCount ? Math.round((declinedCount / totalCount) * 100) : 0;
+        const naPct = totalCount ? Math.max(0, 100 - approvedPct - maybePct - declinedPct) : 0;
+        const iconType = e.holidayKey === 'shabat_eve' ? 'shabat_eve' : e.holidayKey?.includes('eve') ? 'holiday_eve' : e.holidayKey ? 'holiday' : 'custom';
+        return (
+          <li key={e.id} className="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200">
+            <Link href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block h-full cursor-pointer" aria-label={e.title}>
+              <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={e.hostImage && /^https?:/i.test(e.hostImage) ? e.hostImage : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(e.host?.name || 'host')}`} alt="host" className="w-5 h-5 rounded-full" />
-                מארחים: {[e.host?.name, ...(e.coHosts || []).map(h => h.name)].filter(Boolean).join(', ') || '—'}
-              </span>
-              <ApprovalSummary rsvps={e.rsvps} />
-            </div>
-          </a>
-        </li>
-      ))}
+                <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-44 sm:h-40 object-cover transition-transform duration-300 sm:group-hover:scale-[1.03]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-90 pointer-events-none" />
+                <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 pointer-events-none">
+                  {formatDateMaybeDateOnly(e.startAt)}
+                </div>
+              </div>
+              <div className="p-4 sm:p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <EventTypeIcon type={iconType as any} size={20} />
+                      <h3 className="font-semibold text-[1.05rem] sm:text-lg truncate" title={e.title}>{e.title}</h3>
+                    </div>
+                    {e.location && (
+                      <p className="text-[0.8rem] sm:text-xs text-gray-600 dark:text-gray-400 inline-flex items-center gap-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {e.location}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {e.description && <p className="mt-2 text-[0.9rem] sm:text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{e.description}</p>}
+                <div className="mt-3 flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400 inline-flex items-center gap-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={e.hostImage && /^https?:/i.test(e.hostImage) ? e.hostImage : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(e.host?.name || 'host')}`} alt="host" className="w-6 h-6 sm:w-5 sm:h-5 rounded-full" />
+                    מארחים: {[e.host?.name, ...(e.coHosts || []).map(h => h.name)].filter(Boolean).join(', ') || '—'}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex-1">
+                    <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div className="flex h-full w-full">
+                        {totalCount > 0 ? (
+                          <>
+                            {approvedCount > 0 && <div className="h-full bg-green-500" style={{ width: `${(approvedCount / totalCount) * 100}%` }} />}
+                            {maybeCount > 0 && <div className="h-full bg-yellow-400" style={{ width: `${(maybeCount / totalCount) * 100}%` }} />}
+                            {declinedCount > 0 && <div className="h-full bg-red-500" style={{ width: `${(declinedCount / totalCount) * 100}%` }} />}
+                            {naCount > 0 && <div className="h-full bg-gray-300 dark:bg-gray-700" style={{ width: `${(naCount / totalCount) * 100}%` }} />}
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                  {/* RSVP labels removed for mobile focus; details moved to event page */}
+                </div>
+              </div>
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
 function ApprovalSummary({ rsvps }: { rsvps: { status: string }[] }) {
-  const approved = rsvps.filter((r) => r.status === 'APPROVED').length;
+  const approved = rsvps.filter(r => r.status === 'APPROVED').length;
+  const maybe = rsvps.filter(r => r.status === 'MAYBE').length;
+  const declined = rsvps.filter(r => r.status === 'DECLINED').length;
   const total = rsvps.length;
-  return <span className="text-gray-600 dark:text-gray-400">{approved}/{total} אישרו</span>;
+  const responded = approved + maybe + declined;
+  return <span className="text-gray-600 dark:text-gray-400">{responded}/{total} השיבו</span>;
 }
 
 function resolveEventTypeImage(holidayKey?: string | null, title?: string | null) {
