@@ -69,6 +69,8 @@ export default async function EventDetailPage({ params, searchParams }: { params
   const maybeCount = event.rsvps.filter(r => r.status === 'MAYBE').length;
   const declinedCount = event.rsvps.filter(r => r.status === 'DECLINED').length;
   const waitingCount = event.rsvps.filter(r => r.status === 'NA').length;
+  const totalCount = event.rsvps.length;
+  const responded = approvedCount + maybeCount + declinedCount;
   const allHosts = [
     ...(event.host?.name ? [{ id: event.host?.id || 'host', name: event.host?.name }] : []),
     ...((event.coHosts || []))
@@ -121,12 +123,8 @@ export default async function EventDetailPage({ params, searchParams }: { params
         )}
         {/* RSVP quick section removed; using grouped editor below */}
       </div>
-      {/* RSVP summary */}
-      <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
-        <div className="text-sm text-gray-700 dark:text-gray-200">
-          {approvedCount} מגיע/ה · {maybeCount} אולי · {declinedCount} לא · {waitingCount} ממתינים
-        </div>
-      </div>
+      {/* RSVP summary (with toggle) */}
+      <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />
       <RSVPEditor eventId={event.id} />
       {isHost && pendingCount > 0 && (
         <>
@@ -135,6 +133,38 @@ export default async function EventDetailPage({ params, searchParams }: { params
         </>
       )}
     </main>
+  );
+}
+
+function RsvpSummary({ approved, maybe, declined, waiting, total }: { approved: number; maybe: number; declined: number; waiting: number; total: number }) {
+  'use client';
+  const [mode, setMode] = useState<'count'|'percent'>('count');
+  const pct = (n: number) => total ? Math.round((n / total) * 100) : 0;
+  const label = (name: string, n: number) => mode === 'count' ? `${name} ${n}` : `${name} ${pct(n)}%`;
+  const responded = approved + maybe + declined;
+  return (
+    <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
+      <div className="flex items-center justify-between gap-2 text-sm text-gray-700 dark:text-gray-200">
+        <div className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{label('מגיע/ה', approved)}</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />{label('אולי', maybe)}</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{label('לא', declined)}</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 inline-block" />{label('לא השיבו', waiting)}</span>
+        </div>
+        <button type="button" onClick={() => setMode(m => m==='count'?'percent':'count')} className="px-2 py-1 text-xs rounded border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">{mode==='count'?'אחוזים':'כמות'}</button>
+      </div>
+      <div className="mt-3">
+        <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div className="flex h-full w-full">
+            {approved > 0 && <div className="h-full bg-green-500" style={{ width: `${(approved/total)*100}%` }} />}
+            {maybe > 0 && <div className="h-full bg-yellow-400" style={{ width: `${(maybe/total)*100}%` }} />}
+            {declined > 0 && <div className="h-full bg-red-500" style={{ width: `${(declined/total)*100}%` }} />}
+            {waiting > 0 && <div className="h-full bg-gray-300 dark:bg-gray-700" style={{ width: `${(waiting/total)*100}%` }} />}
+          </div>
+        </div>
+        <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">{responded}/{total} השיבו</div>
+      </div>
+    </div>
   );
 }
 
