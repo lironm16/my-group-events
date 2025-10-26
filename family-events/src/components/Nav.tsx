@@ -1,6 +1,5 @@
 "use client";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
 import { useSession, signOut } from 'next-auth/react';
 import FamilyMenu from '@/components/FamilyMenu';
@@ -9,14 +8,13 @@ import { useEffect, useRef, useState } from 'react';
 export default function Nav() {
   const { data: session, status } = useSession();
   const { theme, toggle } = useTheme();
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = (href: string) => {
     setMenuOpen(false);
     try {
-      router.push(href);
-    } catch (e) {
+      window.location.assign(href);
+    } catch {
       try { window.location.href = href; } catch {}
     }
   };

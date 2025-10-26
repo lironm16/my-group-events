@@ -5,14 +5,14 @@ export default withAuth({
   callbacks: {
     authorized: ({ req, token }) => {
       const pathname = req.nextUrl.pathname;
-      // Temporarily allow unauthenticated access to key pages during setup
-      if (['/events', '/events/new', '/settings'].includes(pathname)) return true;
+      // Allow list for public pages only
+      if (['/'].includes(pathname)) return true;
       return !!token;
     },
   },
 });
 
 export const config = {
-  matcher: ['/events/:path*', '/family/:path*'],
+  matcher: ['/events/:path*', '/family/:path*', '/settings', '/signin'],
 };
 
