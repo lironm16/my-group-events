@@ -4,22 +4,13 @@ import { useTheme } from '@/components/ThemeProvider';
 import { useSession, signOut } from 'next-auth/react';
 import FamilyMenu from '@/components/FamilyMenu';
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function Nav() {
   const { data: session, status } = useSession();
   const { theme, toggle } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
-  const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
-  const navigate = (href: string) => {
-    setMenuOpen(false);
-    try {
-      window.location.assign(href);
-    } catch {
-      try { window.location.href = href; } catch {}
-    }
-  };
+  // Navigation is handled via plain anchors to ensure reliability
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -69,45 +60,45 @@ export default function Nav() {
             <div className="absolute z-50 mt-2 right-0 min-w-[180px] rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
               <ul className="text-sm">
                 <li>
-                  <button
-                    type="button"
-                    className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    onClick={() => navigate(status === 'authenticated' ? '/events' : '/')}
-                  >בית</button>
+                  <a
+                    className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    href={status === 'authenticated' ? '/events' : '/'}
+                    onClick={() => setMenuOpen(false)}
+                  >בית</a>
                 </li>
                 <li>
-                  <button
-                    type="button"
-                    className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    onClick={() => navigate('/family')}
-                  >קבוצות</button>
+                  <a
+                    className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    href="/family"
+                    onClick={() => setMenuOpen(false)}
+                  >קבוצות</a>
                 </li>
                 {status === 'authenticated' && (
                   <li>
-                    <button
-                      type="button"
-                      className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-green-700 dark:text-green-400"
-                      onClick={() => navigate('/events/new')}
-                    >יצירת אירוע</button>
+                    <a
+                      className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-green-700 dark:text-green-400"
+                      href="/events/new"
+                      onClick={() => setMenuOpen(false)}
+                    >יצירת אירוע</a>
                   </li>
                 )}
                 {status === 'authenticated' && (
                   <li>
-                    <button
-                      type="button"
-                      className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      onClick={() => navigate('/settings')}
-                    >הגדרות</button>
+                    <a
+                      className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      href="/settings"
+                      onClick={() => setMenuOpen(false)}
+                    >הגדרות</a>
                   </li>
                 )}
                 <li className="border-t border-gray-200 dark:border-gray-800" />
                 {status !== 'authenticated' ? (
                   <li>
-                    <button
-                      type="button"
-                      className="w-full text-right px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      onClick={() => navigate('/signin')}
-                    >התחברות</button>
+                    <a
+                      className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      href="/signin"
+                      onClick={() => setMenuOpen(false)}
+                    >התחברות</a>
                   </li>
                 ) : (
                   <li>
