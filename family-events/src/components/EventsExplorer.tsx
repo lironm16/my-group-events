@@ -289,6 +289,10 @@ function Cards({ list }: { list: EventCard[] }) {
         const declinedCount = e.rsvps.filter(r => r.status === 'DECLINED').length;
         const totalCount = e.rsvps.length;
         const naCount = Math.max(0, totalCount - approvedCount - maybeCount - declinedCount);
+        const approvedPct = totalCount ? Math.round((approvedCount / totalCount) * 100) : 0;
+        const maybePct = totalCount ? Math.round((maybeCount / totalCount) * 100) : 0;
+        const declinedPct = totalCount ? Math.round((declinedCount / totalCount) * 100) : 0;
+        const naPct = totalCount ? Math.max(0, 100 - approvedPct - maybePct - declinedPct) : 0;
         const iconType = e.holidayKey === 'shabat_eve' ? 'shabat_eve' : e.holidayKey?.includes('eve') ? 'holiday_eve' : e.holidayKey ? 'holiday' : 'custom';
         return (
           <li key={e.id} className="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200">
@@ -341,11 +345,11 @@ function Cards({ list }: { list: EventCard[] }) {
                     </div>
                   </div>
                   {totalCount > 0 && (
-                    <div className="text-xs text-gray-600 dark:text-gray-400 inline-flex items-center gap-2 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{approvedCount}</span>
-                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />{maybeCount}</span>
-                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{declinedCount}</span>
-                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 inline-block" />{naCount}</span>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 inline-flex flex-wrap items-center gap-x-3 gap-y-1 whitespace-normal">
+                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />אישרו {approvedPct}%</span>
+                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />אולי {maybePct}%</span>
+                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />לא {declinedPct}%</span>
+                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 inline-block" />לא השיבו {naPct}%</span>
                     </div>
                   )}
                 </div>
