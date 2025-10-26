@@ -6,7 +6,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import EventsSearch, { EventItem } from '@/components/EventsSearch';
 import CalendarMonth, { type CalendarEvent } from '@/components/CalendarMonth';
 import EventTypeIcon from '@/components/EventTypeIcon';
-const launchEmojiConfetti = (typeof window !== 'undefined') ? (require('@/components/confetti') as any).launchEmojiConfetti : (()=>{}) as any;
+import ConfettiLink from '@/components/ConfettiLink';
 
 type EventCard = {
   id: string;
@@ -290,7 +290,7 @@ function Cards({ list }: { list: EventCard[] }) {
         const iconType = e.holidayKey === 'shabat_eve' ? 'shabat_eve' : e.holidayKey?.includes('eve') ? 'holiday_eve' : e.holidayKey ? 'holiday' : 'custom';
         return (
           <li key={e.id} className="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
-            <a href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block" onClick={()=>{ try { launchEmojiConfetti({ count: 20, durationMs: 900 }); } catch {} }}>
+            <ConfettiLink href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block" confettiCount={20} confettiDurationMs={900}>
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
@@ -329,7 +329,7 @@ function Cards({ list }: { list: EventCard[] }) {
                   </div>
                 </div>
               </div>
-            </a>
+            </ConfettiLink>
           </li>
         );
       })}
