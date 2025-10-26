@@ -32,7 +32,20 @@ export default function Nav() {
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((o) => !o)}
           >
-            ☰ תפריט
+            {status === 'authenticated' ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={(() => {
+                  const img = ((session?.user as any)?.image as string | undefined) || '';
+                  if (img && /^https?:/i.test(img)) return img;
+                  return 'https://avataaars.io/?avatarStyle=Circle&topType=ShortHairShortFlat&accessoriesType=Blank&hairColor=BrownDark&facialHairType=Blank&clotheType=Hoodie&clotheColor=Blue03&eyeType=Happy&eyebrowType=Default&mouthType=Smile&skinColor=Light';
+                })()}
+                alt="avatar"
+                className="w-8 h-8 rounded-full"
+              />
+            ) : (
+              <span className="text-lg">☰</span>
+            )}
           </button>
           {menuOpen && (
             <div className="absolute mt-2 right-0 min-w-[180px] rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
