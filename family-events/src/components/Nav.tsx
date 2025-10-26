@@ -4,18 +4,20 @@ import { useTheme } from '@/components/ThemeProvider';
 import { useSession, signOut } from 'next-auth/react';
 import FamilyMenu from '@/components/FamilyMenu';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Nav() {
   const { data: session, status } = useSession();
   const { theme, toggle } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = (href: string) => {
     setMenuOpen(false);
     try {
-      window.location.assign(href);
+      router.push(href);
     } catch {
-      try { window.location.href = href; } catch {}
+      try { window.location.assign(href); } catch {}
     }
   };
 

@@ -26,6 +26,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               var theme = stored ? stored : (prefersDark ? 'dark' : 'light');
               if (theme === 'dark') document.documentElement.classList.add('dark');
               else document.documentElement.classList.remove('dark');
+              // Persist a data attribute to help CSS avoid flashes
+              document.documentElement.setAttribute('data-theme', theme);
             } catch(e) {}
           })();`}
         </Script>

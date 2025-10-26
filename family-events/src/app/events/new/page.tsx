@@ -73,7 +73,9 @@ export default function NewEventPage() {
       )}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">אירוע חדש</h1>
-        <button type="button" onClick={() => { if (step === 2) { setStep(1); return; } window.location.href = '/events'; }} className="px-3 py-2 rounded border text-sm">חזרה</button>
+        {step === 2 && (
+          <button type="button" onClick={() => { setStep(1); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }} className="px-3 py-2 rounded border text-sm">חזרה</button>
+        )}
       </div>
       {step === 1 && (
       <TemplatesTiles onPick={(tpl)=>{
