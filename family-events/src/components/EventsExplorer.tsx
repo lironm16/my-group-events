@@ -357,7 +357,6 @@ function Cards({ list, metricMode, onToggleMetric }: { list: EventCard[]; metric
                     <img src={e.hostImage && /^https?:/i.test(e.hostImage) ? e.hostImage : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(e.host?.name || 'host')}`} alt="host" className="w-5 h-5 rounded-full" />
                     מארחים: {[e.host?.name, ...(e.coHosts || []).map(h => h.name)].filter(Boolean).join(', ') || '—'}
                   </span>
-                  <ApprovalSummary rsvps={e.rsvps} />
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <div className="flex-1">
@@ -374,25 +373,7 @@ function Cards({ list, metricMode, onToggleMetric }: { list: EventCard[]; metric
                       </div>
                     </div>
                   </div>
-                  {totalCount > 0 && (
-                    <button type="button" onClick={onToggleMetric} className="text-xs text-gray-600 dark:text-gray-400 inline-flex flex-wrap items-center gap-x-3 gap-y-1 whitespace-normal hover:underline">
-                      {metricMode === 'percent' ? (
-                        <>
-                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />אישרו {approvedPct}%</span>
-                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />אולי {maybePct}%</span>
-                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />לא {declinedPct}%</span>
-                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 inline-block" />לא השיבו {naPct}%</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />אישרו {approvedCount}</span>
-                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />אולי {maybeCount}</span>
-                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />לא {declinedCount}</span>
-                          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 inline-block" />לא השיבו {naCount}</span>
-                        </>
-                      )}
-                    </button>
-                  )}
+                  {/* RSVP labels removed for mobile focus; details moved to event page */}
                 </div>
               </div>
             </Link>
