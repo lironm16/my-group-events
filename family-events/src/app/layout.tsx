@@ -5,6 +5,7 @@ import ThemeProvider from '@/components/ThemeProvider';
 import AuthProvider from '@/components/AuthProvider';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'אירועי משפחת מתתיהו',
@@ -17,6 +18,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <body>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`(function(){
+            try {
+              var stored = localStorage.getItem('theme');
+              var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+              var theme = stored ? stored : (prefersDark ? 'dark' : 'light');
+              if (theme === 'dark') document.documentElement.classList.add('dark');
+              else document.documentElement.classList.remove('dark');
+            } catch(e) {}
+          })();`}
+        </Script>
         <ThemeProvider>
           <AuthProvider session={session}>
             <Nav />

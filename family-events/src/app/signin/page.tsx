@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = 'force-dynamic';
-import { signIn, useSession, SessionProvider } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -37,7 +37,6 @@ export default function SignInPage() {
   }, [status, router]);
 
   return (
-    <SessionProvider>
     <main className="container-page max-w-md mx-auto space-y-4">
       <h1 className="text-2xl font-bold">התחברות</h1>
       {error && <div className="text-sm text-red-600">{error}</div>}
@@ -53,7 +52,6 @@ export default function SignInPage() {
         </button>
       </form>
     </main>
-    </SessionProvider>
   );
 }
 
