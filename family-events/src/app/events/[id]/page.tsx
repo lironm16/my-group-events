@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma';
 import PendingWhatsApp from '@/components/PendingWhatsApp';
 import RSVPEditor from '@/components/RSVPEditor';
 import RsvpSummary from '@/components/RsvpSummary';
+import RsvpInviteesList from '@/components/RsvpInviteesList';
 
 type EventDetail = {
   id: string;
@@ -89,6 +90,9 @@ export default async function EventDetailPage({ params, searchParams }: { params
     <main className="container-page space-y-4">
       <HeaderActions id={event.id} occurrenceStartAt={occurrenceStartAt} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} backHref={from || '/events'} />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
+        {event.description && (
+          <p className="mb-4 text-gray-700 dark:text-gray-300">{event.description}</p>
+        )}
         <dl className="grid md:grid-cols-2 gap-4">
           <div>
             <dt className="text-sm text-gray-500">מיקום</dt>
@@ -119,9 +123,7 @@ export default async function EventDetailPage({ params, searchParams }: { params
             </div>
           )}
         </dl>
-        {event.description && (
-          <p className="mt-4 text-gray-700 dark:text-gray-300">{event.description}</p>
-        )}
+        
         {/* RSVP quick section removed; using grouped editor below */}
       </div>
       {/* RSVP summary (with toggle) */}
@@ -132,6 +134,7 @@ export default async function EventDetailPage({ params, searchParams }: { params
             עדיין לא אישרת הגעה. נשמח לשמוע אם אתם מצטרפים.
           </div>
         ) : null}
+        <RsvpInviteesList list={event.rsvps} />
         {/* WhatsApp share section moved here, right after RSVP bar */}
         <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
           <div className="flex items-center justify-between gap-2">
