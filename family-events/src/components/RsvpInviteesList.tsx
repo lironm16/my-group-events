@@ -54,8 +54,7 @@ export default function RsvpInviteesList({ list }: { list: Item[] }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium text-sm truncate">{r.user?.name || '—'}</span>
-                <span className={[ 'text-xs rounded px-2 py-0.5 border inline-flex items-center gap-1', chipCls(r.status) ].join(' ')}>
-                  <span className={[ 'w-2 h-2 rounded-full', r.status === 'APPROVED' ? 'bg-green-500' : r.status === 'DECLINED' ? 'bg-red-500' : r.status === 'MAYBE' ? 'bg-yellow-400' : 'bg-gray-400' ].join(' ')} />
+                <span className={[ 'text-xs rounded px-2 py-0.5 border', chipCls(r.status) ].join(' ')}>
                   {r.status === 'APPROVED' ? 'מגיע/ה' : r.status === 'DECLINED' ? 'לא' : r.status === 'MAYBE' ? 'אולי' : '—'}
                 </span>
               </div>
