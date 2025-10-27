@@ -53,16 +53,6 @@ export default function WhatsAppShare({ eventId, title, startAtISO, location, ty
         }}
         aria-label="שיתוף הודעת ווצאפ"
       >וואטסאפ</button>
-      <button
-        type="button"
-        className="px-2 py-1 border rounded text-sm bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-        onClick={async () => { try { await navigator.clipboard.writeText(text); } catch {} }}
-      >העתקה</button>
-      <a className="px-2 py-1 border rounded text-sm bg-gray-100 dark:bg-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700"
-        href={waHref}
-        target="_blank"
-        rel="noreferrer"
-      >פתיחה</a>
       <div className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 max-w-[360px] truncate" title={text.replace(/\n/g, ' ')}>
         תצוגה מקדימה: {text.replace(/\n/g, ' ')}
       </div>
@@ -86,10 +76,13 @@ function buildVariants({ title, dateText, locText, shareUrl, typeKey, includeRem
     { label: 'פתיחה ידידותית', text: `🎉 היי! מוזמנים ל"${title}"\n🗓️ ${dateText}\n${locText}פרטים ואישור: ${shareUrl}` },
     { label: 'מחכים לכם', text: `🙌 מחכים לכם ב"${title}"!\n${locText}מתי: ${dateText}\nאישור כאן: ${shareUrl}` },
   );
+  // Event updated
+  variants.unshift({ label: 'עדכון אירוע', text: `🔄 עדכון: עדכנו את פרטי "${title}"\n🗓️ ${dateText}\n${locText}לפרטים ואישור: ${shareUrl}` });
   if (includeReminders) {
     variants.push(
       { label: 'תזכורת ידידותית', text: `⏰ תזכורת קצרה לאישור הגעה ל"${title}"\n🗓️ ${dateText}\n${locText}לאישור במהירות: ${shareUrl}` },
       { label: 'בודקים שלא פספסתם', text: `🙂 רק בודקים שלא פספסתם – נשמח לאישור ל"${title}"\n${locText}אישור: ${shareUrl}` },
+      { label: 'בקשה למענה (ללא משיבים)', text: `📣 למי שטרם אישרו – נשמח למענה ל"${title}"\n🗓️ ${dateText}\n${locText}אישור כאן: ${shareUrl}` },
     );
   }
   // Deduplicate by text and cap to reasonable amount
@@ -99,7 +92,7 @@ function buildVariants({ title, dateText, locText, shareUrl, typeKey, includeRem
     if (seen.has(v.text)) continue;
     seen.add(v.text);
     out.push(v);
-    if (out.length >= (includeReminders ? 6 : 4)) break;
+    if (out.length >= (includeReminders ? 7 : 5)) break;
   }
   return out;
 }

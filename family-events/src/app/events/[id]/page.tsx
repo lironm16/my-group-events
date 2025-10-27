@@ -132,6 +132,24 @@ export default async function EventDetailPage({ params, searchParams }: { params
             עדיין לא אישרת הגעה. נשמח לשמוע אם אתם מצטרפים.
           </div>
         ) : null}
+        {/* WhatsApp share section moved here, right after RSVP bar */}
+        <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-semibold text-sm">שיתוף בוואטסאפ</h3>
+          </div>
+          <div className="mt-2">
+            <WhatsAppShare
+              eventId={event.id}
+              title={event.title}
+              startAtISO={event.startAt}
+              location={event.location}
+              typeKey={event.holidayKey ?? null}
+              shareUrl={shareUrl}
+              hasResponders={(event.rsvps || []).some((r: any) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED')}
+              includeReminders={(event.rsvps || []).every((r: any) => r.status === 'NA')}
+            />
+          </div>
+        </div>
       </section>
       <RSVPEditor eventId={event.id} />
       {isHost && pendingCount > 0 && (
@@ -151,10 +169,6 @@ function HeaderActions({ id, occurrenceStartAt, wa, ics, isHost, event, shareUrl
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <h1 className="text-2xl font-bold">{event.title}</h1>
       <div className="flex flex-wrap gap-2 w-full sm:w-auto items-center">
-        <div className="inline-flex items-center gap-2 px-2 py-1 rounded border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
-          <span className="text-sm text-gray-600 dark:text-gray-300">שיתוף</span>
-          <WhatsAppShare eventId={id} title={event.title} startAtISO={event.startAt} location={event.location} typeKey={event.holidayKey ?? null} shareUrl={shareUrl} hasResponders={(event.rsvps || []).some((r: any) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED')} includeReminders={(event.rsvps || []).every((r: any) => r.status === 'NA')} />
-        </div>
         <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
         {isHost && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
         {isHost && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} />}
