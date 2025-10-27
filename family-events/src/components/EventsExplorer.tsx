@@ -283,7 +283,6 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
 }
 
 function Cards({ list }: { list: EventCard[] }) {
-  const router = useRouter();
   return (
     <ul className="mt-4 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => {
@@ -297,10 +296,7 @@ function Cards({ list }: { list: EventCard[] }) {
         return (
           <li
             key={e.id}
-            className="group relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200 cursor-pointer"
-            tabIndex={0}
-            onClick={() => { try { router.push(href); } catch {} }}
-            onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); try { router.push(href); } catch {} } }}
+            className="group relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200"
           >
             <Link href={href} className="block focus:outline-none focus:ring-2 focus:ring-blue-500">
               <div className="relative">
