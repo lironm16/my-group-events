@@ -28,13 +28,12 @@ type EventCard = {
 type ScopeKey = 'mine' | 'all' | `group:${string}`;
 type ViewKey = 'list' | 'calendar';
 type TimeKey = 'upcoming' | 'today' | 'week' | 'month' | 'past';
-type MetricMode = 'count' | 'percent';
+// Metric toggle removed from main page per request
 
 export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [filterKey, setFilterKey] = useState<ScopeKey>('mine');
   const [view, setView] = useState<ViewKey>('list');
   const [timeKey, setTimeKey] = useState<TimeKey>('upcoming');
-  const [metricMode, setMetricMode] = useState<MetricMode>('count');
   const [myUserId, setMyUserId] = useState<string>('');
   const [groupOptions, setGroupOptions] = useState<{ id: string; nickname: string; memberIds: string[] }[]>([]);
   const searchParams = useSearchParams();
@@ -87,8 +86,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     if (fk === 'mine' || fk === 'all' || (fk && fk.startsWith('group:'))) setFilterKey(fk as ScopeKey);
     const tk = (searchParams.get('time') || '').toLowerCase();
     if (tk === 'today' || tk === 'week' || tk === 'month' || tk === 'past' || tk === 'upcoming') setTimeKey(tk as TimeKey);
-    const mk = (searchParams.get('metric') || '').toLowerCase();
-    if (mk === 'count' || mk === 'percent') setMetricMode(mk as MetricMode);
+    // metric toggle removed
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -100,10 +98,9 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     if (filterKey) sp.set('filter', filterKey);
     if (timeKey && timeKey !== 'upcoming') sp.set('time', timeKey);
     else sp.delete('time');
-    if (metricMode && metricMode !== 'count') sp.set('metric', metricMode);
-    else sp.delete('metric');
+    // metric toggle removed
     router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
-  }, [view, filterKey, timeKey, metricMode, router, pathname, searchParams]);
+  }, [view, filterKey, timeKey, router, pathname, searchParams]);
 
   const calItems: CalendarEvent[] = useMemo(
     () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location, occurrenceStartAt: e.recurrence ? e.startAt : undefined })),
@@ -116,7 +113,6 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         <GroupFilter value={filterKey} groups={groupOptions} onChange={(v)=>setFilterKey(v)} />
         <TimeFilter value={timeKey} onChange={setTimeKey} />
         <ViewToggle view={view} onChange={setView} />
-        <MetricToggle mode={metricMode} onChange={setMetricMode} />
       </div>
       <EventsSearch
         items={items}
@@ -126,7 +122,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
           setFiltered(next);
         }}
       />
-      {view === 'list' ? <Cards list={filtered} metricMode={metricMode} onToggleMetric={() => setMetricMode(m => m === 'percent' ? 'count' : 'percent')} /> : <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>}
+      {view === 'list' ? <Cards list={filtered} /> : <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>}
       <BackToTop />
     </>
   );
@@ -228,30 +224,6 @@ function TimeFilter({ value, onChange }: { value: TimeKey; onChange: (v: TimeKey
   );
 }
 
-function MetricToggle({ mode, onChange }: { mode: MetricMode; onChange: (m: MetricMode) => void }) {
-  return (
-    <div className="flex gap-1 bg-white/60 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-md p-1 text-sm ml-auto">
-      <button
-        onClick={() => onChange('percent')}
-        className={[
-          'px-2 py-1 rounded',
-          mode === 'percent' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-        ].join(' ')}
-        aria-pressed={mode === 'percent'}
-      >אחוזים</button>
-      <button
-        onClick={() => onChange('count')}
-        className={[
-          'px-2 py-1 rounded',
-          mode === 'count' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-        ].join(' ')}
-        aria-pressed={mode === 'count'}
-      >כמות</button>
-    </div>
-  );
-}
-
-
 // Time tabs removed
 
 function filterByKey(
@@ -310,7 +282,7 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
   return events;
 }
 
-function Cards({ list, metricMode, onToggleMetric }: { list: EventCard[]; metricMode: MetricMode; onToggleMetric: () => void }) {
+function Cards({ list }: { list: EventCard[] }) {
   return (
     <ul className="mt-4 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => {
@@ -319,14 +291,14 @@ function Cards({ list, metricMode, onToggleMetric }: { list: EventCard[]; metric
         const declinedCount = e.rsvps.filter(r => r.status === 'DECLINED').length;
         const totalCount = e.rsvps.length;
         const naCount = Math.max(0, totalCount - approvedCount - maybeCount - declinedCount);
-        const approvedPct = totalCount ? Math.round((approvedCount / totalCount) * 100) : 0;
-        const maybePct = totalCount ? Math.round((maybeCount / totalCount) * 100) : 0;
-        const declinedPct = totalCount ? Math.round((declinedCount / totalCount) * 100) : 0;
-        const naPct = totalCount ? Math.max(0, 100 - approvedPct - maybePct - declinedPct) : 0;
         const iconType = e.holidayKey === 'shabat_eve' ? 'shabat_eve' : e.holidayKey?.includes('eve') ? 'holiday_eve' : e.holidayKey ? 'holiday' : 'custom';
+        const href = `/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`;
         return (
-          <li key={e.id} className="group rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200">
-            <Link href={`/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`} className="block h-full cursor-pointer" aria-label={e.title}>
+          <li
+            key={e.id}
+            className="group relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200"
+          >
+            <Link href={href} className="block focus:outline-none focus:ring-2 focus:ring-blue-500">
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-44 sm:h-40 object-cover transition-transform duration-300 sm:group-hover:scale-[1.03]" />

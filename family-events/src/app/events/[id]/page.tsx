@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma';
 import PendingWhatsApp from '@/components/PendingWhatsApp';
 import RSVPEditor from '@/components/RSVPEditor';
 import RsvpSummary from '@/components/RsvpSummary';
+import RsvpInviteesList from '@/components/RsvpInviteesList';
 
 type EventDetail = {
   id: string;
@@ -89,6 +90,9 @@ export default async function EventDetailPage({ params, searchParams }: { params
     <main className="container-page space-y-4">
       <HeaderActions id={event.id} occurrenceStartAt={occurrenceStartAt} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} backHref={from || '/events'} />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
+        {event.description && (
+          <p className="mb-4 text-gray-700 dark:text-gray-300">{event.description}</p>
+        )}
         <dl className="grid md:grid-cols-2 gap-4">
           <div>
             <dt className="text-sm text-gray-500">מיקום</dt>
@@ -119,13 +123,37 @@ export default async function EventDetailPage({ params, searchParams }: { params
             </div>
           )}
         </dl>
-        {event.description && (
-          <p className="mt-4 text-gray-700 dark:text-gray-300">{event.description}</p>
-        )}
+        
         {/* RSVP quick section removed; using grouped editor below */}
       </div>
       {/* RSVP summary (with toggle) */}
-      <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />
+      <section className="space-y-3">
+        <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />
+        {myRsvp == null || myRsvp === 'NA' ? (
+          <div className="rounded border border-amber-300/60 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-3 text-sm text-amber-800 dark:text-amber-200">
+            עדיין לא אישרת הגעה. נשמח לשמוע אם אתם מצטרפים.
+          </div>
+        ) : null}
+        <RsvpInviteesList list={event.rsvps} />
+        {/* WhatsApp share section moved here, right after RSVP bar */}
+        <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="font-semibold text-sm">שיתוף בוואטסאפ</h3>
+          </div>
+          <div className="mt-2">
+            <WhatsAppShare
+              eventId={event.id}
+              title={event.title}
+              startAtISO={event.startAt}
+              location={event.location}
+              typeKey={event.holidayKey ?? null}
+              shareUrl={shareUrl}
+              hasResponders={(event.rsvps || []).some((r: any) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED')}
+              includeReminders={(event.rsvps || []).every((r: any) => r.status === 'NA')}
+            />
+          </div>
+        </div>
+      </section>
       <RSVPEditor eventId={event.id} />
       {isHost && pendingCount > 0 && (
         <>
@@ -142,9 +170,8 @@ export default async function EventDetailPage({ params, searchParams }: { params
 function HeaderActions({ id, occurrenceStartAt, wa, ics, isHost, event, shareUrl, backHref }: { id: string; occurrenceStartAt?: string; wa: string; ics: string; isHost: boolean; event: any; shareUrl: string; backHref: string }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <h1 className="text-2xl font-bold">פרטי אירוע</h1>
-      <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-        <WhatsAppShare eventId={id} title={event.title} startAtISO={event.startAt} location={event.location} typeKey={event.holidayKey ?? null} shareUrl={shareUrl} hasResponders={(event.rsvps || []).some((r: any) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED')} />
+      <h1 className="text-2xl font-bold">{event.title}</h1>
+      <div className="flex flex-wrap gap-2 w-full sm:w-auto items-center">
         <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
         {isHost && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
         {isHost && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} />}
