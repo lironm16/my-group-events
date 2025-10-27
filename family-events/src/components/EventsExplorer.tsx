@@ -103,8 +103,8 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   }, [view, filterKey, timeKey, router, pathname, searchParams]);
 
   const calItems: CalendarEvent[] = useMemo(
-    () => filtered.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location, occurrenceStartAt: e.recurrence ? e.startAt : undefined })),
-    [filtered]
+    () => (view === 'list' ? filtered : scoped).map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location, occurrenceStartAt: e.recurrence ? e.startAt : undefined })),
+    [filtered, scoped, view]
   );
 
   return (
@@ -114,15 +114,21 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         <TimeFilter value={timeKey} onChange={setTimeKey} />
         <ViewToggle view={view} onChange={setView} />
       </div>
-      <EventsSearch
-        items={items}
-        onFilter={(f) => {
-          const ids = new Set(f.map((x) => x.id));
-          let next = scoped.filter((e) => ids.has(e.id));
-          setFiltered(next);
-        }}
-      />
-      {view === 'list' ? <Cards list={filtered} /> : <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>}
+      {view === 'list' && (
+        <EventsSearch
+          items={items}
+          onFilter={(f) => {
+            const ids = new Set(f.map((x) => x.id));
+            const next = scoped.filter((e) => ids.has(e.id));
+            setFiltered(next);
+          }}
+        />
+      )}
+      {view === 'list' ? (
+        <Cards list={filtered} />
+      ) : (
+        <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>
+      )}
       <BackToTop />
     </>
   );
