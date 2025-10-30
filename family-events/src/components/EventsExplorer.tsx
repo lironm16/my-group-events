@@ -1,5 +1,4 @@
 "use client";
-"use client";
 import Link from 'next/link';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
@@ -72,10 +71,12 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
 
   const [filtered, setFiltered] = useState<EventCard[]>(scoped);
   const deferredScoped = useDeferredValue(scoped);
+  const [searchAllow, setSearchAllow] = useState<Set<string> | null>(null);
 
   // Reset filtered when base changes (tab switch)
   useEffect(() => {
     setFiltered(deferredScoped);
+    setSearchAllow(null);
   }, [deferredScoped]);
 
   // Initialize view/filter from URL
@@ -102,10 +103,12 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
   }, [view, filterKey, timeKey, router, pathname, searchParams]);
 
-  const calItems: CalendarEvent[] = useMemo(
-    () => (view === 'list' ? filtered : scoped).map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location, occurrenceStartAt: e.recurrence ? e.startAt : undefined })),
-    [filtered, scoped, view]
-  );
+  const calItems: CalendarEvent[] = useMemo(() => {
+    const base = view === 'list'
+      ? filtered
+      : (searchAllow ? scoped.filter((e) => searchAllow.has(`${e.id}|${e.startAt}`)) : scoped);
+    return base.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location, occurrenceStartAt: e.recurrence ? e.startAt : undefined }));
+  }, [filtered, scoped, view, searchAllow]);
 
   return (
     <>
@@ -114,16 +117,17 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         <TimeFilter value={timeKey} onChange={setTimeKey} />
         <ViewToggle view={view} onChange={setView} />
       </div>
-      {view === 'list' && (
-        <EventsSearch
-          items={items}
-          onFilter={(f) => {
-            const ids = new Set(f.map((x) => x.id));
-            const next = scoped.filter((e) => ids.has(e.id));
-            setFiltered(next);
-          }}
-        />
-      )}
+      <EventsSearch
+        items={items}
+        onFilter={(f) => {
+          // Filter by occurrence identity (id + startAt) to properly handle recurring events
+          const allow = new Set(f.map((x) => `${x.id}|${x.startAt}`));
+          const allSelected = allow.size === items.length;
+          setSearchAllow(allSelected ? null : allow);
+          const next = scoped.filter((e) => allow.has(`${e.id}|${e.startAt}`));
+          setFiltered(next);
+        }}
+      />
       {view === 'list' ? (
         <Cards list={filtered} />
       ) : (
