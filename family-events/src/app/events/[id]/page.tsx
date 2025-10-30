@@ -6,7 +6,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import PendingWhatsApp from '@/components/PendingWhatsApp';
-import RSVPEditor from '@/components/RSVPEditor';
 import RsvpSummary from '@/components/RsvpSummary';
 import RsvpInviteesList from '@/components/RsvpInviteesList';
 
@@ -154,13 +153,6 @@ export default async function EventDetailPage({ params, searchParams }: { params
           </div>
         </div>
       </section>
-      <RSVPEditor eventId={event.id} />
-      {isHost && pendingCount > 0 && (
-        <>
-          <h2 className="font-semibold">תזכורות (למי שטרם אישרו)</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-300">יש {pendingCount} חברים שעדיין לא אישרו.</p>
-        </>
-      )}
     </main>
   );
 }
@@ -169,14 +161,16 @@ export default async function EventDetailPage({ params, searchParams }: { params
 
 function HeaderActions({ id, occurrenceStartAt, wa, ics, isHost, event, shareUrl, backHref }: { id: string; occurrenceStartAt?: string; wa: string; ics: string; isHost: boolean; event: any; shareUrl: string; backHref: string }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <h1 className="text-2xl font-bold">{event.title}</h1>
-      <div className="flex flex-wrap gap-2 w-full sm:w-auto items-center">
-        <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
-        {isHost && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
-        {isHost && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} />}
-        <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={backHref}>חזרה</Link>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <Link className="px-3 py-2 rounded border text-sm" href={backHref}>חזרה</Link>
+        <div className="flex flex-wrap gap-2 items-center">
+          <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
+          {isHost && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
+          {isHost && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} />}
+        </div>
       </div>
+      <h1 className="text-2xl font-bold">{event.title}</h1>
     </div>
   );
 }

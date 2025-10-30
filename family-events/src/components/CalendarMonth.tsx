@@ -68,21 +68,25 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
         </div>
       </div>
       <div className="block sm:hidden">
-        <ul className="divide-y divide-gray-200 dark:divide-gray-800 rounded border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div className="relative">
           {days.filter(d => d.date.getMonth() === cursor.getMonth()).map((d) => {
             const k = toKey(d.date);
             const list = byDay.get(k) || [];
             if (list.length === 0) return null;
+            const isToday = (() => { const n=new Date(); return n.toDateString()===d.date.toDateString(); })();
             return (
-              <li key={k} className="p-3">
-                <div className="flex items-baseline justify-between mb-2">
-                  <div className="font-medium text-gray-800 dark:text-gray-100">{d.date.toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' })}</div>
+              <section key={k} className="mb-3">
+                <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur px-3 py-2 border-b border-gray-200 dark:border-gray-800 flex items-baseline justify-between">
+                  <div className="font-medium text-gray-800 dark:text-gray-100">
+                    {d.date.toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                    {isToday && <span className="ml-2 text-xs text-blue-600 dark:text-blue-300">היום</span>}
+                  </div>
                   <span className="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">{list.length}</span>
                 </div>
-                <ul className="space-y-2">
+                <ul className="px-3 py-2 space-y-2">
                   {list.map((e) => (
                     <li key={`${e.id}:${e.startAt}`}>
-                      <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}${e.occurrenceStartAt ? `&occurrenceStartAt=${encodeURIComponent(e.occurrenceStartAt)}` : ''}`} className="block rounded border border-gray-200 dark:border-gray-800 p-2 bg-gray-50 dark:bg-gray-900">
+                      <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}${e.occurrenceStartAt ? `&occurrenceStartAt=${encodeURIComponent(e.occurrenceStartAt)}` : ''}`} className="block rounded-lg border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900 shadow-sm">
                         <div className="text-xs text-gray-500 mb-1">{new Date(e.startAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</div>
                         <div className="text-sm leading-snug text-gray-900 dark:text-gray-100 whitespace-normal break-words">{e.title}</div>
                         {e.location && <div className="text-xs text-gray-500 mt-0.5">{e.location}</div>}
@@ -90,10 +94,10 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
                     </li>
                   ))}
                 </ul>
-              </li>
+              </section>
             );
           })}
-        </ul>
+        </div>
       </div>
       <div className="hidden sm:block sm:mx-0">
         <div className="min-w-[840px] grid grid-cols-7 sm:gap-px gap-[1px] bg-gray-200 dark:bg-gray-800 rounded overflow-hidden text-xs sm:text-sm">
