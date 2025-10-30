@@ -18,6 +18,7 @@ export default function NewEventPage() {
   const [skipHolidays, setSkipHolidays] = useState(true);
   const [saving, setSaving] = useState(false);
   const [createdModal, setCreatedModal] = useState<{ id: string; startAt: string } | null>(null);
+  const [canceling, setCanceling] = useState(false);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
     if (!form.title.trim()) errs.title = 'יש להזין כותרת';
@@ -75,7 +76,21 @@ export default function NewEventPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">אירוע חדש</h1>
         {step === 2 && (
-          <button type="button" onClick={() => { setStep(1); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }} className="px-3 py-2 rounded border text-sm">חזרה</button>
+          <button
+            type="button"
+            onClick={() => {
+              try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+              setCanceling(true);
+              // Allow the fade/slide-out animation to play before switching steps
+              window.setTimeout(() => {
+                setStep(1);
+                setCanceling(false);
+              }, 200);
+            }}
+            className="px-3 py-2 rounded border text-sm"
+          >
+            חזרה
+          </button>
         )}
       </div>
       {step === 1 && (
@@ -96,7 +111,10 @@ export default function NewEventPage() {
       }} />
       )}
       {step === 2 && (
-      <form onSubmit={submit} className="space-y-3 max-w-xl">
+      <form
+        onSubmit={submit}
+        className={`space-y-3 max-w-xl transform transition-all duration-200 ease-out ${canceling ? 'opacity-0 -translate-y-2' : 'opacity-100 translate-y-0'}`}
+      >
         <div>
           {(!form.title || !form.title.trim()) && <div className="text-xs text-gray-500 mb-1">הזינו כותרת לאירוע</div>}
           <input className={inputCls} value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
