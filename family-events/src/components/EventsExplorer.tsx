@@ -118,8 +118,9 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         <EventsSearch
           items={items}
           onFilter={(f) => {
-            const ids = new Set(f.map((x) => x.id));
-            const next = scoped.filter((e) => ids.has(e.id));
+            // Filter by occurrence identity (id + startAt) to properly handle recurring events
+            const allow = new Set(f.map((x) => `${x.id}|${x.startAt}`));
+            const next = scoped.filter((e) => allow.has(`${e.id}|${e.startAt}`));
             setFiltered(next);
           }}
         />
