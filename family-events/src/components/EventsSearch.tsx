@@ -12,12 +12,16 @@ export default function EventsSearch({ value, onChange, onClear, placeholder = '
     if (onClear) onClear();
     else onChange('');
   };
+  const update = (next: string) => {
+    onChange(next);
+  };
   return (
     <div className="max-w-xl relative">
       <input
         type="search"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => update(e.target.value)}
+        onInput={(e) => update((e.target as HTMLInputElement).value)}
         className="w-full border pl-3 pr-10 sm:pl-2 sm:pr-10 py-3 sm:py-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-shadow shadow-sm text-base sm:text-sm"
         placeholder={placeholder}
         enterKeyHint="search"

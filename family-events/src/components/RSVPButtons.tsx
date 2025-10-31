@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 type RSVPStatus = "APPROVED" | "DECLINED" | "MAYBE" | "NA";
 
-export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { eventId: string; initial?: RSVPStatus | null; canGroup?: boolean; canAll?: boolean }) {
+export default function RSVPButtons({ eventId, initial, canGroup, canAll, onSaved }: { eventId: string; initial?: RSVPStatus | null; canGroup?: boolean; canAll?: boolean; onSaved?: () => void }) {
   const router = useRouter();
   const [status, setStatus] = useState<RSVPStatus | null>(initial ?? 'NA');
   const [scope, setScope] = useState<'self' | 'group' | 'all'>('self');
@@ -31,11 +31,16 @@ export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { ev
       }
       const res = await fetch('/api/rsvp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!res.ok) return;
-      try { router.refresh(); } catch {}
+      try {
+        router.refresh();
+      } catch {}
+      try {
+        if (onSaved) onSaved();
+      } catch {}
     } finally {
       setSaving(false);
     }
-  }, [eventId, scope, note, status, router]);
+  }, [eventId, scope, note, status, router, onSaved]);
 
   const btnCls = (active: boolean, color: string) => [
     'px-3 py-1 rounded text-sm border transition-colors',
