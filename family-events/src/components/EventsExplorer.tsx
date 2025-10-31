@@ -93,15 +93,15 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <GroupFilter value={filterKey} groups={groupOptions} onChange={(v)=>setFilterKey(v)} />
-        <TimeFilter value={timeKey} onChange={setTimeKey} />
-        <ViewToggle view={view} onChange={setView} />
-        <RsvpStatusFilter value={rsvpFilter} onChange={setRsvpFilter} disabled={!myUserId} />
-      </div>
-      {view === 'list' && (
+      <div className="space-y-3 mb-4">
         <EventsSearch value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
-      )}
+        <div className="flex flex-wrap items-end gap-2">
+          <GroupFilter value={filterKey} groups={groupOptions} onChange={(v)=>setFilterKey(v)} />
+          <TimeFilter value={timeKey} onChange={setTimeKey} />
+          <RsvpStatusFilter value={rsvpFilter} onChange={setRsvpFilter} disabled={!myUserId} />
+          <ViewToggle view={view} onChange={setView} />
+        </div>
+      </div>
       {view === 'list' ? (
         <Cards list={filtered} viewerId={myUserId} />
       ) : (
@@ -136,33 +136,35 @@ function BackToTop() {
 
 function ViewToggle({ view, onChange }: { view: ViewKey; onChange: (v: ViewKey) => void }) {
   return (
-    <div className="flex gap-2 ml-auto">
+    <div className="ml-auto inline-flex items-center gap-2 rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1">
       <button
         onClick={() => onChange('list')}
         title="תצוגת רשימה"
         aria-label="תצוגת רשימה"
         className={[
-          'px-3 py-1 rounded border',
-          view === 'list' ? 'bg-blue-600 text-white border-transparent' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800',
+          'px-3 py-1 rounded-md text-sm flex items-center gap-1 transition-colors',
+          view === 'list' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'
         ].join(' ')}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M4 6h16M4 12h16M4 18h16" />
         </svg>
+        רשימה
       </button>
       <button
         onClick={() => onChange('calendar')}
         title="תצוגת לוח שנה"
         aria-label="תצוגת לוח שנה"
         className={[
-          'px-3 py-1 rounded border',
-          view === 'calendar' ? 'bg-blue-600 text-white border-transparent' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800',
+          'px-3 py-1 rounded-md text-sm flex items-center gap-1 transition-colors',
+          view === 'calendar' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'
         ].join(' ')}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3" y="5" width="18" height="16" rx="2" />
           <path d="M16 3v4M8 3v4M3 9h18" />
         </svg>
+        לוח שנה
       </button>
     </div>
   );
@@ -170,19 +172,24 @@ function ViewToggle({ view, onChange }: { view: ViewKey; onChange: (v: ViewKey) 
 
 function GroupFilter({ value, groups, onChange }: { value: ScopeKey; groups: { id: string; nickname: string }[]; onChange: (v: ScopeKey) => void }) {
   return (
-    <select
-      className="px-2 py-1 border rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
-      value={value}
-      onChange={(e) => onChange(e.target.value as ScopeKey)}
-    >
-      <option value="mine">שלי</option>
-      <option value="all">כולם</option>
-      {groups.map((g) => (
-        <option key={g.id} value={`group:${g.id}`}>{g.nickname}</option>
-      ))}
-    </select>
+    <label className="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1">
+      <span>קבוצה</span>
+      <select
+        className="min-w-[150px] px-2 py-1 border rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
+        value={value}
+        onChange={(e) => onChange(e.target.value as ScopeKey)}
+        aria-label="בחירת קבוצה"
+      >
+        <option value="mine">האירועים שלי</option>
+        <option value="all">כל האירועים</option>
+        {groups.map((g) => (
+          <option key={g.id} value={`group:${g.id}`}>{g.nickname}</option>
+        ))}
+      </select>
+    </label>
   );
 }
+
 function TimeFilter({ value, onChange }: { value: TimeKey; onChange: (v: TimeKey) => void }) {
   const options: { key: TimeKey; label: string }[] = [
     { key: 'upcoming', label: 'קרובים' },
@@ -192,19 +199,19 @@ function TimeFilter({ value, onChange }: { value: TimeKey; onChange: (v: TimeKey
     { key: 'past', label: 'עבר' },
   ];
   return (
-    <div className="flex gap-1 bg-white/60 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-md p-1 text-sm">
-      {options.map((opt) => (
-        <button
-          key={opt.key}
-          onClick={() => onChange(opt.key)}
-          className={[
-            'px-2 py-1 rounded transition-all',
-            value === opt.key ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:-translate-y-0.5 active:translate-y-px'
-          ].join(' ')}
-          aria-pressed={value === opt.key}
-        >{opt.label}</button>
-      ))}
-    </div>
+    <label className="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1">
+      <span>טווח זמן</span>
+      <select
+        className="min-w-[140px] px-2 py-1 border rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
+        value={value}
+        onChange={(e) => onChange(e.target.value as TimeKey)}
+        aria-label="טווח זמן"
+      >
+        {options.map((opt) => (
+          <option key={opt.key} value={opt.key}>{opt.label}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -332,11 +339,6 @@ function Cards({ list, viewerId }: { list: EventCard[]; viewerId: string }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-44 sm:h-40 object-cover transition-transform duration-300 sm:group-hover:scale-[1.03]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-90 pointer-events-none" />
-                {badge && (
-                  <span className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm ${badge.className}`} title={badge.label}>
-                    {badge.emoji}
-                  </span>
-                )}
                 <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 pointer-events-none">
                   {formatDateMaybeDateOnly(e.startAt)}
                 </div>
@@ -348,6 +350,12 @@ function Cards({ list, viewerId }: { list: EventCard[]; viewerId: string }) {
                       <EventTypeIcon type={iconType as any} size={20} />
                       <h3 className="font-semibold text-[1.05rem] sm:text-lg truncate" title={e.title}>{e.title}</h3>
                     </div>
+                    {badge && (
+                      <span className={`mt-1 inline-flex items-center gap-1 text-[0.7rem] sm:text-xs font-medium px-2 py-0.5 rounded-full ${badge.className}`} title={badge.label}>
+                        <span>{badge.emoji}</span>
+                        <span>{badge.label}</span>
+                      </span>
+                    )}
                     {e.location && (
                       <p className="text-[0.8rem] sm:text-xs text-gray-600 dark:text-gray-400 inline-flex items-center gap-1">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -437,38 +445,37 @@ function resolveViewerStatus(event: EventCard, viewerId: string): 'APPROVED' | '
 
 function resolveStatusBadge(status: 'APPROVED' | 'MAYBE' | 'DECLINED' | 'NA') {
   const map: Record<typeof status, { emoji: string; label: string; className: string }> = {
-    APPROVED: { emoji: '✅', label: 'מאושר', className: 'bg-green-600 text-white' },
-    MAYBE: { emoji: '🤔', label: 'אולי', className: 'bg-yellow-500 text-white' },
-    DECLINED: { emoji: '❌', label: 'לא מגיעים', className: 'bg-red-600 text-white' },
-    NA: { emoji: '🕒', label: 'ממתין למענה', className: 'bg-gray-700 text-white' },
+    APPROVED: { emoji: '✅', label: 'מגיע/ה', className: 'border border-green-200 bg-green-50 text-green-700 dark:border-green-700/50 dark:bg-green-900/20 dark:text-green-100' },
+    MAYBE: { emoji: '🤔', label: 'אולי', className: 'border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-700/50 dark:bg-amber-900/20 dark:text-amber-100' },
+    DECLINED: { emoji: '❌', label: 'לא מגיע/ה', className: 'border border-red-200 bg-red-50 text-red-700 dark:border-red-700/50 dark:bg-red-900/20 dark:text-red-100' },
+    NA: { emoji: '🕒', label: 'ממתין לתשובה', className: 'border border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700/50 dark:bg-slate-900/30 dark:text-slate-200' },
   };
   return map[status];
 }
 
 function RsvpStatusFilter({ value, onChange, disabled }: { value: RsvpKey; onChange: (v: RsvpKey) => void; disabled: boolean }) {
   const options: { key: RsvpKey; label: string }[] = [
-    { key: 'all', label: 'כל האירועים' },
+    { key: 'all', label: 'כל הסטטוסים' },
     { key: 'going', label: 'מגיע/ה' },
     { key: 'maybe', label: 'אולי' },
     { key: 'declined', label: 'לא מגיע/ה' },
-    { key: 'pending', label: 'מחכה לתשובה' },
+    { key: 'pending', label: 'ממתין לתשובה' },
   ];
   return (
-    <div className="flex gap-1 bg-white/60 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-md p-1 text-xs sm:text-sm">
-      {options.map((opt) => (
-        <button
-          key={opt.key}
-          type="button"
-          disabled={disabled && opt.key !== 'all'}
-          onClick={() => onChange(opt.key)}
-          className={[
-            'px-2 py-1 rounded transition-all disabled:opacity-50',
-            value === opt.key ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:-translate-y-0.5 active:translate-y-px'
-          ].join(' ')}
-          aria-pressed={value === opt.key}
-        >{opt.label}</button>
-      ))}
-    </div>
+    <label className="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1">
+      <span>סטטוס RSVP</span>
+      <select
+        className="min-w-[150px] px-2 py-1 border rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm disabled:opacity-50"
+        value={value}
+        onChange={(e) => onChange(e.target.value as RsvpKey)}
+        disabled={disabled}
+        aria-label="סטטוס RSVP"
+      >
+        {options.map((opt) => (
+          <option key={opt.key} value={opt.key}>{opt.label}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
