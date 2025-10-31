@@ -1,39 +1,19 @@
 "use client";
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 
-export type EventItem = {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string | null;
-  startAt: string;
+type Props = {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
 };
 
-export default function EventsSearch({ items, onFilter }: { items: EventItem[]; onFilter: (filtered: EventItem[]) => void }) {
-  const [q, setQ] = useState('');
-  const dq = useDeferredValue(q);
-  const filtered = useMemo(() => {
-    const query = dq.trim().toLowerCase();
-    if (!query) return items;
-    return items.filter((e) =>
-      [e.title, e.description ?? '', e.location ?? '', new Date(e.startAt).toLocaleDateString('he-IL')]
-        .join(' ')
-        .toLowerCase()
-        .includes(query)
-    );
-  }, [items, dq]);
-
-  useEffect(() => {
-    onFilter(filtered);
-  }, [filtered, onFilter]);
-
+export default function EventsSearch({ value, onChange, placeholder = 'חיפוש אירועים...' }: Props) {
   return (
     <div className="max-w-xl">
       <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="w-full border p-3 sm:p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-shadow shadow-sm text-base sm:text-sm"
-        placeholder="חיפוש אירועים..."
+        placeholder={placeholder}
       />
     </div>
   );
