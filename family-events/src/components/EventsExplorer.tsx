@@ -48,7 +48,7 @@ const RSVP_OPTIONS: { key: RsvpKey; label: string }[] = [
   { key: 'all', label: 'כל הסטטוסים' },
   { key: 'going', label: 'אגיע' },
   { key: 'maybe', label: 'אולי' },
-  { key: 'declined', label: 'לא מגיע/ה' },
+  { key: 'declined', label: 'לא אגיע' },
   { key: 'pending', label: 'ממתין לתשובה' },
 ];
 
@@ -102,6 +102,15 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
 
   const getTimeLabel = (key: TimeKey): string => TIME_OPTIONS.find((opt) => opt.key === key)?.label ?? '';
   const getRsvpLabel = (key: RsvpKey): string => RSVP_OPTIONS.find((opt) => opt.key === key)?.label ?? '';
+
+  const groupFilterOptions = useMemo(() => {
+    const base: { key: ScopeKey; label: string }[] = [
+      { key: DEFAULT_FILTER_KEY, label: 'כל האירועים' },
+      { key: 'mine', label: 'האירועים שלי' },
+    ];
+    const extras = groupOptions.map((g) => ({ key: (`group:${g.id}` as ScopeKey), label: g.nickname || 'קבוצה' }));
+    return base.concat(extras);
+  }, [groupOptions]);
 
   const activeFilters = useMemo(() => {
     const items: { type: 'filter' | 'time' | 'rsvp'; value: string; label: string }[] = [];
@@ -191,22 +200,19 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   return (
     <>
       <div className="space-y-3 mb-4">
-        <EventsSearch value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-wrap items-end gap-3">
-            <button
-              type="button"
-              onClick={openFilters}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M4 4h16l-6 8v6l-4 2v-8z" />
-              </svg>
-              <span>מסנני חיפוש</span>
-            </button>
-            <GroupFilter value={filterKey} groups={groupOptions} onChange={(v)=>setFilterKey(v)} />
-            <TimeFilter value={timeKey} onChange={setTimeKey} />
-            <RsvpStatusFilter value={rsvpFilter} onChange={setRsvpFilter} disabled={!myUserId} />
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={openFilters}
+            className="inline-flex items-center justify-center h-10 w-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="פתח מסנני חיפוש"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 4h16l-6 8v6l-4 2v-8z" />
+            </svg>
+          </button>
+          <div className="flex-1 min-w-[220px]">
+            <EventsSearch value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
           </div>
           <ViewToggle view={view} onChange={setView} />
         </div>
@@ -256,43 +262,71 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
               </button>
             </div>
             <div className="mt-4 space-y-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">קבוצה</label>
-                <select
-                  className="border border-gray-200 dark:border-gray-700 rounded-md px-2 py-2 bg-white dark:bg-gray-900 text-sm"
-                  value={draftFilterKey}
-                  onChange={(e) => setDraftFilterKey(e.target.value as ScopeKey)}
-                >
-                  <option value="mine">האירועים שלי</option>
-                  <option value="all">כל האירועים</option>
-                  {groupOptions.map((g) => (
-                    <option key={g.id} value={`group:${g.id}`}>{g.nickname}</option>
-                  ))}
-                </select>
+              <div className="flex flex-col gap-2">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-200">קבוצה</div>
+                <div className="grid grid-cols-1 gap-2">
+                  {groupFilterOptions.map((opt) => {
+                    const active = draftFilterKey === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setDraftFilterKey(opt.key)}
+                        aria-pressed={active}
+                        className={[
+                          'rounded-md border px-3 py-2 text-sm text-right transition-colors',
+                          active ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        ].join(' ')}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">טווח זמן</label>
-                <select
-                  className="border border-gray-200 dark:border-gray-700 rounded-md px-2 py-2 bg-white dark:bg-gray-900 text-sm"
-                  value={draftTimeKey}
-                  onChange={(e) => setDraftTimeKey(e.target.value as TimeKey)}
-                >
-                  {TIME_OPTIONS.map((opt) => (
-                    <option key={opt.key} value={opt.key}>{opt.label}</option>
-                  ))}
-                </select>
+              <div className="flex flex-col gap-2">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-200">טווח זמן</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {TIME_OPTIONS.map((opt) => {
+                    const active = draftTimeKey === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setDraftTimeKey(opt.key)}
+                        aria-pressed={active}
+                        className={[
+                          'rounded-md border px-3 py-2 text-sm transition-colors',
+                          active ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        ].join(' ')}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">סטטוס RSVP</label>
-                <select
-                  className="border border-gray-200 dark:border-gray-700 rounded-md px-2 py-2 bg-white dark:bg-gray-900 text-sm"
-                  value={draftRsvpFilter}
-                  onChange={(e) => setDraftRsvpFilter(e.target.value as RsvpKey)}
-                >
-                  {RSVP_OPTIONS.map((opt) => (
-                    <option key={opt.key} value={opt.key}>{opt.label}</option>
-                  ))}
-                </select>
+              <div className="flex flex-col gap-2">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-200">סטטוס RSVP</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {RSVP_OPTIONS.map((opt) => {
+                    const active = draftRsvpFilter === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setDraftRsvpFilter(opt.key)}
+                        aria-pressed={active}
+                        className={[
+                          'rounded-md border px-3 py-2 text-sm transition-colors',
+                          active ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        ].join(' ')}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
             <div className="mt-6 flex items-center justify-between gap-3">
@@ -382,44 +416,6 @@ function ViewToggle({ view, onChange }: { view: ViewKey; onChange: (v: ViewKey) 
         לוח שנה
       </button>
     </div>
-  );
-}
-
-function GroupFilter({ value, groups, onChange }: { value: ScopeKey; groups: { id: string; nickname: string }[]; onChange: (v: ScopeKey) => void }) {
-  return (
-    <label className="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1">
-      <span>קבוצה</span>
-      <select
-        className="min-w-[150px] px-2 py-1 border rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
-        value={value}
-        onChange={(e) => onChange(e.target.value as ScopeKey)}
-        aria-label="בחירת קבוצה"
-      >
-        <option value="mine">האירועים שלי</option>
-        <option value="all">כל האירועים</option>
-        {groups.map((g) => (
-          <option key={g.id} value={`group:${g.id}`}>{g.nickname}</option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function TimeFilter({ value, onChange }: { value: TimeKey; onChange: (v: TimeKey) => void }) {
-  return (
-    <label className="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1">
-      <span>טווח זמן</span>
-      <select
-        className="min-w-[140px] px-2 py-1 border rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
-        value={value}
-        onChange={(e) => onChange(e.target.value as TimeKey)}
-        aria-label="טווח זמן"
-      >
-        {TIME_OPTIONS.map((opt) => (
-          <option key={opt.key} value={opt.key}>{opt.label}</option>
-        ))}
-      </select>
-    </label>
   );
 }
 
@@ -656,28 +652,9 @@ function resolveStatusBadge(status: 'APPROVED' | 'MAYBE' | 'DECLINED' | 'NA'): S
   const map: Record<typeof status, StatusBadge> = {
     APPROVED: { label: 'אגיע', circleClass: 'bg-green-500 dark:bg-green-400' },
     MAYBE: { label: 'אולי', circleClass: 'bg-amber-400 dark:bg-amber-300' },
-    DECLINED: { label: 'לא מגיע/ה', circleClass: 'bg-red-500 dark:bg-red-400' },
+    DECLINED: { label: 'לא אגיע', circleClass: 'bg-red-500 dark:bg-red-400' },
     NA: { label: 'ממתין לתשובה', circleClass: 'bg-slate-400 dark:bg-slate-500' },
   };
   return map[status];
-}
-
-function RsvpStatusFilter({ value, onChange, disabled }: { value: RsvpKey; onChange: (v: RsvpKey) => void; disabled: boolean }) {
-  return (
-    <label className="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1">
-      <span>סטטוס RSVP</span>
-      <select
-        className="min-w-[150px] px-2 py-1 border rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm disabled:opacity-50"
-        value={value}
-        onChange={(e) => onChange(e.target.value as RsvpKey)}
-        disabled={disabled}
-        aria-label="סטטוס RSVP"
-      >
-        {RSVP_OPTIONS.map((opt) => (
-          <option key={opt.key} value={opt.key}>{opt.label}</option>
-        ))}
-      </select>
-    </label>
-  );
 }
 

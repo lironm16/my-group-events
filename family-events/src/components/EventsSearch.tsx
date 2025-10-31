@@ -22,6 +22,12 @@ export default function EventsSearch({ value, onChange, onClear, placeholder = '
         value={value}
         onChange={(e) => update(e.target.value)}
         onInput={(e) => update((e.target as HTMLInputElement).value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            (e.currentTarget as HTMLInputElement).blur();
+          }
+        }}
         className="w-full border pl-3 pr-10 sm:pl-2 sm:pr-10 py-3 sm:py-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-shadow shadow-sm text-base sm:text-sm"
         placeholder={placeholder}
         enterKeyHint="search"
