@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import EventsSearch from '@/components/EventsSearch';
 import CalendarMonth, { type CalendarEvent } from '@/components/CalendarMonth';
@@ -36,7 +36,6 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [myUserId, setMyUserId] = useState<string>('');
   const [groupOptions, setGroupOptions] = useState<{ id: string; nickname: string; memberIds: string[] }[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const deferredSearch = useDeferredValue(searchQuery);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -59,7 +58,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const base = useMemo(() => filterByKey(baseAll, filterKey, myUserId, groupOptions), [baseAll, filterKey, myUserId, groupOptions]);
   const scoped = useMemo(() => filterByTime(base, timeKey), [base, timeKey]);
   const filtered = useMemo(() => {
-    const query = deferredSearch.trim().toLowerCase();
+    const query = searchQuery.trim().toLowerCase();
     if (!query) return scoped;
     return scoped.filter((event) => {
       const haystack = [
@@ -75,7 +74,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         .toLowerCase();
       return haystack.includes(query);
     });
-  }, [scoped, deferredSearch]);
+  }, [scoped, searchQuery]);
 
   // Initialize view/filter from URL
   useEffect(() => {
@@ -114,7 +113,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         <ViewToggle view={view} onChange={setView} />
       </div>
       {view === 'list' && (
-        <EventsSearch value={searchQuery} onChange={setSearchQuery} />
+        <EventsSearch value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
       )}
       {view === 'list' ? (
         <Cards list={filtered} />

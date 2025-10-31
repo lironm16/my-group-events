@@ -36,7 +36,7 @@ export default function EventsCards({ initial }: { initial: EventCard[] }) {
 
   return (
     <>
-      <EventsSearch value={query} onChange={setQuery} />
+      <EventsSearch value={query} onChange={setQuery} onClear={() => setQuery('')} />
       <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((e) => (
           <li key={e.id} className="relative rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow transition-shadow">
