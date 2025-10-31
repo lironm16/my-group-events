@@ -132,7 +132,7 @@ export default async function EventDetailPage({ params, searchParams }: { params
       <section className="space-y-3">
         <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />
         {viewerStatus ? (
-          <RsvpActionPrompt eventId={event.id} status={viewerStatus} canGroup={canGroup} canAll={canAll} />
+          <RsvpActionPrompt eventId={event.id} status={viewerStatus} note={viewerRsvp?.note ?? null} canGroup={canGroup} canAll={canAll} />
         ) : null}
         <RsvpInviteesList list={event.rsvps} />
         {/* WhatsApp share section moved here, right after RSVP bar */}

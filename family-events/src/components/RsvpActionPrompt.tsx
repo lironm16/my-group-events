@@ -28,9 +28,10 @@ const statusLabels: Record<RSVPStatus, { title: string; description: string; ton
   },
 };
 
-export default function RsvpActionPrompt({ eventId, status, canGroup, canAll }: { eventId: string; status: RSVPStatus; canGroup: boolean; canAll: boolean }) {
+export default function RsvpActionPrompt({ eventId, status, note, canGroup, canAll }: { eventId: string; status: RSVPStatus; note?: string | null; canGroup: boolean; canAll: boolean }) {
   const [open, setOpen] = useState(false);
   const tone = statusLabels[status];
+  const existingNote = (note ?? '').trim();
   const intent = useMemo(() => {
     switch (tone.tone) {
       case 'confirmed':
@@ -50,6 +51,11 @@ export default function RsvpActionPrompt({ eventId, status, canGroup, canAll }: 
         <div>
           <div className="font-medium text-sm sm:text-base">{tone.title}</div>
           <div className="text-xs sm:text-sm opacity-80 mt-1">{tone.description}</div>
+          {existingNote && (
+            <div className="text-xs sm:text-sm opacity-90 mt-2">
+              הערה שהשארתם: <span className="font-medium">{existingNote}</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2 sm:ml-4">
           <button
@@ -81,7 +87,7 @@ export default function RsvpActionPrompt({ eventId, status, canGroup, canAll }: 
               </button>
             </div>
             <div className="mt-4">
-              <RSVPButtons eventId={eventId} initial={status} canGroup={canGroup} canAll={canAll} onSaved={() => setOpen(false)} />
+              <RSVPButtons eventId={eventId} initial={status} initialNote={existingNote} canGroup={canGroup} canAll={canAll} onSaved={() => setOpen(false)} />
             </div>
           </div>
         </div>

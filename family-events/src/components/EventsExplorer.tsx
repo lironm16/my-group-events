@@ -27,6 +27,7 @@ type EventCard = {
 type ScopeKey = 'mine' | 'all' | `group:${string}`;
 type ViewKey = 'list' | 'calendar';
 type TimeKey = 'upcoming' | 'today' | 'week' | 'month' | 'past';
+type RsvpKey = 'all' | 'going' | 'maybe' | 'declined' | 'pending';
 // Metric toggle removed from main page per request
 
 export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
@@ -36,6 +37,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [myUserId, setMyUserId] = useState<string>('');
   const [groupOptions, setGroupOptions] = useState<{ id: string; nickname: string; memberIds: string[] }[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [rsvpFilter, setRsvpFilter] = useState<RsvpKey>('all');
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -57,30 +59,8 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const baseAll = initial;
   const base = useMemo(() => filterByKey(baseAll, filterKey, myUserId, groupOptions), [baseAll, filterKey, myUserId, groupOptions]);
   const scoped = useMemo(() => filterByTime(base, timeKey), [base, timeKey]);
-  const [filtered, setFiltered] = useState<EventCard[]>(scoped);
-
-  useEffect(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) {
-      setFiltered(scoped);
-      return;
-    }
-    const next = scoped.filter((event) => {
-      const haystack = [
-        event.title,
-        event.description ?? '',
-        event.location ?? '',
-        event.host?.name ?? '',
-        ...(event.coHosts || []).map((h) => h.name ?? ''),
-        new Date(event.startAt).toLocaleDateString('he-IL'),
-        new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'medium', timeStyle: 'short' }),
-      ]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-    setFiltered(next);
-  }, [scoped, searchQuery]);
+  const scopedByRsvp = useMemo(() => filterByRsvp(scoped, rsvpFilter, myUserId), [scoped, rsvpFilter, myUserId]);
+  const filtered = useMemo(() => filterBySearch(scopedByRsvp, searchQuery), [scopedByRsvp, searchQuery]);
 
   // Initialize view/filter from URL
   useEffect(() => {
@@ -117,12 +97,13 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         <GroupFilter value={filterKey} groups={groupOptions} onChange={(v)=>setFilterKey(v)} />
         <TimeFilter value={timeKey} onChange={setTimeKey} />
         <ViewToggle view={view} onChange={setView} />
+        <RsvpStatusFilter value={rsvpFilter} onChange={setRsvpFilter} disabled={!myUserId} />
       </div>
       {view === 'list' && (
         <EventsSearch value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
       )}
       {view === 'list' ? (
-        <Cards list={filtered} />
+        <Cards list={filtered} viewerId={myUserId} />
       ) : (
         <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>
       )}
@@ -235,10 +216,9 @@ function filterByKey(
   myUserId: string,
   groups: { id: string; memberIds: string[] }[]
 ): EventCard[] {
-  if (!myUserId) return events;
   if (key === 'all') return events;
   if (key === 'mine') {
-    // Events I host or I'm invited to
+    if (!myUserId) return events;
     return events.filter((e) => e.hostId === myUserId || e.rsvps.some((r) => r.userId === myUserId));
   }
   if (key.startsWith('group:')) {
@@ -254,6 +234,45 @@ function filterByKey(
     });
   }
   return events;
+}
+
+function filterByRsvp(events: EventCard[], key: RsvpKey, myUserId: string): EventCard[] {
+  if (key === 'all' || !myUserId) return events;
+  return events.filter((event) => {
+    const myStatus = resolveViewerStatus(event, myUserId);
+    if (key === 'going') return myStatus === 'APPROVED';
+    if (key === 'maybe') return myStatus === 'MAYBE';
+    if (key === 'declined') return myStatus === 'DECLINED';
+    if (key === 'pending') return myStatus === 'NA';
+    return true;
+  });
+}
+
+function filterBySearch(events: EventCard[], query: string): EventCard[] {
+  const normalized = normalizeQuery(query);
+  if (!normalized) return events;
+  return events.filter((event) => {
+    const fields = [
+      event.title,
+      event.description ?? '',
+      event.location ?? '',
+      event.host?.name ?? '',
+      ...(event.coHosts || []).map((h) => h.name ?? ''),
+      new Date(event.startAt).toLocaleDateString('he-IL'),
+      new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'medium', timeStyle: 'short' }),
+    ];
+    return fields.some((field) => normalizeQuery(field).includes(normalized));
+  });
+}
+
+function normalizeQuery(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  try {
+    return trimmed.normalize('NFKD').toLocaleLowerCase('he-IL');
+  } catch {
+    return trimmed.toLocaleLowerCase('he-IL');
+  }
 }
 
 function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
@@ -289,7 +308,7 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
   return events;
 }
 
-function Cards({ list }: { list: EventCard[] }) {
+function Cards({ list, viewerId }: { list: EventCard[]; viewerId: string }) {
   return (
     <ul className="mt-4 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((e) => {
@@ -300,6 +319,8 @@ function Cards({ list }: { list: EventCard[] }) {
         const naCount = Math.max(0, totalCount - approvedCount - maybeCount - declinedCount);
         const iconType = e.holidayKey === 'shabat_eve' ? 'shabat_eve' : e.holidayKey?.includes('eve') ? 'holiday_eve' : e.holidayKey ? 'holiday' : 'custom';
         const href = `/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`;
+        const viewerStatus = resolveViewerStatus(e, viewerId);
+        const badge = resolveStatusBadge(viewerStatus);
         return (
           <li key={e.id} className="list-none">
             <Link
@@ -311,6 +332,11 @@ function Cards({ list }: { list: EventCard[] }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-44 sm:h-40 object-cover transition-transform duration-300 sm:group-hover:scale-[1.03]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-90 pointer-events-none" />
+                {badge && (
+                  <span className={`absolute top-2 right-2 px-2.5 py-1 rounded-full text-xs font-medium shadow-sm ${badge.className}`} title={badge.label}>
+                    {badge.emoji}
+                  </span>
+                )}
                 <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 pointer-events-none">
                   {formatDateMaybeDateOnly(e.startAt)}
                 </div>
@@ -400,5 +426,49 @@ function formatDateMaybeDateOnly(iso: string) {
   }
   const d = new Date(iso);
   return d.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+}
+
+function resolveViewerStatus(event: EventCard, viewerId: string): 'APPROVED' | 'MAYBE' | 'DECLINED' | 'NA' {
+  if (!viewerId) return 'NA';
+  const status = event.rsvps.find((r) => r.userId === viewerId)?.status;
+  if (status === 'APPROVED' || status === 'MAYBE' || status === 'DECLINED') return status;
+  return 'NA';
+}
+
+function resolveStatusBadge(status: 'APPROVED' | 'MAYBE' | 'DECLINED' | 'NA') {
+  const map: Record<typeof status, { emoji: string; label: string; className: string }> = {
+    APPROVED: { emoji: '✅', label: 'מאושר', className: 'bg-green-600 text-white' },
+    MAYBE: { emoji: '🤔', label: 'אולי', className: 'bg-yellow-500 text-white' },
+    DECLINED: { emoji: '❌', label: 'לא מגיעים', className: 'bg-red-600 text-white' },
+    NA: { emoji: '🕒', label: 'ממתין למענה', className: 'bg-gray-700 text-white' },
+  };
+  return map[status];
+}
+
+function RsvpStatusFilter({ value, onChange, disabled }: { value: RsvpKey; onChange: (v: RsvpKey) => void; disabled: boolean }) {
+  const options: { key: RsvpKey; label: string }[] = [
+    { key: 'all', label: 'כל האירועים' },
+    { key: 'going', label: 'מגיע/ה' },
+    { key: 'maybe', label: 'אולי' },
+    { key: 'declined', label: 'לא מגיע/ה' },
+    { key: 'pending', label: 'מחכה לתשובה' },
+  ];
+  return (
+    <div className="flex gap-1 bg-white/60 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 rounded-md p-1 text-xs sm:text-sm">
+      {options.map((opt) => (
+        <button
+          key={opt.key}
+          type="button"
+          disabled={disabled && opt.key !== 'all'}
+          onClick={() => onChange(opt.key)}
+          className={[
+            'px-2 py-1 rounded transition-all disabled:opacity-50',
+            value === opt.key ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:-translate-y-0.5 active:translate-y-px'
+          ].join(' ')}
+          aria-pressed={value === opt.key}
+        >{opt.label}</button>
+      ))}
+    </div>
+  );
 }
 
