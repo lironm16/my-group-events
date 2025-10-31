@@ -249,7 +249,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
       {filtersOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4">
           <div className="absolute inset-0 bg-black/40" onClick={closeFilters} />
-          <div className="relative z-10 w-full max-w-md rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-xl">
+          <div className="relative z-10 w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-2xl">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">מסנני חיפוש</h2>
               <button
@@ -262,27 +262,18 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
               </button>
             </div>
             <div className="mt-4 space-y-4">
-              <div className="flex flex-col gap-2">
-                <div className="text-sm font-medium text-gray-700 dark:text-gray-200">קבוצה</div>
-                <div className="grid grid-cols-1 gap-2">
-                  {groupFilterOptions.map((opt) => {
-                    const active = draftFilterKey === opt.key;
-                    return (
-                      <button
-                        key={opt.key}
-                        type="button"
-                        onClick={() => setDraftFilterKey(opt.key)}
-                        aria-pressed={active}
-                        className={[
-                          'rounded-md border px-3 py-2 text-sm text-right transition-colors',
-                          active ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
-                        ].join(' ')}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="filter-group-select">קבוצה</label>
+                <select
+                  id="filter-group-select"
+                  className="border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 bg-white dark:bg-gray-900 text-sm"
+                  value={draftFilterKey}
+                  onChange={(e) => setDraftFilterKey(e.target.value as ScopeKey)}
+                >
+                  {groupFilterOptions.map((opt) => (
+                    <option key={opt.key} value={opt.key}>{opt.label}</option>
+                  ))}
+                </select>
               </div>
               <div className="flex flex-col gap-2">
                 <div className="text-sm font-medium text-gray-700 dark:text-gray-200">טווח זמן</div>
