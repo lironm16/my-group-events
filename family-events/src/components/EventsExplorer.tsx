@@ -95,7 +95,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     <>
       <div className="space-y-3 mb-4">
         <EventsSearch value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
-        <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-end gap-3">
           <GroupFilter value={filterKey} groups={groupOptions} onChange={(v)=>setFilterKey(v)} />
           <TimeFilter value={timeKey} onChange={setTimeKey} />
           <RsvpStatusFilter value={rsvpFilter} onChange={setRsvpFilter} disabled={!myUserId} />
@@ -339,7 +339,12 @@ function Cards({ list, viewerId }: { list: EventCard[]; viewerId: string }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-44 sm:h-40 object-cover transition-transform duration-300 sm:group-hover:scale-[1.03]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-90 pointer-events-none" />
-                <div className="absolute top-2 left-2 text-xs px-2 py-1 rounded bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 pointer-events-none">
+                {badge && (
+                  <span className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full border bg-white/80 dark:bg-gray-900/80 backdrop-blur pointer-events-none ${badge.className}`}>
+                    {badge.label}
+                  </span>
+                )}
+                <div className="absolute top-2 right-2 text-xs px-2 py-1 rounded bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 pointer-events-none">
                   {formatDateMaybeDateOnly(e.startAt)}
                 </div>
               </div>
@@ -350,12 +355,6 @@ function Cards({ list, viewerId }: { list: EventCard[]; viewerId: string }) {
                       <EventTypeIcon type={iconType as any} size={20} />
                       <h3 className="font-semibold text-[1.05rem] sm:text-lg truncate" title={e.title}>{e.title}</h3>
                     </div>
-                    {badge && (
-                      <span className={`mt-1 inline-flex items-center gap-1 text-[0.7rem] sm:text-xs font-medium px-2 py-0.5 rounded-full ${badge.className}`} title={badge.label}>
-                        <span>{badge.emoji}</span>
-                        <span>{badge.label}</span>
-                      </span>
-                    )}
                     {e.location && (
                       <p className="text-[0.8rem] sm:text-xs text-gray-600 dark:text-gray-400 inline-flex items-center gap-1">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -445,7 +444,7 @@ function resolveViewerStatus(event: EventCard, viewerId: string): 'APPROVED' | '
 
 function resolveStatusBadge(status: 'APPROVED' | 'MAYBE' | 'DECLINED' | 'NA') {
   const map: Record<typeof status, { emoji: string; label: string; className: string }> = {
-    APPROVED: { emoji: '✅', label: 'מגיע/ה', className: 'border border-green-200 bg-green-50 text-green-700 dark:border-green-700/50 dark:bg-green-900/20 dark:text-green-100' },
+    APPROVED: { emoji: '✅', label: 'אגיע', className: 'border border-green-200 bg-green-50 text-green-700 dark:border-green-700/50 dark:bg-green-900/20 dark:text-green-100' },
     MAYBE: { emoji: '🤔', label: 'אולי', className: 'border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-700/50 dark:bg-amber-900/20 dark:text-amber-100' },
     DECLINED: { emoji: '❌', label: 'לא מגיע/ה', className: 'border border-red-200 bg-red-50 text-red-700 dark:border-red-700/50 dark:bg-red-900/20 dark:text-red-100' },
     NA: { emoji: '🕒', label: 'ממתין לתשובה', className: 'border border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700/50 dark:bg-slate-900/30 dark:text-slate-200' },
