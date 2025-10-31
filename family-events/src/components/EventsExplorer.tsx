@@ -30,14 +30,40 @@ type TimeKey = 'upcoming' | 'today' | 'week' | 'month' | 'past';
 type RsvpKey = 'all' | 'going' | 'maybe' | 'declined' | 'pending';
 // Metric toggle removed from main page per request
 
+type StatusBadge = { label: string; circleClass: string };
+
+const DEFAULT_FILTER_KEY: ScopeKey = 'mine';
+const DEFAULT_TIME_KEY: TimeKey = 'upcoming';
+const DEFAULT_RSVP_FILTER: RsvpKey = 'all';
+
+const TIME_OPTIONS: { key: TimeKey; label: string }[] = [
+  { key: 'upcoming', label: 'קרובים' },
+  { key: 'today', label: 'היום' },
+  { key: 'week', label: 'השבוע' },
+  { key: 'month', label: 'החודש' },
+  { key: 'past', label: 'עבר' },
+];
+
+const RSVP_OPTIONS: { key: RsvpKey; label: string }[] = [
+  { key: 'all', label: 'כל הסטטוסים' },
+  { key: 'going', label: 'אגיע' },
+  { key: 'maybe', label: 'אולי' },
+  { key: 'declined', label: 'לא מגיע/ה' },
+  { key: 'pending', label: 'ממתין לתשובה' },
+];
+
 export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
-  const [filterKey, setFilterKey] = useState<ScopeKey>('mine');
+  const [filterKey, setFilterKey] = useState<ScopeKey>(DEFAULT_FILTER_KEY);
   const [view, setView] = useState<ViewKey>('list');
-  const [timeKey, setTimeKey] = useState<TimeKey>('upcoming');
+  const [timeKey, setTimeKey] = useState<TimeKey>(DEFAULT_TIME_KEY);
   const [myUserId, setMyUserId] = useState<string>('');
   const [groupOptions, setGroupOptions] = useState<{ id: string; nickname: string; memberIds: string[] }[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [rsvpFilter, setRsvpFilter] = useState<RsvpKey>('all');
+  const [rsvpFilter, setRsvpFilter] = useState<RsvpKey>(DEFAULT_RSVP_FILTER);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [draftFilterKey, setDraftFilterKey] = useState<ScopeKey>(DEFAULT_FILTER_KEY);
+  const [draftTimeKey, setDraftTimeKey] = useState<TimeKey>(DEFAULT_TIME_KEY);
+  const [draftRsvpFilter, setDraftRsvpFilter] = useState<RsvpKey>(DEFAULT_RSVP_FILTER);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -56,6 +82,77 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
       } catch {}
     })();
   }, []);
+  useEffect(() => {
+    if (filtersOpen) {
+      setDraftFilterKey(filterKey);
+      setDraftTimeKey(timeKey);
+      setDraftRsvpFilter(rsvpFilter);
+    }
+  }, [filtersOpen, filterKey, timeKey, rsvpFilter]);
+
+  const getGroupLabel = (key: ScopeKey): string => {
+    if (key === 'mine') return 'האירועים שלי';
+    if (key === 'all') return 'כל האירועים';
+    if (key.startsWith('group:')) {
+      const id = key.slice('group:'.length);
+      return groupOptions.find((g) => g.id === id)?.nickname ?? 'קבוצה';
+    }
+    return 'האירועים שלי';
+  };
+
+  const getTimeLabel = (key: TimeKey): string => TIME_OPTIONS.find((opt) => opt.key === key)?.label ?? '';
+  const getRsvpLabel = (key: RsvpKey): string => RSVP_OPTIONS.find((opt) => opt.key === key)?.label ?? '';
+
+  const activeFilters = useMemo(() => {
+    const items: { type: 'filter' | 'time' | 'rsvp'; value: string; label: string }[] = [];
+    if (filterKey !== DEFAULT_FILTER_KEY) {
+      items.push({ type: 'filter', value: filterKey, label: getGroupLabel(filterKey) });
+    }
+    if (timeKey !== DEFAULT_TIME_KEY) {
+      items.push({ type: 'time', value: timeKey, label: getTimeLabel(timeKey) });
+    }
+    if (rsvpFilter !== DEFAULT_RSVP_FILTER) {
+      items.push({ type: 'rsvp', value: rsvpFilter, label: getRsvpLabel(rsvpFilter) });
+    }
+    return items;
+  }, [filterKey, timeKey, rsvpFilter, groupOptions]);
+
+  const hasActiveFilters = activeFilters.length > 0;
+
+  const handleClearChip = (type: 'filter' | 'time' | 'rsvp') => {
+    if (type === 'filter') {
+      setFilterKey(DEFAULT_FILTER_KEY);
+      setDraftFilterKey(DEFAULT_FILTER_KEY);
+    } else if (type === 'time') {
+      setTimeKey(DEFAULT_TIME_KEY);
+      setDraftTimeKey(DEFAULT_TIME_KEY);
+    } else {
+      setRsvpFilter(DEFAULT_RSVP_FILTER);
+      setDraftRsvpFilter(DEFAULT_RSVP_FILTER);
+    }
+  };
+
+  const clearAllFilters = () => {
+    setFilterKey(DEFAULT_FILTER_KEY);
+    setTimeKey(DEFAULT_TIME_KEY);
+    setRsvpFilter(DEFAULT_RSVP_FILTER);
+    setDraftFilterKey(DEFAULT_FILTER_KEY);
+    setDraftTimeKey(DEFAULT_TIME_KEY);
+    setDraftRsvpFilter(DEFAULT_RSVP_FILTER);
+  };
+
+  const openFilters = () => setFiltersOpen(true);
+  const closeFilters = () => setFiltersOpen(false);
+  const applyFilters = () => {
+    setFilterKey(draftFilterKey);
+    setTimeKey(draftTimeKey);
+    setRsvpFilter(draftRsvpFilter);
+    setFiltersOpen(false);
+  };
+  const clearAllAndClose = () => {
+    clearAllFilters();
+    setFiltersOpen(false);
+  };
   const baseAll = initial;
   const base = useMemo(() => filterByKey(baseAll, filterKey, myUserId, groupOptions), [baseAll, filterKey, myUserId, groupOptions]);
   const scoped = useMemo(() => filterByTime(base, timeKey), [base, timeKey]);
@@ -96,11 +193,46 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
       <div className="space-y-3 mb-4">
         <EventsSearch value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
         <div className="flex flex-wrap items-end gap-3">
-          <GroupFilter value={filterKey} groups={groupOptions} onChange={(v)=>setFilterKey(v)} />
-          <TimeFilter value={timeKey} onChange={setTimeKey} />
-          <RsvpStatusFilter value={rsvpFilter} onChange={setRsvpFilter} disabled={!myUserId} />
+          <div className="flex flex-wrap items-end gap-3">
+            <button
+              type="button"
+              onClick={openFilters}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 4h16l-6 8v6l-4 2v-8z" />
+              </svg>
+              <span>מסנני חיפוש</span>
+            </button>
+            <GroupFilter value={filterKey} groups={groupOptions} onChange={(v)=>setFilterKey(v)} />
+            <TimeFilter value={timeKey} onChange={setTimeKey} />
+            <RsvpStatusFilter value={rsvpFilter} onChange={setRsvpFilter} disabled={!myUserId} />
+          </div>
           <ViewToggle view={view} onChange={setView} />
         </div>
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-2">
+            {activeFilters.map((item) => (
+              <button
+                key={`${item.type}-${item.value}`}
+                type="button"
+                onClick={() => handleClearChip(item.type)}
+                className="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200 px-2 py-1 text-xs"
+              >
+                <span>{item.label}</span>
+                <span aria-hidden="true">×</span>
+                <span className="sr-only">הסר מסנן {item.label}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="text-xs text-blue-600 dark:text-blue-300 hover:underline"
+            >
+              נקה הכל
+            </button>
+          </div>
+        )}
       </div>
       {view === 'list' ? (
         <Cards list={filtered} viewerId={myUserId} />
@@ -108,6 +240,89 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>
       )}
       <BackToTop />
+      {filtersOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4">
+          <div className="absolute inset-0 bg-black/40" onClick={closeFilters} />
+          <div className="relative z-10 w-full max-w-md rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-xl">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">מסנני חיפוש</h2>
+              <button
+                type="button"
+                onClick={closeFilters}
+                aria-label="סגירת חלון"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="mt-4 space-y-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">קבוצה</label>
+                <select
+                  className="border border-gray-200 dark:border-gray-700 rounded-md px-2 py-2 bg-white dark:bg-gray-900 text-sm"
+                  value={draftFilterKey}
+                  onChange={(e) => setDraftFilterKey(e.target.value as ScopeKey)}
+                >
+                  <option value="mine">האירועים שלי</option>
+                  <option value="all">כל האירועים</option>
+                  {groupOptions.map((g) => (
+                    <option key={g.id} value={`group:${g.id}`}>{g.nickname}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">טווח זמן</label>
+                <select
+                  className="border border-gray-200 dark:border-gray-700 rounded-md px-2 py-2 bg-white dark:bg-gray-900 text-sm"
+                  value={draftTimeKey}
+                  onChange={(e) => setDraftTimeKey(e.target.value as TimeKey)}
+                >
+                  {TIME_OPTIONS.map((opt) => (
+                    <option key={opt.key} value={opt.key}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">סטטוס RSVP</label>
+                <select
+                  className="border border-gray-200 dark:border-gray-700 rounded-md px-2 py-2 bg-white dark:bg-gray-900 text-sm"
+                  value={draftRsvpFilter}
+                  onChange={(e) => setDraftRsvpFilter(e.target.value as RsvpKey)}
+                >
+                  {RSVP_OPTIONS.map((opt) => (
+                    <option key={opt.key} value={opt.key}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={clearAllAndClose}
+                className="text-sm text-red-600 dark:text-red-300 hover:underline"
+              >
+                נקה הכל
+              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={closeFilters}
+                  className="px-3 py-2 text-sm rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  ביטול
+                </button>
+                <button
+                  type="button"
+                  onClick={applyFilters}
+                  className="px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  החלה
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -191,13 +406,6 @@ function GroupFilter({ value, groups, onChange }: { value: ScopeKey; groups: { i
 }
 
 function TimeFilter({ value, onChange }: { value: TimeKey; onChange: (v: TimeKey) => void }) {
-  const options: { key: TimeKey; label: string }[] = [
-    { key: 'upcoming', label: 'קרובים' },
-    { key: 'today', label: 'היום' },
-    { key: 'week', label: 'השבוע' },
-    { key: 'month', label: 'החודש' },
-    { key: 'past', label: 'עבר' },
-  ];
   return (
     <label className="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1">
       <span>טווח זמן</span>
@@ -207,7 +415,7 @@ function TimeFilter({ value, onChange }: { value: TimeKey; onChange: (v: TimeKey
         onChange={(e) => onChange(e.target.value as TimeKey)}
         aria-label="טווח זמן"
       >
-        {options.map((opt) => (
+        {TIME_OPTIONS.map((opt) => (
           <option key={opt.key} value={opt.key}>{opt.label}</option>
         ))}
       </select>
@@ -340,9 +548,11 @@ function Cards({ list, viewerId }: { list: EventCard[]; viewerId: string }) {
                 <img src={resolveEventTypeImage(e.holidayKey, e.title)} alt={e.title} className="w-full h-44 sm:h-40 object-cover transition-transform duration-300 sm:group-hover:scale-[1.03]" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-90 pointer-events-none" />
                 {badge && (
-                  <span className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full border bg-white/80 dark:bg-gray-900/80 backdrop-blur pointer-events-none ${badge.className}`}>
-                    {badge.label}
-                  </span>
+                  <span
+                    className={`absolute top-2 left-2 h-4 w-4 rounded-full border border-white/70 shadow-sm pointer-events-none ${badge.circleClass}`}
+                    title={badge.label}
+                    aria-label={badge.label}
+                  />
                 )}
                 <div className="absolute top-2 right-2 text-xs px-2 py-1 rounded bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 pointer-events-none">
                   {formatDateMaybeDateOnly(e.startAt)}
@@ -442,24 +652,17 @@ function resolveViewerStatus(event: EventCard, viewerId: string): 'APPROVED' | '
   return 'NA';
 }
 
-function resolveStatusBadge(status: 'APPROVED' | 'MAYBE' | 'DECLINED' | 'NA') {
-  const map: Record<typeof status, { emoji: string; label: string; className: string }> = {
-    APPROVED: { emoji: '✅', label: 'אגיע', className: 'border border-green-200 bg-green-50 text-green-700 dark:border-green-700/50 dark:bg-green-900/20 dark:text-green-100' },
-    MAYBE: { emoji: '🤔', label: 'אולי', className: 'border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-700/50 dark:bg-amber-900/20 dark:text-amber-100' },
-    DECLINED: { emoji: '❌', label: 'לא מגיע/ה', className: 'border border-red-200 bg-red-50 text-red-700 dark:border-red-700/50 dark:bg-red-900/20 dark:text-red-100' },
-    NA: { emoji: '🕒', label: 'ממתין לתשובה', className: 'border border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700/50 dark:bg-slate-900/30 dark:text-slate-200' },
+function resolveStatusBadge(status: 'APPROVED' | 'MAYBE' | 'DECLINED' | 'NA'): StatusBadge {
+  const map: Record<typeof status, StatusBadge> = {
+    APPROVED: { label: 'אגיע', circleClass: 'bg-green-500 dark:bg-green-400' },
+    MAYBE: { label: 'אולי', circleClass: 'bg-amber-400 dark:bg-amber-300' },
+    DECLINED: { label: 'לא מגיע/ה', circleClass: 'bg-red-500 dark:bg-red-400' },
+    NA: { label: 'ממתין לתשובה', circleClass: 'bg-slate-400 dark:bg-slate-500' },
   };
   return map[status];
 }
 
 function RsvpStatusFilter({ value, onChange, disabled }: { value: RsvpKey; onChange: (v: RsvpKey) => void; disabled: boolean }) {
-  const options: { key: RsvpKey; label: string }[] = [
-    { key: 'all', label: 'כל הסטטוסים' },
-    { key: 'going', label: 'מגיע/ה' },
-    { key: 'maybe', label: 'אולי' },
-    { key: 'declined', label: 'לא מגיע/ה' },
-    { key: 'pending', label: 'ממתין לתשובה' },
-  ];
   return (
     <label className="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1">
       <span>סטטוס RSVP</span>
@@ -470,7 +673,7 @@ function RsvpStatusFilter({ value, onChange, disabled }: { value: RsvpKey; onCha
         disabled={disabled}
         aria-label="סטטוס RSVP"
       >
-        {options.map((opt) => (
+        {RSVP_OPTIONS.map((opt) => (
           <option key={opt.key} value={opt.key}>{opt.label}</option>
         ))}
       </select>
