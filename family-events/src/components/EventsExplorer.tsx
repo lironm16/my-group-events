@@ -57,10 +57,15 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const baseAll = initial;
   const base = useMemo(() => filterByKey(baseAll, filterKey, myUserId, groupOptions), [baseAll, filterKey, myUserId, groupOptions]);
   const scoped = useMemo(() => filterByTime(base, timeKey), [base, timeKey]);
-  const filtered = useMemo(() => {
+  const [filtered, setFiltered] = useState<EventCard[]>(scoped);
+
+  useEffect(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return scoped;
-    return scoped.filter((event) => {
+    if (!query) {
+      setFiltered(scoped);
+      return;
+    }
+    const next = scoped.filter((event) => {
       const haystack = [
         event.title,
         event.description ?? '',
@@ -74,6 +79,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         .toLowerCase();
       return haystack.includes(query);
     });
+    setFiltered(next);
   }, [scoped, searchQuery]);
 
   // Initialize view/filter from URL
@@ -236,12 +242,16 @@ function filterByKey(
     return events.filter((e) => e.hostId === myUserId || e.rsvps.some((r) => r.userId === myUserId));
   }
   if (key.startsWith('group:')) {
-    // IMPORTANT: Filter ONLY by host's current group membership, not invitees
     const gid = key.slice('group:'.length);
     const group = groups.find((g) => g.id === gid);
     if (!group) return events;
     const set = new Set<string>(group.memberIds);
-    return events.filter((e) => !!e.hostId && set.has(e.hostId));
+    return events.filter((e) => {
+      const hostHit = !!e.hostId && set.has(e.hostId);
+      const coHostsHit = (e.coHosts || []).some((h) => !!h.id && set.has(h.id));
+      const rsvpHit = e.rsvps.some((r) => !!r.userId && set.has(r.userId));
+      return hostHit || coHostsHit || rsvpHit;
+    });
   }
   return events;
 }
