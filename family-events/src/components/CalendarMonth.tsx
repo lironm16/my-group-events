@@ -70,7 +70,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-3 sm:px-6">
         <div className="text-lg font-semibold">
           {cursor.toLocaleString("he-IL", { month: "long", year: "numeric" })}
         </div>
@@ -81,7 +81,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
             aria-label="חודש קודם"
             onClick={() => setCursor((d) => addMonths(d, -1))}
           >
-            <ArrowIcon className="h-4 w-4 rotate-180" />
+            <ArrowIcon className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -105,7 +105,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
         </div>
       </div>
       {!interactive && (
-      <div className="block sm:hidden">
+      <div className="block sm:hidden px-3 sm:px-6">
         <div className="relative">
           {days.filter(d => d.date.getMonth() === cursor.getMonth()).map((d) => {
             const k = toKey(d.date);
@@ -138,7 +138,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
         </div>
       </div>
       )}
-      <div className={interactive ? 'grid grid-cols-7 gap-2 text-xs sm:text-sm' : 'hidden sm:block sm:mx-0'}>
+      <div className={interactive ? 'px-3 sm:px-6 grid grid-cols-7 gap-2 text-xs sm:text-sm' : 'hidden sm:block sm:mx-0'}>
         {interactive ? (
           <>
             {WEEKDAY_LABELS.map((label) => (

@@ -295,17 +295,30 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   }, [calendarOpen, selectedDateKey]);
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const original = document.body.style.overflow;
-    if (calendarOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = original;
-      };
-    }
-    document.body.style.overflow = original;
+    if (!calendarOpen) return;
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const docEl = document.documentElement;
+    const original = {
+      bodyOverflow: body.style.overflow,
+      htmlOverflow: docEl.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+    };
+    body.style.overflow = 'hidden';
+    docEl.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
     return () => {
-      document.body.style.overflow = original;
+      body.style.overflow = original.bodyOverflow;
+      docEl.style.overflow = original.htmlOverflow;
+      body.style.position = original.bodyPosition;
+      body.style.top = original.bodyTop;
+      body.style.width = original.bodyWidth;
+      window.scrollTo(0, scrollY);
     };
   }, [calendarOpen]);
 
@@ -580,7 +593,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         </div>
       )}
       {calendarOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={closeCalendarView} />
           <div className="relative z-10 flex h-full w-full flex-col overflow-hidden bg-white dark:bg-gray-950">
             <div className="flex items-center justify-between gap-4">
