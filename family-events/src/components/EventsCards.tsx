@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import EventsSearch, { EventItem } from '@/components/EventsSearch';
+import EventsSearch from '@/components/EventsSearch';
 
 type EventCard = {
   id: string;
@@ -15,28 +15,28 @@ type EventCard = {
 };
 
 export default function EventsCards({ initial }: { initial: EventCard[] }) {
-  const [filtered, setFiltered] = useState<EventCard[]>(initial);
-  const items = useMemo<EventItem[]>(
-    () =>
-      initial.map((e) => ({
-        id: e.id,
-        title: e.title,
-        description: e.description,
-        location: e.location,
-        startAt: e.startAt,
-      })),
-    [initial]
-  );
+  const [query, setQuery] = useState('');
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return initial;
+    return initial.filter((e) => {
+      const haystack = [
+        e.title,
+        e.description ?? '',
+        e.location ?? '',
+        e.host?.name ?? '',
+        new Date(e.startAt).toLocaleDateString('he-IL'),
+        new Date(e.startAt).toLocaleString('he-IL', { dateStyle: 'medium', timeStyle: 'short' }),
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(needle);
+    });
+  }, [initial, query]);
 
   return (
     <>
-      <EventsSearch
-        items={items}
-        onFilter={(f) => {
-          const ids = new Set(f.map((x) => x.id));
-          setFiltered(initial.filter((e) => ids.has(e.id)));
-        }}
-      />
+      <EventsSearch value={query} onChange={setQuery} onClear={() => setQuery('')} />
       <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((e) => (
           <li key={e.id} className="relative rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900 hover:shadow transition-shadow">

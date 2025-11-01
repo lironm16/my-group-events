@@ -5,23 +5,25 @@ import { useRouter } from "next/navigation";
 
 type RSVPStatus = "APPROVED" | "DECLINED" | "MAYBE" | "NA";
 
-export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { eventId: string; initial?: RSVPStatus | null; canGroup?: boolean; canAll?: boolean }) {
+export default function RSVPButtons({ eventId, initial, initialNote, canGroup, canAll, onSaved }: { eventId: string; initial?: RSVPStatus | null; initialNote?: string | null; canGroup?: boolean; canAll?: boolean; onSaved?: () => void }) {
   const router = useRouter();
   const [status, setStatus] = useState<RSVPStatus | null>(initial ?? 'NA');
   const [scope, setScope] = useState<'self' | 'group' | 'all'>('self');
-  const [note, setNote] = useState<string>('');
+  const normalizedInitialNote = (initialNote ?? '').trim();
+  const [note, setNote] = useState<string>(normalizedInitialNote);
   const [saving, setSaving] = useState(false);
   const initialStatusRef = useRef<RSVPStatus | null>(initial ?? 'NA');
+  const initialNoteRef = useRef<string>(normalizedInitialNote);
 
   const save = useCallback(async () => {
     const noteTrimmed = note.trim();
     const statusChanged = status !== initialStatusRef.current;
-    const onlyCommentChange = !statusChanged && noteTrimmed.length > 0;
-    if (!status && noteTrimmed.length === 0) return;
+    const noteChanged = noteTrimmed !== initialNoteRef.current;
+    if (!statusChanged && !noteChanged) return;
     setSaving(true);
     try {
       const payload: any = { eventId, scope };
-      if (onlyCommentChange) {
+      if (!statusChanged && noteChanged) {
         // Let server update note only without touching status
         payload.status = null;
         payload.note = noteTrimmed;
@@ -31,11 +33,19 @@ export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { ev
       }
       const res = await fetch('/api/rsvp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!res.ok) return;
-      try { router.refresh(); } catch {}
+      try {
+        router.refresh();
+      } catch {}
+      try {
+        if (onSaved) onSaved();
+      } catch {}
+      setNote(noteTrimmed);
+      initialStatusRef.current = status;
+      initialNoteRef.current = noteTrimmed;
     } finally {
       setSaving(false);
     }
-  }, [eventId, scope, note, status, router]);
+  }, [eventId, scope, note, status, router, onSaved]);
 
   const btnCls = (active: boolean, color: string) => [
     'px-3 py-1 rounded text-sm border transition-colors',
@@ -46,15 +56,17 @@ export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { ev
   const declinedActive = useMemo(() => status === 'DECLINED', [status]);
   const maybeActive = useMemo(() => status === 'MAYBE', [status]);
   const naActive = useMemo(() => status === 'NA' || status == null, [status]);
+  const statusDirty = status !== initialStatusRef.current;
+  const noteDirty = note.trim() !== initialNoteRef.current;
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
         <button disabled={saving} onClick={() => setStatus('APPROVED')} className={btnCls(approvedActive, 'bg-green-600')}>
-          מגיע/ה
+          אגיע
         </button>
         <button disabled={saving} onClick={() => setStatus('DECLINED')} className={btnCls(declinedActive, 'bg-red-600')}>
-          לא מגיע/ה
+          לא אגיע
         </button>
         <button disabled={saving} onClick={() => setStatus('MAYBE')} className={btnCls(maybeActive, 'bg-yellow-500')}>
           אולי
@@ -82,15 +94,32 @@ export default function RSVPButtons({ eventId, initial, canGroup, canAll }: { ev
         )}
       </div>
       <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-        <input
-          className="flex-1 border p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
-          placeholder="הערה (אופציונלי)"
-          value={note}
-          onChange={(e)=>setNote(e.target.value)}
-        />
-        <button disabled={saving || (!status && !note.trim())} onClick={save} className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-60">שמירה</button>
+        <div className="relative flex-1">
+          <input
+            className="w-full border pr-10 pl-3 p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
+            placeholder="הערה (אופציונלי)"
+            value={note}
+            onChange={(e)=>setNote(e.target.value)}
+          />
+          {note && (
+            <button
+              type="button"
+              onClick={() => setNote('')}
+              className="absolute inset-y-0 left-0 flex items-center pl-3 pr-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+              aria-label="ניקוי ההערה"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <button
+          disabled={saving || (!statusDirty && !noteDirty)}
+          onClick={save}
+          className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-60"
+        >שמירה</button>
       </div>
     </div>
   );
 }
+
 

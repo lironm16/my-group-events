@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
 export type CalendarEvent = {
@@ -25,7 +24,7 @@ function toKey(d: Date) {
   return `${y}-${m}-${day}`;
 }
 
-export default function CalendarMonth({ events, initialMonth, onMonthChange }: { events: CalendarEvent[]; initialMonth?: string; onMonthChange?: (month: string) => void }) {
+export default function CalendarMonth({ events, initialMonth, onMonthChange, onDaySelect, selectedDateKey }: { events: CalendarEvent[]; initialMonth?: string; onMonthChange?: (month: string) => void; onDaySelect?: (dateKey: string, events: CalendarEvent[]) => void; selectedDateKey?: string }) {
   const [cursor, setCursor] = useState<Date>(() => {
     if (initialMonth && /^\d{4}-\d{2}$/.test(initialMonth)) {
       const [y, m] = initialMonth.split('-').map(Number);
@@ -55,19 +54,58 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
     return undefined;
   }, [cursor, onMonthChange]);
 
+  const interactive = typeof onDaySelect === 'function';
+  const selectedKey = selectedDateKey ?? null;
+  const todayKey = toKey(new Date());
+
+  const ensureVisibleMonth = (targetKey: string) => {
+    if (!targetKey || targetKey.length < 7) return;
+    const [year, month] = targetKey.split('-').map(Number);
+    if (Number.isNaN(year) || Number.isNaN(month)) return;
+    const currentYear = cursor.getFullYear();
+    const currentMonth = cursor.getMonth() + 1;
+    if (year === currentYear && month === currentMonth) return;
+    setCursor(new Date(year, month - 1, 1));
+  };
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-3 sm:px-6 pt-2">
         <div className="text-lg font-semibold">
           {cursor.toLocaleString("he-IL", { month: "long", year: "numeric" })}
         </div>
         <div className="flex gap-2">
-          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, -1))}>◀</button>
-          <button className="px-2 py-1 rounded border" onClick={() => setCursor(getStartOfMonth(new Date()))}>היום</button>
-          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, 1))}>▶</button>
+          <button
+            type="button"
+            className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-transform"
+            aria-label="חודש קודם"
+            onClick={() => setCursor((d) => addMonths(d, -1))}
+          >
+            <ArrowIcon className="h-4 w-4 -scale-x-100" />
+          </button>
+          <button
+            type="button"
+            className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={() => {
+              const today = new Date();
+              setCursor(getStartOfMonth(today));
+              onDaySelect?.(todayKey, byDay.get(todayKey) || []);
+            }}
+          >
+            היום
+          </button>
+          <button
+            type="button"
+            className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-transform"
+            aria-label="חודש הבא"
+            onClick={() => setCursor((d) => addMonths(d, 1))}
+          >
+            <ArrowIcon className="h-4 w-4" />
+          </button>
         </div>
       </div>
-      <div className="block sm:hidden">
+      {!interactive && (
+      <div className="block sm:hidden px-3 sm:px-6">
         <div className="relative">
           {days.filter(d => d.date.getMonth() === cursor.getMonth()).map((d) => {
             const k = toKey(d.date);
@@ -99,43 +137,92 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
           })}
         </div>
       </div>
-      <div className="hidden sm:block sm:mx-0">
-        <div className="min-w-[840px] grid grid-cols-7 sm:gap-px gap-[1px] bg-gray-200 dark:bg-gray-800 rounded overflow-hidden text-xs sm:text-sm">
-        {WEEKDAY_LABELS.map((label) => (
-          <div key={label} className="bg-white dark:bg-gray-900 p-2 text-xs font-medium text-center">
-            {label}
-          </div>
-        ))}
-        {days.map((d) => {
-          const k = toKey(d.date);
-          const list = byDay.get(k) || [];
-          const isCurrentMonth = d.date.getMonth() === cursor.getMonth();
-          return (
-            <div key={k} className={["bg-white dark:bg-gray-900 min-h-[80px] sm:min-h-[110px] p-1 sm:p-2", isCurrentMonth ? "" : "opacity-50"].join(" ")}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] sm:text-xs text-gray-500">{d.date.getDate()}</span>
-                {list.length > 0 && (
-                  <span className="text-[9px] sm:text-[10px] px-1 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
-                    {list.length}
-                  </span>
-                )}
+      )}
+      <div className={interactive ? 'px-3 sm:px-6 grid grid-cols-7 gap-2 text-xs sm:text-sm' : 'hidden sm:block sm:mx-0'}>
+        {interactive ? (
+          <>
+            {WEEKDAY_LABELS.map((label) => (
+              <div key={label} className="p-2 bg-white dark:bg-gray-900 rounded-md text-center text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">
+                {label}
               </div>
-              <ul className="space-y-0.5 sm:space-y-1">
-                {list.slice(0, 3).map((e) => (
-                  <li key={`${e.id}:${e.startAt}`} className="truncate">
-                    <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}${e.occurrenceStartAt ? `&occurrenceStartAt=${encodeURIComponent(e.occurrenceStartAt)}` : ''}`} className="block w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer">
-                      {new Date(e.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · {e.title}
-                    </a>
-                  </li>
-                ))}
-                {list.length > 3 && (
-                  <li className="text-[10px] sm:text-[11px] text-gray-500">+{list.length - 3} נוספים</li>
-                )}
-              </ul>
-            </div>
-          );
-        })}
-        </div>
+            ))}
+            {days.map((d) => {
+              const k = toKey(d.date);
+              const list = byDay.get(k) || [];
+              const isCurrentMonth = d.date.getMonth() === cursor.getMonth();
+              const active = selectedKey === k;
+              const isToday = k === todayKey;
+              const hasEvents = list.length > 0;
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => {
+                    ensureVisibleMonth(k);
+                    onDaySelect?.(k, list);
+                  }}
+                  aria-pressed={active}
+                  className={[
+                    'relative min-h-[48px] sm:min-h-[68px] rounded-lg border transition-colors p-2 flex items-center justify-center',
+                    isCurrentMonth ? '' : 'opacity-60',
+                    active
+                      ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700 bg-blue-100/70 dark:bg-blue-900/60 text-blue-900 dark:text-blue-100'
+                      : hasEvents
+                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
+                        : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100',
+                    !active && !hasEvents ? 'hover:bg-gray-50 dark:hover:bg-gray-800' : '',
+                    !active && isToday ? 'border-2 border-blue-300 dark:border-blue-600' : active ? '' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500'
+                  ].join(' ')}
+                >
+                  <span className="text-sm sm:text-base font-semibold">
+                    {d.date.getDate()}
+                  </span>
+                </button>
+              );
+            })}
+          </>
+        ) : (
+          <div className="min-w-[840px] grid grid-cols-7 sm:gap-px gap-[1px] bg-gray-200 dark:bg-gray-800 rounded overflow-hidden text-xs sm:text-sm">
+            {WEEKDAY_LABELS.map((label) => (
+              <div key={label} className="bg-white dark:bg-gray-900 p-2 text-xs font-medium text-center">
+                {label}
+              </div>
+            ))}
+            {days.map((d) => {
+              const k = toKey(d.date);
+              const list = byDay.get(k) || [];
+              const isCurrentMonth = d.date.getMonth() === cursor.getMonth();
+              const isToday = k === todayKey;
+              return (
+                <div
+                  key={k}
+                  className={[
+                    'min-h-[64px] sm:min-h-[88px] p-1 sm:p-2 border rounded-md',
+                    isCurrentMonth ? '' : 'opacity-50',
+                    isToday ? 'border-blue-200 dark:border-blue-600' : 'border-transparent',
+                    list.length > 0 ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200'
+                  ].join(' ')}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] sm:text-xs text-gray-500">{d.date.getDate()}</span>
+                  </div>
+                  <ul className="space-y-0.5 sm:space-y-1">
+                    {list.slice(0, 3).map((e) => (
+                      <li key={`${e.id}:${e.startAt}`} className="truncate">
+                        <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}${e.occurrenceStartAt ? `&occurrenceStartAt=${encodeURIComponent(e.occurrenceStartAt)}` : ''}`} className="block w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer">
+                          {new Date(e.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · {e.title}
+                        </a>
+                      </li>
+                    ))}
+                    {list.length > 3 && (
+                      <li className="text-[10px] sm:text-[11px] text-gray-500">+{list.length - 3} נוספים</li>
+                    )}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -164,4 +251,21 @@ function buildMonthGrid(anchor: Date) {
     days.push({ date: d });
   }
   return days;
+}
+
+function ArrowIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
 }

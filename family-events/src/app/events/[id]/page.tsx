@@ -1,13 +1,12 @@
 import Link from 'next/link';
-import WhatsAppShare from '@/components/WhatsAppShare';
-import RSVPButtons from '@/components/RSVPButtons';
 import DeleteEventButton from '@/components/DeleteEventButton';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import PendingWhatsApp from '@/components/PendingWhatsApp';
 import RsvpSummary from '@/components/RsvpSummary';
 import RsvpInviteesList from '@/components/RsvpInviteesList';
+import RsvpActionPrompt from '@/components/RsvpActionPrompt';
+import WhatsAppShareButton from '@/components/WhatsAppShareButton';
 
 type EventDetail = {
   id: string;
@@ -49,8 +48,6 @@ export default async function EventDetailPage({ params, searchParams }: { params
     getServerSession(authOptions),
   ]);
   const base = process.env.NEXTAUTH_URL ?? '';
-  const shareText = `מצטרפים לאירוע? ראו פרטים וקישור: ${base}/events/${params.id}`;
-  const wa = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
   if (!event) {
     return (
       <main className="container-page">
@@ -59,35 +56,61 @@ export default async function EventDetailPage({ params, searchParams }: { params
       </main>
     );
   }
-  const userId = (session?.user as any)?.id as string | undefined;
-  const myRsvp = userId ? event.rsvps.find(r => r.user.id === userId)?.status ?? null : null;
+  const sessionUserId = (session?.user as any)?.id as string | undefined;
+  const sessionEmail = typeof session?.user?.email === 'string' ? session.user.email : undefined;
+  let viewer: { id: string; groupId: string | null; familyId: string | null; role: string | null } | null = null;
+  if (sessionUserId) {
+    viewer = await prisma.user.findUnique({ where: { id: sessionUserId }, select: { id: true, groupId: true, familyId: true, role: true } });
+  } else if (sessionEmail) {
+    viewer = await prisma.user.findFirst({ where: { email: sessionEmail }, select: { id: true, groupId: true, familyId: true, role: true } });
+  }
+  const userId = viewer?.id ?? sessionUserId;
   const isHost = userId ? event.host?.id === userId : false;
-  const toRSVPStatus = (s: string | null): 'APPROVED' | 'DECLINED' | 'MAYBE' | null => {
-    return s === 'APPROVED' || s === 'DECLINED' || s === 'MAYBE' ? s : null;
+  const isCoHost = userId ? (event.coHosts || []).some((h) => h.id === userId) : false;
+  const canEdit = isHost || isCoHost;
+  const canDelete = isHost;
+  const canGroup = !!viewer?.groupId;
+  const canAll = canEdit || viewer?.role === 'admin';
+  const viewerRsvp = userId ? event.rsvps.find((r) => r.user.id === userId) : null;
+  const normalizeStatus = (s: string | null | undefined): 'APPROVED' | 'DECLINED' | 'MAYBE' | 'NA' => {
+    return s === 'APPROVED' || s === 'DECLINED' || s === 'MAYBE' ? s : 'NA';
   };
-  const pendingCount = event.rsvps.filter(r => r.status !== 'APPROVED').length;
+  const viewerStatus = viewerRsvp ? normalizeStatus(viewerRsvp.status) : null;
   const approvedCount = event.rsvps.filter(r => r.status === 'APPROVED').length;
   const maybeCount = event.rsvps.filter(r => r.status === 'MAYBE').length;
   const declinedCount = event.rsvps.filter(r => r.status === 'DECLINED').length;
   const waitingCount = event.rsvps.filter(r => r.status === 'NA').length;
   const totalCount = event.rsvps.length;
-  const responded = approvedCount + maybeCount + declinedCount;
   const allHosts = [
     ...(event.host?.name ? [{ id: event.host?.id || 'host', name: event.host?.name }] : []),
     ...((event.coHosts || []))
   ];
   const shareUrl = `${base}/events/${event.id}`;
-  const dateText = (() => {
-    const d = new Date(event.startAt);
-    if (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0) return d.toLocaleDateString('he-IL', { dateStyle: 'full' });
-    return d.toLocaleString('he-IL');
-  })();
-  const locText = event.location ? `במקום: ${event.location} ` : '';
+  const hasResponders = (event.rsvps || []).some((r) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED');
+  const includeReminders = (event.rsvps || []).every((r) => r.status === 'NA');
   const from = typeof searchParams?.from === 'string' ? (searchParams!.from as string) : undefined;
   const occurrenceStartAt = typeof searchParams?.occurrenceStartAt === 'string' ? (searchParams!.occurrenceStartAt as string) : undefined;
   return (
     <main className="container-page space-y-4">
-      <HeaderActions id={event.id} occurrenceStartAt={occurrenceStartAt} wa={wa} ics={`${base}/api/events/${event.id}/ics`} isHost={isHost} event={event} shareUrl={`${base}/events/${event.id}`} backHref={from || '/events'} />
+      <HeaderActions
+        id={event.id}
+        occurrenceStartAt={occurrenceStartAt}
+        ics={`${base}/api/events/${event.id}/ics`}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        event={event}
+        backHref={from || '/events'}
+        shareProps={{
+          eventId: event.id,
+          title: event.title,
+          startAtISO: event.startAt,
+          location: event.location,
+          shareUrl,
+          typeKey: event.holidayKey ?? null,
+          hasResponders,
+          includeReminders,
+        }}
+      />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
         {event.description && (
           <p className="mb-4 text-gray-700 dark:text-gray-300">{event.description}</p>
@@ -125,33 +148,15 @@ export default async function EventDetailPage({ params, searchParams }: { params
         
         {/* RSVP quick section removed; using grouped editor below */}
       </div>
-      {/* RSVP summary (with toggle) */}
+      {/* RSVP actions */}
       <section className="space-y-3">
-        <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />
-        {myRsvp == null || myRsvp === 'NA' ? (
-          <div className="rounded border border-amber-300/60 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-3 text-sm text-amber-800 dark:text-amber-200">
-            עדיין לא אישרת הגעה. נשמח לשמוע אם אתם מצטרפים.
-          </div>
+        {viewerStatus ? (
+          <RsvpActionPrompt eventId={event.id} status={viewerStatus} note={viewerRsvp?.note ?? null} canGroup={canGroup} canAll={canAll} />
         ) : null}
         <RsvpInviteesList list={event.rsvps} />
-        {/* WhatsApp share section moved here, right after RSVP bar */}
-        <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="font-semibold text-sm">שיתוף בוואטסאפ</h3>
-          </div>
-          <div className="mt-2">
-            <WhatsAppShare
-              eventId={event.id}
-              title={event.title}
-              startAtISO={event.startAt}
-              location={event.location}
-              typeKey={event.holidayKey ?? null}
-              shareUrl={shareUrl}
-              hasResponders={(event.rsvps || []).some((r: any) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED')}
-              includeReminders={(event.rsvps || []).every((r: any) => r.status === 'NA')}
-            />
-          </div>
-        </div>
+      </section>
+      <section>
+        <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />
       </section>
     </main>
   );
@@ -159,15 +164,27 @@ export default async function EventDetailPage({ params, searchParams }: { params
 
 // RsvpSummary moved to client component
 
-function HeaderActions({ id, occurrenceStartAt, wa, ics, isHost, event, shareUrl, backHref }: { id: string; occurrenceStartAt?: string; wa: string; ics: string; isHost: boolean; event: any; shareUrl: string; backHref: string }) {
+type ShareProps = {
+  eventId: string;
+  title: string;
+  startAtISO: string;
+  location: string | null;
+  shareUrl: string;
+  typeKey: string | null;
+  hasResponders: boolean;
+  includeReminders: boolean;
+};
+
+function HeaderActions({ id, occurrenceStartAt, ics, canEdit, canDelete, event, backHref, shareProps }: { id: string; occurrenceStartAt?: string; ics: string; canEdit: boolean; canDelete: boolean; event: any; backHref: string; shareProps: ShareProps }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <Link className="px-3 py-2 rounded border text-sm" href={backHref}>חזרה</Link>
         <div className="flex flex-wrap gap-2 items-center">
+          <WhatsAppShareButton {...shareProps} />
           <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
-          {isHost && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
-          {isHost && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} />}
+          {canEdit && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
+          {canDelete && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} />}
         </div>
       </div>
       <h1 className="text-2xl font-bold">{event.title}</h1>

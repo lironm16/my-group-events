@@ -12,13 +12,13 @@ export default function RsvpSummary({ approved, maybe, declined, waiting, total 
       <div className="flex items-center justify-between gap-2 text-sm text-gray-700 dark:text-gray-200">
         <div className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
           {approved > 0 && (
-            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{label('מגיע/ה', approved)}</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{label('אגיע', approved)}</span>
           )}
           {maybe > 0 && (
             <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />{label('אולי', maybe)}</span>
           )}
           {declined > 0 && (
-            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{label('לא', declined)}</span>
+            <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{label('לא אגיע', declined)}</span>
           )}
           {waiting > 0 && (
             <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 inline-block" />{label('לא השיבו', waiting)}</span>

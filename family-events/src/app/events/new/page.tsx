@@ -1,10 +1,9 @@
 "use client";
 import { useMemo, useState, useEffect } from 'react';
-import EventTypeIcon from '@/components/EventTypeIcon';
+import Link from 'next/link';
 import DateTimePicker from '@/components/DateTimePicker';
 import WhatsAppShare from '@/components/WhatsAppShare';
 import Script from 'next/script';
-import ConfettiLink from '@/components/ConfettiLink';
 
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '', image: '' });
@@ -196,8 +195,8 @@ function SuccessModal({ title, location, eventId, startAtISO, onLater }: { title
             );
           })()}
           <div className="flex gap-2">
-            <ConfettiLink href={`/events/${eventId}`} className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors">לפרטי האירוע</ConfettiLink>
-            <ConfettiLink href="/events" className="px-3 py-2 rounded border">אשלח מאוחר יותר</ConfettiLink>
+            <Link href={`/events/${eventId}`} className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors">לפרטי האירוע</Link>
+            <Link href="/events" className="px-3 py-2 rounded border">אשלח מאוחר יותר</Link>
           </div>
         </div>
       </div>
@@ -228,27 +227,27 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
   ];
   const items: { cat: typeof categories[number]['key']; label: string; img: string; tpl: Template }[] = [
     // Holidays ordered starting from Rosh Hashanah
-    { cat: 'holidays', label: 'ראש השנה', img: '/templates/rosh-hashanah.jpg', tpl: { title: 'ראש השנה', description: 'ארוחת חג משפחתית', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'יום כיפור', img: '/templates/kippur.jpg', tpl: { title: 'מוצאי יום כיפור', description: 'ארוחת מפסקת/נעילת צום', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'סוכות', img: '/templates/sukkot.jpg', tpl: { title: 'סוכות', description: 'ארוחה בסוכה', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'חנוכה', img: '/templates/hanukkah.jpg', tpl: { title: 'חנוכה', description: 'הדלקת נרות', startAt: toLocalNow(), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'ט"ו בשבט', img: '/templates/tu-bishvat.jpg', tpl: { title: 'ט"ו בשבט', description: 'סדר פירות', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'פורים', img: '/templates/purim.jpg', tpl: { title: 'פורים', description: 'מסיבת תחפושות', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'פסח', img: '/templates/passover.jpg', tpl: { title: 'פסח', description: 'ליל הסדר משפחתי', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'שבועות', img: '/templates/shavout.jpg', tpl: { title: 'שבועות', description: 'ארוחת חג', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'ט"ו באב', img: '/templates/tu-beav.jpg', tpl: { title: 'ט"ו באב', description: 'מפגש משפחתי', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
-    { cat: 'holidays', label: 'ל"ג בעומר', img: '/templates/lag-baomer.jpg', tpl: { title: 'ל"ג בעומר', description: 'מדורה משפחתית', startAt: toLocal(nextWeek), holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'ראש השנה', img: '/templates/rosh-hashanah.jpg', tpl: { title: 'ראש השנה', description: 'ארוחת חג משפחתית', holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'יום כיפור', img: '/templates/kippur.jpg', tpl: { title: 'מוצאי יום כיפור', description: 'ארוחת מפסקת/נעילת צום', holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'סוכות', img: '/templates/sukkot.jpg', tpl: { title: 'סוכות', description: 'ארוחה בסוכה', holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'חנוכה', img: '/templates/hanukkah.jpg', tpl: { title: 'חנוכה', description: 'הדלקת נרות', holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'ט"ו בשבט', img: '/templates/tu-bishvat.jpg', tpl: { title: 'ט"ו בשבט', description: 'סדר פירות', holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'פורים', img: '/templates/purim.jpg', tpl: { title: 'פורים', description: 'מסיבת תחפושות', holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'פסח', img: '/templates/passover.jpg', tpl: { title: 'פסח', description: 'ליל הסדר משפחתי', holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'שבועות', img: '/templates/shavout.jpg', tpl: { title: 'שבועות', description: 'ארוחת חג', holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'ט"ו באב', img: '/templates/tu-beav.jpg', tpl: { title: 'ט"ו באב', description: 'מפגש משפחתי', holidayKey: 'holiday' } },
+    { cat: 'holidays', label: 'ל"ג בעומר', img: '/templates/lag-baomer.jpg', tpl: { title: 'ל"ג בעומר', description: 'מדורה משפחתית', holidayKey: 'holiday' } },
     // Meals first in tabs; include lunch
-    { cat: 'dinners', label: 'ערב שישי', img: '/templates/shishi-dinner.jpg', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', startAt: toLocal(nextFriday), holidayKey: 'shabat_eve' } },
-    { cat: 'dinners', label: 'ארוחת צהריים', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת צהריים', description: 'מפגש צהריים', startAt: toLocalNow() } },
-    { cat: 'dinners', label: 'ארוחת ערב', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת ערב', description: 'מפגש משפחתי', startAt: toLocalNow() } },
-    { cat: 'dinners', label: 'ארוחת בוקר', img: '/templates/brekfast.jpg', tpl: { title: 'ארוחת בוקר', description: 'מפגש בוקר', startAt: toLocalNow() } },
-    { cat: 'other', label: 'יום הולדת', img: '/templates/birthday.jpg', tpl: { title: 'מסיבת יום הולדת', description: 'חוגגים יום הולדת', startAt: toLocal(nextWeek) } },
-    { cat: 'outdoors', label: 'פיקניק', img: '/templates/picnic.jpg', tpl: { title: 'פיקניק משפחתי', description: 'בפארק', startAt: toLocal(nextWeek) } },
-    { cat: 'outdoors', label: 'ים', img: '/templates/beach.jpg', tpl: { title: 'ים', description: 'יום כיף בים', startAt: toLocal(nextWeek) } },
-    { cat: 'outdoors', label: 'טיול', img: '/templates/party.jpg', tpl: { title: 'טיול', description: 'טיול משפחתי', startAt: toLocal(nextWeek) } },
-    { cat: 'other', label: 'מסעדה', img: '/templates/resturant.jpg', tpl: { title: 'מסעדה', description: 'ארוחה במסעדה', startAt: toLocal(nextWeek) } },
-    { cat: 'other', label: 'מותאם אישית', img: '/templates/party.jpg', tpl: { title: '', description: '', startAt: '' } },
+    { cat: 'dinners', label: 'ערב שישי', img: '/templates/shishi-dinner.jpg', tpl: { title: 'ערב שישי', description: 'ארוחת שבת משפחתית', holidayKey: 'shabat_eve' } },
+    { cat: 'dinners', label: 'ארוחת צהריים', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת צהריים', description: 'מפגש צהריים' } },
+    { cat: 'dinners', label: 'ארוחת ערב', img: '/templates/dinner.jpg', tpl: { title: 'ארוחת ערב', description: 'מפגש משפחתי' } },
+    { cat: 'dinners', label: 'ארוחת בוקר', img: '/templates/brekfast.jpg', tpl: { title: 'ארוחת בוקר', description: 'מפגש בוקר' } },
+    { cat: 'other', label: 'יום הולדת', img: '/templates/birthday.jpg', tpl: { title: 'מסיבת יום הולדת', description: 'חוגגים יום הולדת' } },
+    { cat: 'outdoors', label: 'פיקניק', img: '/templates/picnic.jpg', tpl: { title: 'פיקניק משפחתי', description: 'בפארק' } },
+    { cat: 'outdoors', label: 'ים', img: '/templates/beach.jpg', tpl: { title: 'ים', description: 'יום כיף בים' } },
+    { cat: 'outdoors', label: 'טיול', img: '/templates/party.jpg', tpl: { title: 'טיול', description: 'טיול משפחתי' } },
+    { cat: 'other', label: 'מסעדה', img: '/templates/resturant.jpg', tpl: { title: 'מסעדה', description: 'ארוחה במסעדה' } },
+    { cat: 'other', label: 'מותאם אישית', img: '/templates/party.jpg', tpl: { title: '', description: '' } },
   ];
 
   const [cat, setCat] = useState<'holidays' | 'birthdays' | 'dinners' | 'outdoors' | 'other'>('holidays');
@@ -264,7 +263,7 @@ function TemplatesTiles({ onPick }: { onPick: (tpl: Template) => void }) {
         {items.filter(i=>i.cat===cat).map((t)=> (
           <button type="button" key={t.label} onClick={async()=>{
             // Resolve start time according to rules
-            let startISO = t.tpl.startAt || toLocalNow();
+            let startISO = t.cat === 'holidays' ? toLocal(nextWeek) : toLocalNow();
             if (t.cat === 'dinners' && /שישי/.test(t.label)) startISO = toLocal(nextFriday);
             if (/שבת/.test(t.label)) startISO = toLocal(nextSaturday);
             if (t.cat === 'holidays') {
