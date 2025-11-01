@@ -40,7 +40,7 @@ const DEFAULT_RSVP_FILTER: RsvpKey = 'all';
 const DEFAULT_SORT_KEY: SortKey = 'startAsc';
 
 const TIME_OPTIONS: { key: TimeKey; label: string }[] = [
-  { key: 'upcoming', label: 'קרובים' },
+  { key: 'upcoming', label: 'הכל' },
   { key: 'today', label: 'היום' },
   { key: 'week', label: 'השבוע' },
   { key: 'month', label: 'החודש' },
@@ -100,6 +100,11 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [draftSortKey, setDraftSortKey] = useState<SortKey>(DEFAULT_SORT_KEY);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const today = useMemo(() => new Date(), []);
+  const defaultMonth = useMemo(() => `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`, [today]);
+  const [calendarInitialMonth, setCalendarInitialMonth] = useState<string>(defaultMonth);
+  const [calendarSeed, setCalendarSeed] = useState(0);
+  const calendarWasOpenRef = useRef(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -274,20 +279,27 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const sortActive = sortOpen || sortKey !== DEFAULT_SORT_KEY;
 
   useEffect(() => {
-    if (!calendarOpen) return;
-    if (selectedDateKey) {
-      if (eventsByDay.has(selectedDateKey)) return;
-      return;
+    if (calendarOpen && !calendarWasOpenRef.current) {
+      const now = new Date();
+      const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      setCalendarInitialMonth(monthStr);
+      setCalendarSeed((token) => token + 1);
     }
+    calendarWasOpenRef.current = calendarOpen;
+  }, [calendarOpen]);
+
+  useEffect(() => {
+    if (!calendarOpen) return;
     const todayKey = dateToKey(new Date());
     if (eventsByDay.has(todayKey)) {
-      setSelectedDateKey(todayKey);
+      setSelectedDateKey((prev) => (prev === todayKey ? prev : todayKey));
     } else {
       const iterator = eventsByDay.keys();
       const first = iterator.next();
-      setSelectedDateKey(first.done ? null : first.value);
+      const nextKey = first.done ? null : first.value;
+      setSelectedDateKey((prev) => (prev === nextKey ? prev : nextKey));
     }
-  }, [calendarOpen, selectedDateKey, eventsByDay]);
+  }, [calendarOpen, eventsByDay]);
 
   useEffect(() => {
     if (!calendarOpen) return;
@@ -355,16 +367,6 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={openFilters}
-            className="inline-flex items-center justify-center h-10 w-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label="פתח מסנני חיפוש"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M4 4h16l-6 8v6l-4 2v-8z" />
-            </svg>
-          </button>
-          <button
-            type="button"
             onClick={toggleCalendar}
             aria-pressed={calendarOpen}
             className={[
@@ -403,6 +405,17 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
               <line x1="16" y1="16" x2="17" y2="16" />
             </svg>
             <span>מיון</span>
+          </button>
+          <button
+            type="button"
+            onClick={openFilters}
+            className="inline-flex items-center gap-2 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="פתח מסנני חיפוש"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 4h16l-6 8v6l-4 2v-8z" />
+            </svg>
+            <span>סינון</span>
           </button>
         </div>
         {hasActiveFilters && (
@@ -627,7 +640,9 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
               }}
             >
               <CalendarMonth
+                key={`calendar-${calendarSeed}`}
                 events={calendarEvents}
+                initialMonth={calendarInitialMonth}
                 onDaySelect={handleDaySelect}
                 selectedDateKey={selectedDateKey ?? undefined}
               />
@@ -784,7 +799,7 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
 
   const endOfMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth() + 1, 0, 23, 59, 59, 999);
 
-  if (key === 'upcoming') return events.filter(e => getEffectiveStartDate(e) >= now);
+  if (key === 'upcoming') return events;
   if (key === 'today') return events.filter(e => {
     const d = getEffectiveStartDate(e);
     return d >= startOfToday && d <= endOfToday;
