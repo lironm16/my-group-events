@@ -613,7 +613,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
       {calendarOpen && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={closeCalendarView} />
-          <div className="relative z-10 flex h-full w-full flex-col overflow-hidden bg-white dark:bg-gray-950">
+          <div className="relative z-10 mx-auto my-6 flex h-[calc(100vh-48px)] w-[calc(100vw-32px)] max-w-5xl flex-col overflow-hidden rounded-3xl bg-white dark:bg-gray-950">
             <div className="flex items-center justify-between gap-4 px-4 sm:px-6 pt-6">
               <div>
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
@@ -651,7 +651,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
                 selectedDateKey={selectedDateKey ?? undefined}
               />
             </div>
-            <div ref={listRef} className="mt-4 flex-1 overflow-y-auto px-4 sm:px-6 pt-6 pb-6">
+            <div ref={listRef} className="mt-4 flex-1 overflow-y-auto px-4 sm:px-6 pt-4 pb-6">
               {selectedDayEvents.length > 0 ? (
                 <ul className="space-y-3">
                   {selectedDayEvents.map((event) => {
@@ -666,9 +666,6 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
                         >
                           <div className="text-sm font-medium text-blue-600 dark:text-blue-300">{formatTimeLabel(effectiveStartISO)}</div>
                           <div className="mt-1 text-base font-semibold text-gray-900 dark:text-gray-100">{event.title}</div>
-                          {event.description && (
-                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{event.description}</p>
-                          )}
                         </Link>
                       </li>
                     );

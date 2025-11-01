@@ -70,7 +70,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between px-3 sm:px-6">
+      <div className="flex items-center justify-between px-3 sm:px-6 pt-2">
         <div className="text-lg font-semibold">
           {cursor.toLocaleString("he-IL", { month: "long", year: "numeric" })}
         </div>
