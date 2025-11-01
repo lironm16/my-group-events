@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import WhatsAppShare from '@/components/WhatsAppShare';
 import DeleteEventButton from '@/components/DeleteEventButton';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
@@ -7,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import RsvpSummary from '@/components/RsvpSummary';
 import RsvpInviteesList from '@/components/RsvpInviteesList';
 import RsvpActionPrompt from '@/components/RsvpActionPrompt';
+import WhatsAppShareButton from '@/components/WhatsAppShareButton';
 
 type EventDetail = {
   id: string;
@@ -86,11 +86,31 @@ export default async function EventDetailPage({ params, searchParams }: { params
     ...((event.coHosts || []))
   ];
   const shareUrl = `${base}/events/${event.id}`;
+  const hasResponders = (event.rsvps || []).some((r) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED');
+  const includeReminders = (event.rsvps || []).every((r) => r.status === 'NA');
   const from = typeof searchParams?.from === 'string' ? (searchParams!.from as string) : undefined;
   const occurrenceStartAt = typeof searchParams?.occurrenceStartAt === 'string' ? (searchParams!.occurrenceStartAt as string) : undefined;
   return (
     <main className="container-page space-y-4">
-      <HeaderActions id={event.id} occurrenceStartAt={occurrenceStartAt} ics={`${base}/api/events/${event.id}/ics`} canEdit={canEdit} canDelete={canDelete} event={event} backHref={from || '/events'} />
+      <HeaderActions
+        id={event.id}
+        occurrenceStartAt={occurrenceStartAt}
+        ics={`${base}/api/events/${event.id}/ics`}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        event={event}
+        backHref={from || '/events'}
+        shareProps={{
+          eventId: event.id,
+          title: event.title,
+          startAtISO: event.startAt,
+          location: event.location,
+          shareUrl,
+          typeKey: event.holidayKey ?? null,
+          hasResponders,
+          includeReminders,
+        }}
+      />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
         {event.description && (
           <p className="mb-4 text-gray-700 dark:text-gray-300">{event.description}</p>
@@ -128,31 +148,15 @@ export default async function EventDetailPage({ params, searchParams }: { params
         
         {/* RSVP quick section removed; using grouped editor below */}
       </div>
-      {/* RSVP summary (with toggle) */}
+      {/* RSVP actions */}
       <section className="space-y-3">
-        <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />
         {viewerStatus ? (
           <RsvpActionPrompt eventId={event.id} status={viewerStatus} note={viewerRsvp?.note ?? null} canGroup={canGroup} canAll={canAll} />
         ) : null}
         <RsvpInviteesList list={event.rsvps} />
-        {/* WhatsApp share section moved here, right after RSVP bar */}
-        <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="font-semibold text-sm">שיתוף בוואטסאפ</h3>
-          </div>
-          <div className="mt-2">
-            <WhatsAppShare
-              eventId={event.id}
-              title={event.title}
-              startAtISO={event.startAt}
-              location={event.location}
-              typeKey={event.holidayKey ?? null}
-              shareUrl={shareUrl}
-              hasResponders={(event.rsvps || []).some((r: any) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED')}
-              includeReminders={(event.rsvps || []).every((r: any) => r.status === 'NA')}
-            />
-          </div>
-        </div>
+      </section>
+      <section>
+        <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />
       </section>
     </main>
   );
@@ -160,12 +164,24 @@ export default async function EventDetailPage({ params, searchParams }: { params
 
 // RsvpSummary moved to client component
 
-function HeaderActions({ id, occurrenceStartAt, ics, canEdit, canDelete, event, backHref }: { id: string; occurrenceStartAt?: string; ics: string; canEdit: boolean; canDelete: boolean; event: any; backHref: string }) {
+type ShareProps = {
+  eventId: string;
+  title: string;
+  startAtISO: string;
+  location: string | null;
+  shareUrl: string;
+  typeKey: string | null;
+  hasResponders: boolean;
+  includeReminders: boolean;
+};
+
+function HeaderActions({ id, occurrenceStartAt, ics, canEdit, canDelete, event, backHref, shareProps }: { id: string; occurrenceStartAt?: string; ics: string; canEdit: boolean; canDelete: boolean; event: any; backHref: string; shareProps: ShareProps }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <Link className="px-3 py-2 rounded border text-sm" href={backHref}>חזרה</Link>
         <div className="flex flex-wrap gap-2 items-center">
+          <WhatsAppShareButton {...shareProps} />
           <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
           {canEdit && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
           {canDelete && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} />}

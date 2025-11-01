@@ -63,10 +63,10 @@ export default function RSVPButtons({ eventId, initial, initialNote, canGroup, c
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
         <button disabled={saving} onClick={() => setStatus('APPROVED')} className={btnCls(approvedActive, 'bg-green-600')}>
-          מגיע/ה
+          אגיע
         </button>
         <button disabled={saving} onClick={() => setStatus('DECLINED')} className={btnCls(declinedActive, 'bg-red-600')}>
-          לא מגיע/ה
+          לא אגיע
         </button>
         <button disabled={saving} onClick={() => setStatus('MAYBE')} className={btnCls(maybeActive, 'bg-yellow-500')}>
           אולי

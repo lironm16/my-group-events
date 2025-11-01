@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
 export type CalendarEvent = {
@@ -25,7 +24,7 @@ function toKey(d: Date) {
   return `${y}-${m}-${day}`;
 }
 
-export default function CalendarMonth({ events, initialMonth, onMonthChange }: { events: CalendarEvent[]; initialMonth?: string; onMonthChange?: (month: string) => void }) {
+export default function CalendarMonth({ events, initialMonth, onMonthChange, onDaySelect, selectedDateKey }: { events: CalendarEvent[]; initialMonth?: string; onMonthChange?: (month: string) => void; onDaySelect?: (dateKey: string, events: CalendarEvent[]) => void; selectedDateKey?: string }) {
   const [cursor, setCursor] = useState<Date>(() => {
     if (initialMonth && /^\d{4}-\d{2}$/.test(initialMonth)) {
       const [y, m] = initialMonth.split('-').map(Number);
@@ -55,6 +54,9 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
     return undefined;
   }, [cursor, onMonthChange]);
 
+  const interactive = typeof onDaySelect === 'function';
+  const selectedKey = selectedDateKey ?? null;
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -67,6 +69,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
           <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, 1))}>▶</button>
         </div>
       </div>
+      {!interactive && (
       <div className="block sm:hidden">
         <div className="relative">
           {days.filter(d => d.date.getMonth() === cursor.getMonth()).map((d) => {
@@ -99,43 +102,96 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange }: {
           })}
         </div>
       </div>
-      <div className="hidden sm:block sm:mx-0">
-        <div className="min-w-[840px] grid grid-cols-7 sm:gap-px gap-[1px] bg-gray-200 dark:bg-gray-800 rounded overflow-hidden text-xs sm:text-sm">
-        {WEEKDAY_LABELS.map((label) => (
-          <div key={label} className="bg-white dark:bg-gray-900 p-2 text-xs font-medium text-center">
-            {label}
-          </div>
-        ))}
-        {days.map((d) => {
-          const k = toKey(d.date);
-          const list = byDay.get(k) || [];
-          const isCurrentMonth = d.date.getMonth() === cursor.getMonth();
-          return (
-            <div key={k} className={["bg-white dark:bg-gray-900 min-h-[80px] sm:min-h-[110px] p-1 sm:p-2", isCurrentMonth ? "" : "opacity-50"].join(" ")}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] sm:text-xs text-gray-500">{d.date.getDate()}</span>
-                {list.length > 0 && (
-                  <span className="text-[9px] sm:text-[10px] px-1 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
-                    {list.length}
-                  </span>
-                )}
+      )}
+      <div className={interactive ? 'grid grid-cols-7 gap-2 text-xs sm:text-sm' : 'hidden sm:block sm:mx-0'}>
+        {interactive ? (
+          <>
+            {WEEKDAY_LABELS.map((label) => (
+              <div key={label} className="p-2 bg-white dark:bg-gray-900 rounded-md text-center text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">
+                {label}
               </div>
-              <ul className="space-y-0.5 sm:space-y-1">
-                {list.slice(0, 3).map((e) => (
-                  <li key={`${e.id}:${e.startAt}`} className="truncate">
-                    <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}${e.occurrenceStartAt ? `&occurrenceStartAt=${encodeURIComponent(e.occurrenceStartAt)}` : ''}`} className="block w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer">
-                      {new Date(e.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · {e.title}
-                    </a>
-                  </li>
-                ))}
-                {list.length > 3 && (
-                  <li className="text-[10px] sm:text-[11px] text-gray-500">+{list.length - 3} נוספים</li>
-                )}
-              </ul>
-            </div>
-          );
-        })}
-        </div>
+            ))}
+            {days.map((d) => {
+              const k = toKey(d.date);
+              const list = byDay.get(k) || [];
+              const isCurrentMonth = d.date.getMonth() === cursor.getMonth();
+              const active = selectedKey === k;
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => onDaySelect?.(k, list)}
+                  aria-pressed={active}
+                  className={[
+                    'min-h-[80px] sm:min-h-[110px] text-left rounded-lg border transition-colors p-2 bg-white dark:bg-gray-900',
+                    isCurrentMonth ? '' : 'opacity-60',
+                    active ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500'
+                  ].join(' ')}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{d.date.getDate()}</span>
+                    {list.length > 0 && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+                        {list.length}
+                      </span>
+                    )}
+                  </div>
+                  {list.length > 0 ? (
+                    <ul className="space-y-1">
+                      {list.slice(0, 3).map((e) => (
+                        <li key={`${e.id}:${e.startAt}`} className="text-[10px] sm:text-[11px] text-gray-600 dark:text-gray-300 truncate">
+                          {new Date(e.startAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })} · {e.title}
+                        </li>
+                      ))}
+                      {list.length > 3 && (
+                        <li className="text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500">+{list.length - 3} נוספים</li>
+                      )}
+                    </ul>
+                  ) : (
+                    <div className="text-[10px] text-gray-400 dark:text-gray-600">אין אירועים</div>
+                  )}
+                </button>
+              );
+            })}
+          </>
+        ) : (
+          <div className="min-w-[840px] grid grid-cols-7 sm:gap-px gap-[1px] bg-gray-200 dark:bg-gray-800 rounded overflow-hidden text-xs sm:text-sm">
+            {WEEKDAY_LABELS.map((label) => (
+              <div key={label} className="bg-white dark:bg-gray-900 p-2 text-xs font-medium text-center">
+                {label}
+              </div>
+            ))}
+            {days.map((d) => {
+              const k = toKey(d.date);
+              const list = byDay.get(k) || [];
+              const isCurrentMonth = d.date.getMonth() === cursor.getMonth();
+              return (
+                <div key={k} className={["bg-white dark:bg-gray-900 min-h-[80px] sm:min-h-[110px] p-1 sm:p-2", isCurrentMonth ? "" : "opacity-50"].join(" ")}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] sm:text-xs text-gray-500">{d.date.getDate()}</span>
+                    {list.length > 0 && (
+                      <span className="text-[9px] sm:text-[10px] px-1 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+                        {list.length}
+                      </span>
+                    )}
+                  </div>
+                  <ul className="space-y-0.5 sm:space-y-1">
+                    {list.slice(0, 3).map((e) => (
+                      <li key={`${e.id}:${e.startAt}`} className="truncate">
+                        <a href={`/events/${e.id}?from=${encodeURIComponent(`/events?view=calendar&month=${String(cursor.getFullYear())}-${String(cursor.getMonth()+1).padStart(2,'0')}`)}${e.occurrenceStartAt ? `&occurrenceStartAt=${encodeURIComponent(e.occurrenceStartAt)}` : ''}`} className="block w-full truncate text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer">
+                          {new Date(e.startAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })} · {e.title}
+                        </a>
+                      </li>
+                    ))}
+                    {list.length > 3 && (
+                      <li className="text-[10px] sm:text-[11px] text-gray-500">+{list.length - 3} נוספים</li>
+                    )}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

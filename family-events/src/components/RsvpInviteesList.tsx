@@ -41,8 +41,8 @@ export default function RsvpInviteesList({ list }: { list: Item[] }) {
         <div className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded p-1">
           <button aria-pressed={filter==='all'} onClick={() => setFilter('all')} className={[ 'px-2 py-1 rounded', filter==='all' ? tabActiveCls.all : tabInactiveCls.all ].join(' ')}>הכל</button>
           <button aria-pressed={filter==='NA'} onClick={() => setFilter('NA')} className={[ 'px-2 py-1 rounded', filter==='NA' ? tabActiveCls.NA : tabInactiveCls.NA ].join(' ')}>לא השיבו</button>
-          <button aria-pressed={filter==='APPROVED'} onClick={() => setFilter('APPROVED')} className={[ 'px-2 py-1 rounded', filter==='APPROVED' ? tabActiveCls.APPROVED : tabInactiveCls.APPROVED ].join(' ')}>מגיעים</button>
-          <button aria-pressed={filter==='DECLINED'} onClick={() => setFilter('DECLINED')} className={[ 'px-2 py-1 rounded', filter==='DECLINED' ? tabActiveCls.DECLINED : tabInactiveCls.DECLINED ].join(' ')}>לא מגיעים</button>
+          <button aria-pressed={filter==='APPROVED'} onClick={() => setFilter('APPROVED')} className={[ 'px-2 py-1 rounded', filter==='APPROVED' ? tabActiveCls.APPROVED : tabInactiveCls.APPROVED ].join(' ')}>אגיע</button>
+          <button aria-pressed={filter==='DECLINED'} onClick={() => setFilter('DECLINED')} className={[ 'px-2 py-1 rounded', filter==='DECLINED' ? tabActiveCls.DECLINED : tabInactiveCls.DECLINED ].join(' ')}>לא אגיע</button>
           <button aria-pressed={filter==='MAYBE'} onClick={() => setFilter('MAYBE')} className={[ 'px-2 py-1 rounded', filter==='MAYBE' ? tabActiveCls.MAYBE : tabInactiveCls.MAYBE ].join(' ')}>אולי</button>
         </div>
       </div>
@@ -55,7 +55,7 @@ export default function RsvpInviteesList({ list }: { list: Item[] }) {
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium text-sm truncate">{r.user?.name || '—'}</span>
                 <span className={[ 'text-xs rounded px-2 py-0.5 border', chipCls(r.status) ].join(' ')}>
-                  {r.status === 'APPROVED' ? 'מגיע/ה' : r.status === 'DECLINED' ? 'לא' : r.status === 'MAYBE' ? 'אולי' : '—'}
+                  {r.status === 'APPROVED' ? 'אגיע' : r.status === 'DECLINED' ? 'לא אגיע' : r.status === 'MAYBE' ? 'אולי' : '—'}
                 </span>
               </div>
               {r.note && r.note.trim() && (

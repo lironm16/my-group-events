@@ -32,7 +32,7 @@ type RsvpKey = 'all' | 'going' | 'maybe' | 'declined' | 'pending';
 
 type StatusBadge = { label: string; circleClass: string };
 
-const DEFAULT_FILTER_KEY: ScopeKey = 'mine';
+const DEFAULT_FILTER_KEY: ScopeKey = 'all';
 const DEFAULT_TIME_KEY: TimeKey = 'upcoming';
 const DEFAULT_RSVP_FILTER: RsvpKey = 'all';
 
@@ -52,6 +52,18 @@ const RSVP_OPTIONS: { key: RsvpKey; label: string }[] = [
   { key: 'pending', label: 'ממתין לתשובה' },
 ];
 
+const isoToDateKey = (iso: string) => {
+  const d = new Date(iso);
+  return dateToKey(d);
+};
+
+const dateToKey = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [filterKey, setFilterKey] = useState<ScopeKey>(DEFAULT_FILTER_KEY);
   const [view, setView] = useState<ViewKey>('list');
@@ -64,6 +76,8 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [draftFilterKey, setDraftFilterKey] = useState<ScopeKey>(DEFAULT_FILTER_KEY);
   const [draftTimeKey, setDraftTimeKey] = useState<TimeKey>(DEFAULT_TIME_KEY);
   const [draftRsvpFilter, setDraftRsvpFilter] = useState<RsvpKey>(DEFAULT_RSVP_FILTER);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -90,14 +104,27 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     }
   }, [filtersOpen, filterKey, timeKey, rsvpFilter]);
 
+  useEffect(() => {
+    if (!calendarOpen) return;
+    if (selectedDateKey && eventsByDay.has(selectedDateKey)) return;
+    const todayKey = dateToKey(new Date());
+    if (eventsByDay.has(todayKey)) {
+      setSelectedDateKey(todayKey);
+    } else {
+      const iterator = eventsByDay.keys();
+      const first = iterator.next();
+      setSelectedDateKey(first.done ? null : first.value);
+    }
+  }, [calendarOpen, selectedDateKey, eventsByDay]);
+
   const getGroupLabel = (key: ScopeKey): string => {
-    if (key === 'mine') return 'האירועים שלי';
     if (key === 'all') return 'כל האירועים';
+    if (key === 'mine') return 'האירועים שלי';
     if (key.startsWith('group:')) {
       const id = key.slice('group:'.length);
       return groupOptions.find((g) => g.id === id)?.nickname ?? 'קבוצה';
     }
-    return 'האירועים שלי';
+    return 'כל האירועים';
   };
 
   const getTimeLabel = (key: TimeKey): string => TIME_OPTIONS.find((opt) => opt.key === key)?.label ?? '';
@@ -162,16 +189,57 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     clearAllFilters();
     setFiltersOpen(false);
   };
+  const openCalendarView = () => {
+    setCalendarOpen(true);
+    setView('calendar');
+  };
+  const closeCalendarView = () => {
+    setCalendarOpen(false);
+    setView('list');
+  };
+  const handleViewToggle = (next: ViewKey) => {
+    if (next === 'calendar') openCalendarView();
+    else closeCalendarView();
+  };
+  const handleDaySelect = (dateKey: string) => {
+    setSelectedDateKey(dateKey);
+  };
   const baseAll = initial;
   const base = useMemo(() => filterByKey(baseAll, filterKey, myUserId, groupOptions), [baseAll, filterKey, myUserId, groupOptions]);
   const scoped = useMemo(() => filterByTime(base, timeKey), [base, timeKey]);
   const scopedByRsvp = useMemo(() => filterByRsvp(scoped, rsvpFilter, myUserId), [scoped, rsvpFilter, myUserId]);
   const filtered = useMemo(() => filterBySearch(scopedByRsvp, searchQuery), [scopedByRsvp, searchQuery]);
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, EventCard[]>();
+    for (const event of filtered) {
+      const key = isoToDateKey(event.startAt);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(event);
+    }
+    for (const [, list] of map) list.sort((a, b) => +new Date(a.startAt) - +new Date(b.startAt));
+    return map;
+  }, [filtered]);
+  const calendarEvents = useMemo<CalendarEvent[]>(() => filtered.map((e) => ({
+    id: e.id,
+    title: e.title,
+    startAt: e.startAt,
+    location: e.location,
+    occurrenceStartAt: e.recurrence ? e.startAt : undefined,
+  })), [filtered]);
+  const selectedDayEvents = useMemo(() => selectedDateKey ? (eventsByDay.get(selectedDateKey) ?? []) : [], [selectedDateKey, eventsByDay]);
+  const selectedDateDisplay = useMemo(() => {
+    if (!selectedDateKey) return '';
+    const parts = selectedDateKey.split('-').map((n) => Number(n));
+    if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return '';
+    const [y, m, d] = parts;
+    const date = new Date(y, m - 1, d);
+    return date.toLocaleDateString('he-IL', { weekday: 'long', day: '2-digit', month: 'long' });
+  }, [selectedDateKey]);
 
   // Initialize view/filter from URL
   useEffect(() => {
     const v = (searchParams.get('view') || '').toLowerCase();
-    if (v === 'calendar') setView('calendar');
+    if (v === 'calendar') openCalendarView();
     const fk = searchParams.get('filter');
     if (fk === 'mine' || fk === 'all' || (fk && fk.startsWith('group:'))) setFilterKey(fk as ScopeKey);
     const tk = (searchParams.get('time') || '').toLowerCase();
@@ -192,11 +260,6 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
   }, [view, filterKey, timeKey, router, pathname, searchParams]);
 
-  const calItems: CalendarEvent[] = useMemo(
-    () => scoped.map((e) => ({ id: e.id, title: e.title, startAt: e.startAt, location: e.location, occurrenceStartAt: e.recurrence ? e.startAt : undefined })),
-    [scoped]
-  );
-
   return (
     <>
       <div className="space-y-3 mb-4">
@@ -214,7 +277,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
           <div className="flex-1 min-w-[220px]">
             <EventsSearch value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
           </div>
-          <ViewToggle view={view} onChange={setView} />
+          <ViewToggle view={calendarOpen ? 'calendar' : 'list'} onChange={handleViewToggle} />
         </div>
         {hasActiveFilters && (
           <div className="flex flex-wrap items-center gap-2">
@@ -240,11 +303,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
           </div>
         )}
       </div>
-      {view === 'list' ? (
-        <Cards list={filtered} viewerId={myUserId} />
-      ) : (
-        <div className="mt-4 animate-fade-in"><CalendarMonth events={calItems} /></div>
-      )}
+      <Cards list={filtered} viewerId={myUserId} />
       <BackToTop />
       {filtersOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4">
@@ -344,6 +403,45 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
                   החלה
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {calendarOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4">
+          <div className="absolute inset-0 bg-black/50" onClick={closeCalendarView} />
+          <div className="relative z-10 flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">לוח שנה</h2>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                  {selectedDateDisplay ? `אירועים ל-${selectedDateDisplay}` : 'בחרו יום כדי לראות את האירועים' }
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCalendarView}
+                className="text-2xl leading-none text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                aria-label="סגירת חלון הלוח"
+              >
+                ×
+              </button>
+            </div>
+            <div className="mt-4 flex-1 overflow-auto">
+              <CalendarMonth
+                events={calendarEvents}
+                onDaySelect={handleDaySelect}
+                selectedDateKey={selectedDateKey ?? undefined}
+              />
+            </div>
+            <div className="mt-4 max-h-[38vh] overflow-y-auto">
+              {selectedDayEvents.length > 0 ? (
+                <Cards list={selectedDayEvents} viewerId={myUserId} />
+              ) : (
+                <div className="flex items-center justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-700 py-10 text-sm text-gray-500 dark:text-gray-400">
+                  אין אירועים בתאריך זה
+                </div>
+              )}
             </div>
           </div>
         </div>

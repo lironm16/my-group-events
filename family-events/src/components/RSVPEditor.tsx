@@ -229,9 +229,9 @@ function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus
         <div className="flex items-center gap-2 text-xs">
           <select className="px-2 py-1 border rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800" onChange={(e)=> onQuickApply(node.id, e.target.value as Status, true)} defaultValue="__">
             <option value="__" disabled>בחר</option>
-            <option value="APPROVED">מגיע/ה</option>
+            <option value="APPROVED">אגיע</option>
             <option value="MAYBE">אולי</option>
-            <option value="DECLINED">לא</option>
+            <option value="DECLINED">לא אגיע</option>
           </select>
           <button className="px-2 py-1 rounded border" onClick={()=> onQuickApply(node.id, 'NA', false)}>אפס</button>
         </div>
@@ -284,9 +284,9 @@ function GroupItem({ node, level, byParent, onQuickApply, onGroupNote, getStatus
 
 function StatusPicker({ value, onChange, disabled }: { value: Status; onChange: (s: Status) => void; disabled?: boolean }) {
   const opts: { key: Status; label: string; cls: string }[] = [
-    { key: 'APPROVED', label: 'מגיע/ה', cls: 'bg-green-600 text-white' },
+    { key: 'APPROVED', label: 'אגיע', cls: 'bg-green-600 text-white' },
     { key: 'MAYBE', label: 'אולי', cls: 'bg-yellow-500 text-white' },
-    { key: 'DECLINED', label: 'לא', cls: 'bg-red-600 text-white' },
+    { key: 'DECLINED', label: 'לא אגיע', cls: 'bg-red-600 text-white' },
     { key: 'NA', label: '—', cls: 'bg-gray-500 text-white' },
   ];
   return (
