@@ -56,6 +56,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
 
   const interactive = typeof onDaySelect === 'function';
   const selectedKey = selectedDateKey ?? null;
+  const todayKey = toKey(new Date());
 
   return (
     <div className="space-y-3">
@@ -70,12 +71,16 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
             aria-label="חודש קודם"
             onClick={() => setCursor((d) => addMonths(d, -1))}
           >
-            <ArrowIcon className="h-4 w-4 rotate-180" />
+            <ArrowIcon className="h-4 w-4 transform rotate-180" />
           </button>
           <button
             type="button"
             className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800"
-            onClick={() => setCursor(getStartOfMonth(new Date()))}
+            onClick={() => {
+              const today = new Date();
+              setCursor(getStartOfMonth(today));
+              onDaySelect?.(todayKey, byDay.get(todayKey) || []);
+            }}
           >
             היום
           </button>
@@ -85,7 +90,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
             aria-label="חודש הבא"
             onClick={() => setCursor((d) => addMonths(d, 1))}
           >
-            <ArrowIcon className="h-4 w-4" />
+            <ArrowIcon className="h-4 w-4 transform" />
           </button>
         </div>
       </div>
@@ -136,6 +141,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
               const list = byDay.get(k) || [];
               const isCurrentMonth = d.date.getMonth() === cursor.getMonth();
               const active = selectedKey === k;
+              const isToday = k === todayKey;
               return (
                 <button
                   key={k}
@@ -143,9 +149,13 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
                   onClick={() => onDaySelect?.(k, list)}
                   aria-pressed={active}
                   className={[
-                    'relative min-h-[80px] sm:min-h-[110px] rounded-lg border transition-colors p-2 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center',
+                    'relative min-h-[64px] sm:min-h-[92px] rounded-lg border transition-colors p-2 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center',
                     isCurrentMonth ? '' : 'opacity-60',
-                    active ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500'
+                    active
+                      ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700'
+                      : isToday
+                        ? 'border-blue-300 dark:border-blue-600'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500'
                   ].join(' ')}
                 >
                   <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-100">{d.date.getDate()}</span>
@@ -169,8 +179,16 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
               const k = toKey(d.date);
               const list = byDay.get(k) || [];
               const isCurrentMonth = d.date.getMonth() === cursor.getMonth();
+              const isToday = k === todayKey;
               return (
-                <div key={k} className={["bg-white dark:bg-gray-900 min-h-[80px] sm:min-h-[110px] p-1 sm:p-2", isCurrentMonth ? "" : "opacity-50"].join(" ")}>
+                <div
+                  key={k}
+                  className={[
+                    'bg-white dark:bg-gray-900 min-h-[80px] sm:min-h-[110px] p-1 sm:p-2 border border-transparent',
+                    isCurrentMonth ? '' : 'opacity-50',
+                    isToday ? 'border-blue-200 dark:border-blue-600' : ''
+                  ].join(' ')}
+                >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] sm:text-xs text-gray-500">{d.date.getDate()}</span>
                     {list.length > 0 && (
