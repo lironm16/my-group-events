@@ -64,9 +64,29 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
           {cursor.toLocaleString("he-IL", { month: "long", year: "numeric" })}
         </div>
         <div className="flex gap-2">
-          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, -1))}>◀</button>
-          <button className="px-2 py-1 rounded border" onClick={() => setCursor(getStartOfMonth(new Date()))}>היום</button>
-          <button className="px-2 py-1 rounded border" onClick={() => setCursor((d) => addMonths(d, 1))}>▶</button>
+          <button
+            type="button"
+            className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-transform"
+            aria-label="חודש קודם"
+            onClick={() => setCursor((d) => addMonths(d, -1))}
+          >
+            <ArrowIcon className="h-4 w-4 rotate-180" />
+          </button>
+          <button
+            type="button"
+            className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={() => setCursor(getStartOfMonth(new Date()))}
+          >
+            היום
+          </button>
+          <button
+            type="button"
+            className="px-2 py-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-transform"
+            aria-label="חודש הבא"
+            onClick={() => setCursor((d) => addMonths(d, 1))}
+          >
+            <ArrowIcon className="h-4 w-4" />
+          </button>
         </div>
       </div>
       {!interactive && (
@@ -123,32 +143,16 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
                   onClick={() => onDaySelect?.(k, list)}
                   aria-pressed={active}
                   className={[
-                    'min-h-[80px] sm:min-h-[110px] text-left rounded-lg border transition-colors p-2 bg-white dark:bg-gray-900',
+                    'relative min-h-[80px] sm:min-h-[110px] rounded-lg border transition-colors p-2 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center',
                     isCurrentMonth ? '' : 'opacity-60',
                     active ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500'
                   ].join(' ')}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{d.date.getDate()}</span>
-                    {list.length > 0 && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
-                        {list.length}
-                      </span>
-                    )}
-                  </div>
-                  {list.length > 0 ? (
-                    <ul className="space-y-1">
-                      {list.slice(0, 3).map((e) => (
-                        <li key={`${e.id}:${e.startAt}`} className="text-[10px] sm:text-[11px] text-gray-600 dark:text-gray-300 truncate">
-                          {new Date(e.startAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })} · {e.title}
-                        </li>
-                      ))}
-                      {list.length > 3 && (
-                        <li className="text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500">+{list.length - 3} נוספים</li>
-                      )}
-                    </ul>
-                  ) : (
-                    <div className="text-[10px] text-gray-400 dark:text-gray-600">אין אירועים</div>
+                  <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-100">{d.date.getDate()}</span>
+                  {list.length > 0 && (
+                    <span className="absolute top-2 left-2 inline-flex min-w-[20px] items-center justify-center rounded-full bg-blue-600 text-white text-[10px] leading-none px-1.5 py-0.5">
+                      {list.length}
+                    </span>
                   )}
                 </button>
               );
@@ -220,4 +224,21 @@ function buildMonthGrid(anchor: Date) {
     days.push({ date: d });
   }
   return days;
+}
+
+function ArrowIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
 }

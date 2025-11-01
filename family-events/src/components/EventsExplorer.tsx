@@ -64,6 +64,13 @@ const dateToKey = (date: Date) => {
   return `${y}-${m}-${day}`;
 };
 
+const formatTimeLabel = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  if (date.getHours() === 0 && date.getMinutes() === 0) return 'כל היום';
+  return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+};
+
 export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [filterKey, setFilterKey] = useState<ScopeKey>(DEFAULT_FILTER_KEY);
   const [view, setView] = useState<ViewKey>('list');
@@ -163,6 +170,11 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     setDraftTimeKey(DEFAULT_TIME_KEY);
     setDraftRsvpFilter(DEFAULT_RSVP_FILTER);
   };
+  const resetDraftFilters = () => {
+    setDraftFilterKey(DEFAULT_FILTER_KEY);
+    setDraftTimeKey(DEFAULT_TIME_KEY);
+    setDraftRsvpFilter(DEFAULT_RSVP_FILTER);
+  };
 
   const openFilters = () => setFiltersOpen(true);
   const closeFilters = () => setFiltersOpen(false);
@@ -170,10 +182,6 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     setFilterKey(draftFilterKey);
     setTimeKey(draftTimeKey);
     setRsvpFilter(draftRsvpFilter);
-    setFiltersOpen(false);
-  };
-  const clearAllAndClose = () => {
-    clearAllFilters();
     setFiltersOpen(false);
   };
   const openCalendarView = () => {
@@ -382,7 +390,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
             <div className="mt-6 flex items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={clearAllAndClose}
+                onClick={resetDraftFilters}
                 className="text-sm text-red-600 dark:text-red-300 hover:underline"
               >
                 נקה הכל
@@ -427,16 +435,34 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
                 ×
               </button>
             </div>
-            <div className="mt-4 flex-1 overflow-auto">
+            <div className="mt-4 flex-none">
               <CalendarMonth
                 events={calendarEvents}
                 onDaySelect={handleDaySelect}
                 selectedDateKey={selectedDateKey ?? undefined}
               />
             </div>
-            <div className="mt-4 max-h-[38vh] overflow-y-auto">
+            <div className="mt-4 flex-1 overflow-y-auto">
               {selectedDayEvents.length > 0 ? (
-                <Cards list={selectedDayEvents} viewerId={myUserId} />
+                <ul className="space-y-3">
+                  {selectedDayEvents.map((event) => {
+                    const href = `/events/${event.id}${event.recurrence ? `?occurrenceStartAt=${encodeURIComponent(event.startAt)}` : ''}`;
+                    return (
+                      <li key={`${event.id}:${event.startAt}`}>
+                        <Link
+                          href={href}
+                          className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 shadow-sm hover:border-blue-300 dark:hover:border-blue-400 hover:shadow-md transition"
+                        >
+                          <div className="text-sm font-medium text-blue-600 dark:text-blue-300">{formatTimeLabel(event.startAt)}</div>
+                          <div className="mt-1 text-base font-semibold text-gray-900 dark:text-gray-100">{event.title}</div>
+                          {event.description && (
+                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{event.description}</p>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
               ) : (
                 <div className="flex items-center justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-700 py-10 text-sm text-gray-500 dark:text-gray-400">
                   אין אירועים בתאריך זה
@@ -591,7 +617,7 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
 
   const endOfMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth() + 1, 0, 23, 59, 59, 999);
 
-  if (key === 'upcoming') return events.filter(e => new Date(e.startAt) >= startOfToday);
+  if (key === 'upcoming') return events.filter(e => new Date(e.startAt) >= now);
   if (key === 'today') return events.filter(e => {
     const d = new Date(e.startAt);
     return d >= startOfToday && d <= endOfToday;
@@ -604,7 +630,7 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
     const d = new Date(e.startAt);
     return d >= startOfToday && d <= endOfMonth;
   });
-  if (key === 'past') return events.filter(e => new Date(e.startAt) < startOfToday);
+  if (key === 'past') return events.filter(e => new Date(e.startAt) < now);
   return events;
 }
 
