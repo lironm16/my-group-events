@@ -651,7 +651,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
                 selectedDateKey={selectedDateKey ?? undefined}
               />
             </div>
-            <div ref={listRef} className="mt-4 flex-1 overflow-y-auto px-4 sm:px-6 pt-4 pb-6">
+            <div ref={listRef} className="mt-4 flex-1 overflow-y-auto px-4 sm:px-6 pt-6 pb-6">
               {selectedDayEvents.length > 0 ? (
                 <ul className="space-y-3">
                   {selectedDayEvents.map((event) => {
