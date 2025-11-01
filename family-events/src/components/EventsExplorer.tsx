@@ -104,19 +104,6 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     }
   }, [filtersOpen, filterKey, timeKey, rsvpFilter]);
 
-  useEffect(() => {
-    if (!calendarOpen) return;
-    if (selectedDateKey && eventsByDay.has(selectedDateKey)) return;
-    const todayKey = dateToKey(new Date());
-    if (eventsByDay.has(todayKey)) {
-      setSelectedDateKey(todayKey);
-    } else {
-      const iterator = eventsByDay.keys();
-      const first = iterator.next();
-      setSelectedDateKey(first.done ? null : first.value);
-    }
-  }, [calendarOpen, selectedDateKey, eventsByDay]);
-
   const getGroupLabel = (key: ScopeKey): string => {
     if (key === 'all') return 'כל האירועים';
     if (key === 'mine') return 'האירועים שלי';
@@ -235,6 +222,19 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     const date = new Date(y, m - 1, d);
     return date.toLocaleDateString('he-IL', { weekday: 'long', day: '2-digit', month: 'long' });
   }, [selectedDateKey]);
+
+  useEffect(() => {
+    if (!calendarOpen) return;
+    if (selectedDateKey && eventsByDay.has(selectedDateKey)) return;
+    const todayKey = dateToKey(new Date());
+    if (eventsByDay.has(todayKey)) {
+      setSelectedDateKey(todayKey);
+    } else {
+      const iterator = eventsByDay.keys();
+      const first = iterator.next();
+      setSelectedDateKey(first.done ? null : first.value);
+    }
+  }, [calendarOpen, selectedDateKey, eventsByDay]);
 
   // Initialize view/filter from URL
   useEffect(() => {
