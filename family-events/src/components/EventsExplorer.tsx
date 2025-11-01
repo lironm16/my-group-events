@@ -385,6 +385,8 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
           <div className="flex-1 min-w-[220px]">
             <EventsSearch value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
           </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={openFilters}
@@ -804,7 +806,7 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
 
   const endOfMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth() + 1, 0, 23, 59, 59, 999);
 
-  if (key === 'upcoming') return events;
+  if (key === 'upcoming') return events.filter(e => getEffectiveStartDate(e) >= now);
   if (key === 'today') return events.filter(e => {
     const d = getEffectiveStartDate(e);
     return d >= startOfToday && d <= endOfToday;
