@@ -387,6 +387,17 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
           </div>
           <button
             type="button"
+            onClick={openFilters}
+            className="inline-flex items-center gap-2 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="פתח מסנני חיפוש"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 4h16l-6 8v6l-4 2v-8z" />
+            </svg>
+            <span>סינון</span>
+          </button>
+          <button
+            type="button"
             onClick={openSort}
             aria-pressed={sortActive}
             className={[
@@ -405,17 +416,6 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
               <line x1="16" y1="16" x2="17" y2="16" />
             </svg>
             <span>מיון</span>
-          </button>
-          <button
-            type="button"
-            onClick={openFilters}
-            className="inline-flex items-center gap-2 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label="פתח מסנני חיפוש"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M4 4h16l-6 8v6l-4 2v-8z" />
-            </svg>
-            <span>סינון</span>
           </button>
         </div>
         {hasActiveFilters && (
@@ -694,10 +694,15 @@ function BackToTop() {
   return (
     <button
       type="button"
-      className="back-to-top-btn px-3 py-2 rounded-full bg-blue-600 text-white shadow-md hover:bg-blue-700 transition-all hover:-translate-y-0.5"
+      className="back-to-top-btn inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-blue-600 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/40 transition-all hover:-translate-y-0.5"
       aria-label="חזרה לראש הדף"
       onClick={() => { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {} }}
-    >⬆️</button>
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M7 12l5-5 5 5" />
+        <line x1="12" y1="7" x2="12" y2="19" />
+      </svg>
+    </button>
   );
 }
 
@@ -869,13 +874,6 @@ function Cards({ list, viewerId }: { list: EventCard[]; viewerId: string }) {
                   </div>
                 </div>
                 {e.description && <p className="mt-2 text-[0.9rem] sm:text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{e.description}</p>}
-                <div className="mt-3 flex items-center justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400 inline-flex items-center gap-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={e.hostImage && /^https?:/i.test(e.hostImage) ? e.hostImage : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(e.host?.name || 'host')}`} alt="host" className="w-6 h-6 sm:w-5 sm:h-5 rounded-full" />
-                    מארחים: {[e.host?.name, ...(e.coHosts || []).map(h => h.name)].filter(Boolean).join(', ') || '—'}
-                  </span>
-                </div>
                 <div className="mt-2 flex items-center gap-2">
                   <div className="flex-1">
                     <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">

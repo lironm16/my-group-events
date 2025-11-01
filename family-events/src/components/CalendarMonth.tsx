@@ -81,7 +81,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
             aria-label="חודש קודם"
             onClick={() => setCursor((d) => addMonths(d, -1))}
           >
-            <ArrowIcon className="h-4 w-4 rotate-180" />
+            <ArrowIcon className="h-4 w-4 -scale-x-100" />
           </button>
           <button
             type="button"
