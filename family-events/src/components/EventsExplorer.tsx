@@ -614,9 +614,8 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={closeCalendarView} />
           <div className="relative z-10 flex h-full w-full flex-col overflow-hidden bg-white dark:bg-gray-950">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-4 px-4 sm:px-6 pt-6">
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">לוח שנה</h2>
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   {selectedDateDisplay ? `אירועים ל-${selectedDateDisplay}` : 'בחרו יום כדי לראות את האירועים' }
                 </p>
@@ -624,14 +623,17 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
               <button
                 type="button"
                 onClick={closeCalendarView}
-                className="text-2xl leading-none text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 hover:text-gray-700 dark:hover:text-white shadow-sm"
                 aria-label="סגירת חלון הלוח"
               >
-                ×
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
             <div
-              className="mt-4 flex-none"
+              className="mt-4 flex-none px-4 sm:px-6"
               onWheelCapture={(event) => {
                 event.stopPropagation();
                 event.preventDefault();
@@ -649,7 +651,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
                 selectedDateKey={selectedDateKey ?? undefined}
               />
             </div>
-            <div ref={listRef} className="mt-4 flex-1 overflow-y-auto">
+            <div ref={listRef} className="mt-4 flex-1 overflow-y-auto px-4 sm:px-6 pt-4 pb-6">
               {selectedDayEvents.length > 0 ? (
                 <ul className="space-y-3">
                   {selectedDayEvents.map((event) => {

@@ -54,7 +54,13 @@ export default async function EventsPage({ searchParams }: { searchParams?: { pa
         orClauses.push({ familyId: { in: familyList }, visibleToAll: true });
       }
 
-      const where = { OR: orClauses } as any;
+      const now = new Date();
+      const where = {
+        OR: orClauses,
+        startAt: {
+          gte: now,
+        },
+      } as any;
       total = await prisma.event.count({ where });
       const rows = await prisma.event.findMany({
         where,
