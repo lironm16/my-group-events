@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import EventsSearch from '@/components/EventsSearch';
 import CalendarMonth, { type CalendarEvent } from '@/components/CalendarMonth';
@@ -28,6 +28,7 @@ type ScopeKey = 'mine' | 'all' | `group:${string}`;
 type ViewKey = 'list' | 'calendar';
 type TimeKey = 'upcoming' | 'today' | 'week' | 'month' | 'past';
 type RsvpKey = 'all' | 'going' | 'maybe' | 'declined' | 'pending';
+type SortKey = 'startAsc' | 'startDesc' | 'titleAsc';
 // Metric toggle removed from main page per request
 
 type StatusBadge = { label: string; circleClass: string };
@@ -35,6 +36,7 @@ type StatusBadge = { label: string; circleClass: string };
 const DEFAULT_FILTER_KEY: ScopeKey = 'all';
 const DEFAULT_TIME_KEY: TimeKey = 'upcoming';
 const DEFAULT_RSVP_FILTER: RsvpKey = 'all';
+const DEFAULT_SORT_KEY: SortKey = 'startAsc';
 
 const TIME_OPTIONS: { key: TimeKey; label: string }[] = [
   { key: 'upcoming', label: 'קרובים' },
@@ -50,6 +52,12 @@ const RSVP_OPTIONS: { key: RsvpKey; label: string }[] = [
   { key: 'maybe', label: 'אולי' },
   { key: 'declined', label: 'לא אגיע' },
   { key: 'pending', label: 'ממתין לתשובה' },
+];
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: 'startAsc', label: 'הקרובים קודם' },
+  { key: 'startDesc', label: 'הרחוקים קודם' },
+  { key: 'titleAsc', label: 'א-ת לפי שם אירוע' },
 ];
 
 const isoToDateKey = (iso: string) => {
@@ -86,8 +94,12 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [draftFilterKey, setDraftFilterKey] = useState<ScopeKey>(DEFAULT_FILTER_KEY);
   const [draftTimeKey, setDraftTimeKey] = useState<TimeKey>(DEFAULT_TIME_KEY);
   const [draftRsvpFilter, setDraftRsvpFilter] = useState<RsvpKey>(DEFAULT_RSVP_FILTER);
+  const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT_KEY);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [draftSortKey, setDraftSortKey] = useState<SortKey>(DEFAULT_SORT_KEY);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -114,6 +126,12 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     }
   }, [filtersOpen, filterKey, timeKey, rsvpFilter]);
 
+  useEffect(() => {
+    if (sortOpen) {
+      setDraftSortKey(sortKey);
+    }
+  }, [sortOpen, sortKey]);
+
   const getGroupLabel = (key: ScopeKey): string => {
     if (key === 'all') return 'כל האירועים';
     if (key === 'mine') return 'האירועים שלי';
@@ -137,7 +155,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   }, [groupOptions]);
 
   const activeFilters = useMemo(() => {
-    const items: { type: 'filter' | 'time' | 'rsvp'; value: string; label: string }[] = [];
+    const items: { type: 'filter' | 'time' | 'rsvp' | 'sort'; value: string; label: string }[] = [];
     if (filterKey !== DEFAULT_FILTER_KEY) {
       items.push({ type: 'filter', value: filterKey, label: getGroupLabel(filterKey) });
     }
@@ -147,12 +165,15 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     if (rsvpFilter !== DEFAULT_RSVP_FILTER) {
       items.push({ type: 'rsvp', value: rsvpFilter, label: getRsvpLabel(rsvpFilter) });
     }
+    if (sortKey !== DEFAULT_SORT_KEY) {
+      items.push({ type: 'sort', value: sortKey, label: SORT_OPTIONS.find((opt) => opt.key === sortKey)?.label ?? '' });
+    }
     return items;
-  }, [filterKey, timeKey, rsvpFilter, groupOptions]);
+  }, [filterKey, timeKey, rsvpFilter, sortKey, groupOptions]);
 
   const hasActiveFilters = activeFilters.length > 0;
 
-  const handleClearChip = (type: 'filter' | 'time' | 'rsvp') => {
+  const handleClearChip = (type: 'filter' | 'time' | 'rsvp' | 'sort') => {
     if (type === 'filter') {
       setFilterKey(DEFAULT_FILTER_KEY);
       setDraftFilterKey(DEFAULT_FILTER_KEY);
@@ -160,8 +181,13 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
       setTimeKey(DEFAULT_TIME_KEY);
       setDraftTimeKey(DEFAULT_TIME_KEY);
     } else {
-      setRsvpFilter(DEFAULT_RSVP_FILTER);
-      setDraftRsvpFilter(DEFAULT_RSVP_FILTER);
+      if (type === 'rsvp') {
+        setRsvpFilter(DEFAULT_RSVP_FILTER);
+        setDraftRsvpFilter(DEFAULT_RSVP_FILTER);
+      } else {
+        setSortKey(DEFAULT_SORT_KEY);
+        setDraftSortKey(DEFAULT_SORT_KEY);
+      }
     }
   };
 
@@ -169,15 +195,19 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     setFilterKey(DEFAULT_FILTER_KEY);
     setTimeKey(DEFAULT_TIME_KEY);
     setRsvpFilter(DEFAULT_RSVP_FILTER);
+    setSortKey(DEFAULT_SORT_KEY);
     setDraftFilterKey(DEFAULT_FILTER_KEY);
     setDraftTimeKey(DEFAULT_TIME_KEY);
     setDraftRsvpFilter(DEFAULT_RSVP_FILTER);
+    setDraftSortKey(DEFAULT_SORT_KEY);
+    setSortOpen(false);
   };
   const resetDraftFilters = () => {
     setDraftFilterKey(DEFAULT_FILTER_KEY);
     setDraftTimeKey(DEFAULT_TIME_KEY);
     setDraftRsvpFilter(DEFAULT_RSVP_FILTER);
   };
+  const resetDraftSort = () => setDraftSortKey(DEFAULT_SORT_KEY);
 
   const openFilters = () => setFiltersOpen(true);
   const closeFilters = () => setFiltersOpen(false);
@@ -187,6 +217,12 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     setRsvpFilter(draftRsvpFilter);
     setFiltersOpen(false);
   };
+  const openSort = () => setSortOpen(true);
+  const closeSort = () => setSortOpen(false);
+  const applySort = () => {
+    setSortKey(draftSortKey);
+    setSortOpen(false);
+  };
   const openCalendarView = () => {
     setCalendarOpen(true);
     setView('calendar');
@@ -195,9 +231,9 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     setCalendarOpen(false);
     setView('list');
   };
-  const handleViewToggle = (next: ViewKey) => {
-    if (next === 'calendar') openCalendarView();
-    else closeCalendarView();
+  const toggleCalendar = () => {
+    if (calendarOpen) closeCalendarView();
+    else openCalendarView();
   };
   const handleDaySelect = (dateKey: string) => {
     setSelectedDateKey(dateKey);
@@ -206,24 +242,25 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const base = useMemo(() => filterByKey(baseAll, filterKey, myUserId, groupOptions), [baseAll, filterKey, myUserId, groupOptions]);
   const scoped = useMemo(() => filterByTime(base, timeKey), [base, timeKey]);
   const scopedByRsvp = useMemo(() => filterByRsvp(scoped, rsvpFilter, myUserId), [scoped, rsvpFilter, myUserId]);
-  const filtered = useMemo(() => filterBySearch(scopedByRsvp, searchQuery), [scopedByRsvp, searchQuery]);
+  const searched = useMemo(() => filterBySearch(scopedByRsvp, searchQuery), [scopedByRsvp, searchQuery]);
+  const sorted = useMemo(() => sortEvents(searched, sortKey), [searched, sortKey]);
   const eventsByDay = useMemo(() => {
     const map = new Map<string, EventCard[]>();
-    for (const event of filtered) {
+    for (const event of sorted) {
       const key = isoToDateKey(getEffectiveStartAt(event));
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(event);
     }
     for (const [, list] of map) list.sort((a, b) => +getEffectiveStartDate(a) - +getEffectiveStartDate(b));
     return map;
-  }, [filtered]);
-  const calendarEvents = useMemo<CalendarEvent[]>(() => filtered.map((e) => ({
+  }, [sorted]);
+  const calendarEvents = useMemo<CalendarEvent[]>(() => sorted.map((e) => ({
     id: e.id,
     title: e.title,
     startAt: getEffectiveStartAt(e),
     location: e.location,
     occurrenceStartAt: e.occurrenceStartAt ?? undefined,
-  })), [filtered]);
+  })), [sorted]);
   const selectedDayEvents = useMemo(() => selectedDateKey ? (eventsByDay.get(selectedDateKey) ?? []) : [], [selectedDateKey, eventsByDay]);
   const selectedDateDisplay = useMemo(() => {
     if (!selectedDateKey) return '';
@@ -233,6 +270,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     const date = new Date(y, m - 1, d);
     return date.toLocaleDateString('he-IL', { weekday: 'long', day: '2-digit', month: 'long' });
   }, [selectedDateKey]);
+  const sortActive = sortOpen || sortKey !== DEFAULT_SORT_KEY;
 
   useEffect(() => {
     if (!calendarOpen) return;
@@ -246,6 +284,14 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
       setSelectedDateKey(first.done ? null : first.value);
     }
   }, [calendarOpen, selectedDateKey, eventsByDay]);
+
+  useEffect(() => {
+    if (!calendarOpen) return;
+    if (!listRef.current) return;
+    try {
+      listRef.current.scrollTop = 0;
+    } catch {}
+  }, [calendarOpen, selectedDateKey]);
 
   // Initialize view/filter from URL
   useEffect(() => {
@@ -285,10 +331,47 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
               <path d="M4 4h16l-6 8v6l-4 2v-8z" />
             </svg>
           </button>
+          <button
+            type="button"
+            onClick={toggleCalendar}
+            aria-pressed={calendarOpen}
+            className={[
+              'inline-flex items-center justify-center h-10 w-10 rounded-md border shadow-sm transition-colors',
+              calendarOpen
+                ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-500'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+            ].join(' ')}
+            aria-label={calendarOpen ? 'סגור לוח שנה' : 'פתח לוח שנה'}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path d="M16 3v4M8 3v4M3 9h18" />
+            </svg>
+          </button>
           <div className="flex-1 min-w-[220px]">
             <EventsSearch value={searchQuery} onChange={setSearchQuery} onClear={() => setSearchQuery('')} />
           </div>
-          <ViewToggle view={calendarOpen ? 'calendar' : 'list'} onChange={handleViewToggle} />
+          <button
+            type="button"
+            onClick={openSort}
+            aria-pressed={sortActive}
+            className={[
+              'inline-flex items-center gap-2 h-10 rounded-md border px-3 text-sm shadow-sm transition-colors',
+              sortActive
+                ? 'border-blue-500 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:border-blue-500/60 dark:text-blue-300 dark:bg-blue-900/30'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+            ].join(' ')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M8 4l4-4 4 4" />
+              <path d="M8 20l4 4 4-4" />
+              <line x1="12" y1="2" x2="12" y2="22" />
+              <line x1="16" y1="8" x2="21" y2="8" />
+              <line x1="16" y1="12" x2="19" y2="12" />
+              <line x1="16" y1="16" x2="17" y2="16" />
+            </svg>
+            <span>מיון</span>
+          </button>
         </div>
         {hasActiveFilters && (
           <div className="flex flex-wrap items-center gap-2">
@@ -314,7 +397,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
           </div>
         )}
       </div>
-      <Cards list={filtered} viewerId={myUserId} />
+      <Cards list={sorted} viewerId={myUserId} />
       <BackToTop />
       {filtersOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4">
@@ -418,6 +501,68 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
           </div>
         </div>
       )}
+      {sortOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4">
+          <div className="absolute inset-0 bg-black/40" onClick={closeSort} />
+          <div className="relative z-10 w-full max-w-xs rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-2xl">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">מיון אירועים</h2>
+              <button
+                type="button"
+                onClick={closeSort}
+                aria-label="סגירת חלון"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="mt-4 space-y-2">
+              {SORT_OPTIONS.map((opt) => {
+                const active = draftSortKey === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => setDraftSortKey(opt.key)}
+                    aria-pressed={active}
+                    className={[
+                      'w-full rounded-md border px-3 py-2 text-sm text-right transition-colors',
+                      active ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    ].join(' ')}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={resetDraftSort}
+                className="text-sm text-red-600 dark:text-red-300 hover:underline"
+              >
+                ברירת מחדל
+              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={closeSort}
+                  className="px-3 py-2 text-sm rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  ביטול
+                </button>
+                <button
+                  type="button"
+                  onClick={applySort}
+                  className="px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  החלה
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {calendarOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4">
           <div className="absolute inset-0 bg-black/50" onClick={closeCalendarView} />
@@ -438,25 +583,37 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
                 ×
               </button>
             </div>
-            <div className="mt-4 flex-none">
+            <div
+              className="mt-4 flex-none"
+              onWheelCapture={(event) => {
+                event.stopPropagation();
+                event.preventDefault();
+              }}
+              onTouchMoveCapture={(event) => {
+                event.stopPropagation();
+                event.preventDefault();
+              }}
+            >
               <CalendarMonth
                 events={calendarEvents}
                 onDaySelect={handleDaySelect}
                 selectedDateKey={selectedDateKey ?? undefined}
               />
             </div>
-            <div className="mt-4 flex-1 overflow-y-auto">
+            <div ref={listRef} className="mt-4 flex-1 overflow-y-auto">
               {selectedDayEvents.length > 0 ? (
                 <ul className="space-y-3">
                   {selectedDayEvents.map((event) => {
-                    const href = `/events/${event.id}${event.recurrence ? `?occurrenceStartAt=${encodeURIComponent(event.startAt)}` : ''}`;
+                    const occurrenceParam = event.occurrenceStartAt ? `?occurrenceStartAt=${encodeURIComponent(event.occurrenceStartAt)}` : '';
+                    const href = `/events/${event.id}${occurrenceParam}`;
+                    const effectiveStartISO = getEffectiveStartAt(event);
                     return (
-                      <li key={`${event.id}:${event.startAt}`}>
+                      <li key={`${event.id}:${effectiveStartISO}`}>
                         <Link
                           href={href}
                           className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 shadow-sm hover:border-blue-300 dark:hover:border-blue-400 hover:shadow-md transition"
                         >
-                          <div className="text-sm font-medium text-blue-600 dark:text-blue-300">{formatTimeLabel(getEffectiveStartAt(event))}</div>
+                          <div className="text-sm font-medium text-blue-600 dark:text-blue-300">{formatTimeLabel(effectiveStartISO)}</div>
                           <div className="mt-1 text-base font-semibold text-gray-900 dark:text-gray-100">{event.title}</div>
                           {event.description && (
                             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{event.description}</p>
@@ -497,47 +654,21 @@ function BackToTop() {
   );
 }
 
-// Tabs removed per request
-
-// Scope tabs removed; integrated into GroupFilter
-
-function ViewToggle({ view, onChange }: { view: ViewKey; onChange: (v: ViewKey) => void }) {
-  return (
-    <div className="ml-auto inline-flex items-center gap-2 rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1">
-      <button
-        onClick={() => onChange('list')}
-        title="תצוגת רשימה"
-        aria-label="תצוגת רשימה"
-        className={[
-          'px-3 py-1 rounded-md text-sm flex items-center gap-1 transition-colors',
-          view === 'list' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'
-        ].join(' ')}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-        רשימה
-      </button>
-      <button
-        onClick={() => onChange('calendar')}
-        title="תצוגת לוח שנה"
-        aria-label="תצוגת לוח שנה"
-        className={[
-          'px-3 py-1 rounded-md text-sm flex items-center gap-1 transition-colors',
-          view === 'calendar' ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'
-        ].join(' ')}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <rect x="3" y="5" width="18" height="16" rx="2" />
-          <path d="M16 3v4M8 3v4M3 9h18" />
-        </svg>
-        לוח שנה
-      </button>
-    </div>
-  );
-}
-
 // Time tabs removed
+
+function sortEvents(events: EventCard[], key: SortKey): EventCard[] {
+  const list = events.slice();
+  if (key === 'startAsc') {
+    return list.sort((a, b) => +getEffectiveStartDate(a) - +getEffectiveStartDate(b));
+  }
+  if (key === 'startDesc') {
+    return list.sort((a, b) => +getEffectiveStartDate(b) - +getEffectiveStartDate(a));
+  }
+  if (key === 'titleAsc') {
+    return list.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '', 'he')); 
+  }
+  return list;
+}
 
 function filterByKey(
   events: EventCard[],
@@ -654,7 +785,7 @@ function Cards({ list, viewerId }: { list: EventCard[]; viewerId: string }) {
         const viewerStatus = resolveViewerStatus(e, viewerId);
         const badge = resolveStatusBadge(viewerStatus);
         return (
-          <li key={e.id} className="list-none">
+          <li key={`${e.id}:${effectiveStartISO}`} className="list-none">
             <Link
               href={href}
               className="group block rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:shadow-xl transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

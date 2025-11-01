@@ -71,7 +71,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
             aria-label="חודש קודם"
             onClick={() => setCursor((d) => addMonths(d, -1))}
           >
-            <ArrowIcon className="h-4 w-4 transform rotate-180" />
+            <ArrowIcon className="h-4 w-4 -scale-x-100" />
           </button>
           <button
             type="button"
@@ -90,7 +90,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
             aria-label="חודש הבא"
             onClick={() => setCursor((d) => addMonths(d, 1))}
           >
-            <ArrowIcon className="h-4 w-4 transform" />
+            <ArrowIcon className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -149,12 +149,12 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
                   onClick={() => onDaySelect?.(k, list)}
                   aria-pressed={active}
                   className={[
-                    'relative min-h-[64px] sm:min-h-[92px] rounded-lg border transition-colors p-2 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center',
+                    'relative min-h-[56px] sm:min-h-[80px] rounded-lg border transition-colors p-2 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center',
                     isCurrentMonth ? '' : 'opacity-60',
                     active
                       ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700'
                       : isToday
-                        ? 'border-blue-300 dark:border-blue-600'
+                        ? 'border-2 border-blue-300 dark:border-blue-600'
                         : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500'
                   ].join(' ')}
                 >
@@ -184,7 +184,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
                 <div
                   key={k}
                   className={[
-                    'bg-white dark:bg-gray-900 min-h-[80px] sm:min-h-[110px] p-1 sm:p-2 border border-transparent',
+                    'bg-white dark:bg-gray-900 min-h-[72px] sm:min-h-[96px] p-1 sm:p-2 border border-transparent',
                     isCurrentMonth ? '' : 'opacity-50',
                     isToday ? 'border-blue-200 dark:border-blue-600' : ''
                   ].join(' ')}
