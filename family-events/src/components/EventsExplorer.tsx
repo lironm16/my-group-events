@@ -294,6 +294,21 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     } catch {}
   }, [calendarOpen, selectedDateKey]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const original = document.body.style.overflow;
+    if (calendarOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = original;
+      };
+    }
+    document.body.style.overflow = original;
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, [calendarOpen]);
+
   // Initialize view/filter from URL
   useEffect(() => {
     const v = (searchParams.get('view') || '').toLowerCase();

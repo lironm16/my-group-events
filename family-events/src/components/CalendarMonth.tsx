@@ -142,6 +142,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
               const isCurrentMonth = d.date.getMonth() === cursor.getMonth();
               const active = selectedKey === k;
               const isToday = k === todayKey;
+              const hasEvents = list.length > 0;
               return (
                 <button
                   key={k}
@@ -149,21 +150,20 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
                   onClick={() => onDaySelect?.(k, list)}
                   aria-pressed={active}
                   className={[
-                    'relative min-h-[56px] sm:min-h-[80px] rounded-lg border transition-colors p-2 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center',
+                    'relative min-h-[48px] sm:min-h-[68px] rounded-lg border transition-colors p-2 flex items-center justify-center',
                     isCurrentMonth ? '' : 'opacity-60',
                     active
-                      ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700'
-                      : isToday
-                        ? 'border-2 border-blue-300 dark:border-blue-600'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500'
+                      ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700 bg-blue-100/70 dark:bg-blue-900/60 text-blue-900 dark:text-blue-100'
+                      : hasEvents
+                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
+                        : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100',
+                    !active && !hasEvents ? 'hover:bg-gray-50 dark:hover:bg-gray-800' : '',
+                    !active && isToday ? 'border-2 border-blue-300 dark:border-blue-600' : active ? '' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500'
                   ].join(' ')}
                 >
-                  <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-100">{d.date.getDate()}</span>
-                  {list.length > 0 && (
-                    <span className="absolute top-2 left-2 inline-flex min-w-[20px] items-center justify-center rounded-full bg-blue-600 text-white text-[10px] leading-none px-1.5 py-0.5">
-                      {list.length}
-                    </span>
-                  )}
+                  <span className="text-sm sm:text-base font-semibold">
+                    {d.date.getDate()}
+                  </span>
                 </button>
               );
             })}
@@ -184,18 +184,14 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
                 <div
                   key={k}
                   className={[
-                    'bg-white dark:bg-gray-900 min-h-[72px] sm:min-h-[96px] p-1 sm:p-2 border border-transparent',
+                    'min-h-[64px] sm:min-h-[88px] p-1 sm:p-2 border rounded-md',
                     isCurrentMonth ? '' : 'opacity-50',
-                    isToday ? 'border-blue-200 dark:border-blue-600' : ''
+                    isToday ? 'border-blue-200 dark:border-blue-600' : 'border-transparent',
+                    list.length > 0 ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200'
                   ].join(' ')}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] sm:text-xs text-gray-500">{d.date.getDate()}</span>
-                    {list.length > 0 && (
-                      <span className="text-[9px] sm:text-[10px] px-1 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
-                        {list.length}
-                      </span>
-                    )}
                   </div>
                   <ul className="space-y-0.5 sm:space-y-1">
                     {list.slice(0, 3).map((e) => (
