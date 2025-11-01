@@ -166,9 +166,9 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
                     'relative min-h-[48px] sm:min-h-[68px] rounded-lg border transition-colors p-2 flex items-center justify-center',
                     isCurrentMonth ? '' : 'opacity-60',
                     active
-                      ? 'border-blue-600 ring-2 ring-blue-400 dark:ring-blue-700 bg-blue-300/80 dark:bg-blue-900/60 text-blue-900 dark:text-blue-100'
+                      ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700 bg-blue-100/70 dark:bg-blue-900/60 text-blue-900 dark:text-blue-100'
                       : hasEvents
-                        ? 'bg-blue-200/80 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100'
+                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
                         : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100',
                     !active && !hasEvents ? 'hover:bg-gray-50 dark:hover:bg-gray-800' : '',
                     !active && isToday ? 'border-2 border-blue-300 dark:border-blue-600' : active ? '' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500'
@@ -200,7 +200,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
                     'min-h-[64px] sm:min-h-[88px] p-1 sm:p-2 border rounded-md',
                     isCurrentMonth ? '' : 'opacity-50',
                     isToday ? 'border-blue-200 dark:border-blue-600' : 'border-transparent',
-                    list.length > 0 ? 'bg-blue-200/80 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200'
+                    list.length > 0 ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200'
                   ].join(' ')}
                 >
                   <div className="flex items-center justify-between mb-1">
