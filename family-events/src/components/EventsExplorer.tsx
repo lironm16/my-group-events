@@ -22,6 +22,7 @@ type EventCard = {
   recurrence?: any | null;
   recurrenceExceptions?: string[] | null;
   coHosts?: { id: string; name: string | null }[];
+  occurrenceStartAt?: string | null;
 };
 
 type ScopeKey = 'mine' | 'all' | `group:${string}`;
