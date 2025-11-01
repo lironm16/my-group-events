@@ -71,6 +71,9 @@ const formatTimeLabel = (iso: string) => {
   return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
 };
 
+const getEffectiveStartAt = (event: EventCard) => event.occurrenceStartAt ?? event.startAt;
+const getEffectiveStartDate = (event: EventCard) => new Date(getEffectiveStartAt(event));
+
 export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const [filterKey, setFilterKey] = useState<ScopeKey>(DEFAULT_FILTER_KEY);
   const [view, setView] = useState<ViewKey>('list');
@@ -207,19 +210,19 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
   const eventsByDay = useMemo(() => {
     const map = new Map<string, EventCard[]>();
     for (const event of filtered) {
-      const key = isoToDateKey(event.startAt);
+      const key = isoToDateKey(getEffectiveStartAt(event));
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(event);
     }
-    for (const [, list] of map) list.sort((a, b) => +new Date(a.startAt) - +new Date(b.startAt));
+    for (const [, list] of map) list.sort((a, b) => +getEffectiveStartDate(a) - +getEffectiveStartDate(b));
     return map;
   }, [filtered]);
   const calendarEvents = useMemo<CalendarEvent[]>(() => filtered.map((e) => ({
     id: e.id,
     title: e.title,
-    startAt: e.startAt,
+    startAt: getEffectiveStartAt(e),
     location: e.location,
-    occurrenceStartAt: e.recurrence ? e.startAt : undefined,
+    occurrenceStartAt: e.occurrenceStartAt ?? undefined,
   })), [filtered]);
   const selectedDayEvents = useMemo(() => selectedDateKey ? (eventsByDay.get(selectedDateKey) ?? []) : [], [selectedDateKey, eventsByDay]);
   const selectedDateDisplay = useMemo(() => {
@@ -453,7 +456,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
                           href={href}
                           className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 shadow-sm hover:border-blue-300 dark:hover:border-blue-400 hover:shadow-md transition"
                         >
-                          <div className="text-sm font-medium text-blue-600 dark:text-blue-300">{formatTimeLabel(event.startAt)}</div>
+                          <div className="text-sm font-medium text-blue-600 dark:text-blue-300">{formatTimeLabel(getEffectiveStartAt(event))}</div>
                           <div className="mt-1 text-base font-semibold text-gray-900 dark:text-gray-100">{event.title}</div>
                           {event.description && (
                             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{event.description}</p>
@@ -578,14 +581,15 @@ function filterBySearch(events: EventCard[], query: string): EventCard[] {
   const normalized = normalizeQuery(query);
   if (!normalized) return events;
   return events.filter((event) => {
+    const effectiveStart = getEffectiveStartDate(event);
     const fields = [
       event.title,
       event.description ?? '',
       event.location ?? '',
       event.host?.name ?? '',
       ...(event.coHosts || []).map((h) => h.name ?? ''),
-      new Date(event.startAt).toLocaleDateString('he-IL'),
-      new Date(event.startAt).toLocaleString('he-IL', { dateStyle: 'medium', timeStyle: 'short' }),
+      effectiveStart.toLocaleDateString('he-IL'),
+      effectiveStart.toLocaleString('he-IL', { dateStyle: 'medium', timeStyle: 'short' }),
     ];
     return fields.some((field) => normalizeQuery(field).includes(normalized));
   });
@@ -617,20 +621,20 @@ function filterByTime(events: EventCard[], key: TimeKey): EventCard[] {
 
   const endOfMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth() + 1, 0, 23, 59, 59, 999);
 
-  if (key === 'upcoming') return events.filter(e => new Date(e.startAt) >= now);
+  if (key === 'upcoming') return events.filter(e => getEffectiveStartDate(e) >= now);
   if (key === 'today') return events.filter(e => {
-    const d = new Date(e.startAt);
+    const d = getEffectiveStartDate(e);
     return d >= startOfToday && d <= endOfToday;
   });
   if (key === 'week') return events.filter(e => {
-    const d = new Date(e.startAt);
+    const d = getEffectiveStartDate(e);
     return d >= startOfToday && d <= endOfWeek;
   });
   if (key === 'month') return events.filter(e => {
-    const d = new Date(e.startAt);
+    const d = getEffectiveStartDate(e);
     return d >= startOfToday && d <= endOfMonth;
   });
-  if (key === 'past') return events.filter(e => new Date(e.startAt) < now);
+  if (key === 'past') return events.filter(e => getEffectiveStartDate(e) < now);
   return events;
 }
 
@@ -644,7 +648,9 @@ function Cards({ list, viewerId }: { list: EventCard[]; viewerId: string }) {
         const totalCount = e.rsvps.length;
         const naCount = Math.max(0, totalCount - approvedCount - maybeCount - declinedCount);
         const iconType = e.holidayKey === 'shabat_eve' ? 'shabat_eve' : e.holidayKey?.includes('eve') ? 'holiday_eve' : e.holidayKey ? 'holiday' : 'custom';
-        const href = `/events/${e.id}${e.recurrence ? `?occurrenceStartAt=${encodeURIComponent(e.startAt)}` : ''}`;
+        const effectiveStartISO = getEffectiveStartAt(e);
+        const occurrenceParam = e.occurrenceStartAt ? `?occurrenceStartAt=${encodeURIComponent(e.occurrenceStartAt)}` : '';
+        const href = `/events/${e.id}${occurrenceParam}`;
         const viewerStatus = resolveViewerStatus(e, viewerId);
         const badge = resolveStatusBadge(viewerStatus);
         return (
@@ -666,7 +672,7 @@ function Cards({ list, viewerId }: { list: EventCard[]; viewerId: string }) {
                   />
                 )}
                 <div className="absolute top-2 right-2 text-xs px-2 py-1 rounded bg-white/90 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 pointer-events-none">
-                  {formatDateMaybeDateOnly(e.startAt)}
+                  {formatDateMaybeDateOnly(effectiveStartISO)}
                 </div>
               </div>
               <div className="p-4 sm:p-4">
