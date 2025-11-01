@@ -580,9 +580,9 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
         </div>
       )}
       {calendarOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4">
-          <div className="absolute inset-0 bg-black/50" onClick={closeCalendarView} />
-          <div className="relative z-10 flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={closeCalendarView} />
+          <div className="relative z-10 flex h-full w-full flex-col overflow-hidden bg-white dark:bg-gray-950">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">לוח שנה</h2>

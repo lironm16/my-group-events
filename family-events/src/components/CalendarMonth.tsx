@@ -58,6 +58,16 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
   const selectedKey = selectedDateKey ?? null;
   const todayKey = toKey(new Date());
 
+  const ensureVisibleMonth = (targetKey: string) => {
+    if (!targetKey || targetKey.length < 7) return;
+    const [year, month] = targetKey.split('-').map(Number);
+    if (Number.isNaN(year) || Number.isNaN(month)) return;
+    const currentYear = cursor.getFullYear();
+    const currentMonth = cursor.getMonth() + 1;
+    if (year === currentYear && month === currentMonth) return;
+    setCursor(new Date(year, month - 1, 1));
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -71,7 +81,7 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
             aria-label="חודש קודם"
             onClick={() => setCursor((d) => addMonths(d, -1))}
           >
-            <ArrowIcon className="h-4 w-4 -scale-x-100" />
+            <ArrowIcon className="h-4 w-4 rotate-180" />
           </button>
           <button
             type="button"
@@ -147,7 +157,10 @@ export default function CalendarMonth({ events, initialMonth, onMonthChange, onD
                 <button
                   key={k}
                   type="button"
-                  onClick={() => onDaySelect?.(k, list)}
+                  onClick={() => {
+                    ensureVisibleMonth(k);
+                    onDaySelect?.(k, list);
+                  }}
                   aria-pressed={active}
                   className={[
                     'relative min-h-[48px] sm:min-h-[68px] rounded-lg border transition-colors p-2 flex items-center justify-center',
