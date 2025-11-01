@@ -275,7 +275,10 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
 
   useEffect(() => {
     if (!calendarOpen) return;
-    if (selectedDateKey && eventsByDay.has(selectedDateKey)) return;
+    if (selectedDateKey) {
+      if (eventsByDay.has(selectedDateKey)) return;
+      return;
+    }
     const todayKey = dateToKey(new Date());
     if (eventsByDay.has(todayKey)) {
       setSelectedDateKey(todayKey);
