@@ -135,18 +135,18 @@ export default function PushPreferences() {
         throw new Error(data.error || TEXT.activationFailed);
       }
 
-      const refreshed = await registration.pushManager.getSubscription();
-      setEnabled(Boolean(refreshed));
+      setEnabled(true);
       setStatus('success');
       setMessage(TEXT.activated);
       setTestStatus('idle');
+      fetchStatus().catch(() => undefined);
     } catch (error) {
       console.error(error);
       setStatus('error');
       setMessage((error as Error).message);
       setEnabled(false);
     }
-  }, [canToggle, vapidKey]);
+  }, [canToggle, vapidKey, fetchStatus]);
 
   const handleUnsubscribe = useCallback(async () => {
     setStatus('loading');
@@ -166,17 +166,17 @@ export default function PushPreferences() {
           body: JSON.stringify({ endpoint }),
         });
       }
-      const refreshed = await registration.pushManager.getSubscription();
-      setEnabled(Boolean(refreshed));
+      setEnabled(false);
       setStatus('success');
       setMessage(TEXT.deactivated);
       setTestStatus('idle');
+      fetchStatus().catch(() => undefined);
     } catch (error) {
       console.error(error);
       setStatus('error');
       setMessage((error as Error).message);
     }
-  }, []);
+  }, [fetchStatus]);
 
   const handleSendTest = useCallback(async () => {
     setTestStatus('loading');
