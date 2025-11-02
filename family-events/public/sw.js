@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-events-static-v4';
+const CACHE_NAME = 'family-events-static-v5';
 const PRECACHE_URLS = ['/', '/manifest.json'];
 
 self.addEventListener('message', (event) => {
@@ -81,10 +81,24 @@ self.addEventListener('push', (event) => {
     payload = { title: DEFAULT_TITLE, body: event.data.text() };
   }
 
+  console.log('[sw] raw push payload', payload);
+
   const title = (typeof payload.title === 'string' && payload.title.trim().length) ? payload.title : DEFAULT_TITLE;
   const bodyText = (typeof payload.body === 'string' && payload.body.trim().length) ? payload.body : DEFAULT_BODY;
-  const decodedTitle = payload.encoded ? decodeURIComponent(title) : title;
-  const decodedBody = payload.encoded ? decodeURIComponent(bodyText) : bodyText;
+  let decodedTitle = title;
+  let decodedBody = bodyText;
+  if (payload.encoded) {
+    try {
+      decodedTitle = atob(title);
+    } catch (error) {
+      console.error('[sw] failed to decode title', error);
+    }
+    try {
+      decodedBody = atob(bodyText);
+    } catch (error) {
+      console.error('[sw] failed to decode body', error);
+    }
+  }
 
   const options = {
     body: decodedBody,

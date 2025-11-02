@@ -30,8 +30,8 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
 
   const encodedPayload = {
     ...safePayload,
-    title: encodeURIComponent(safePayload.title),
-    body: encodeURIComponent(safePayload.body),
+    title: Buffer.from(safePayload.title, 'utf8').toString('base64'),
+    body: Buffer.from(safePayload.body, 'utf8').toString('base64'),
     encoded: true,
   };
 
