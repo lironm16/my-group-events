@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { fetchIsraelHolidays } from '@/lib/holidays';
 import { computeNextOccurrence, computeReadyAt, parseTemplateData, toJsonValue, type RecurrenceConfig } from '@/lib/recurrence';
+import { createNotifications } from '@/lib/notifications';
 
 const DEFAULT_BATCH_SIZE = 10;
+type NotificationInput = Parameters<typeof createNotifications>[0][number];
 
 export async function POST(req: Request) {
   const secret = process.env.EVENT_SERIES_CRON_SECRET || process.env.CRON_SECRET;
@@ -35,6 +37,7 @@ export async function POST(req: Request) {
   const holidayCache = new Map<number, Awaited<ReturnType<typeof fetchIsraelHolidays>>>();
 
   const results: Array<{ seriesId: string; created?: string; skipped?: string; error?: string }> = [];
+  const pendingNotifications: NotificationInput[] = [];
 
   for (const series of dueSeries) {
     const holidays: Awaited<ReturnType<typeof fetchIsraelHolidays>> = [];
@@ -165,10 +168,34 @@ export async function POST(req: Request) {
         },
       });
 
-      return { created: event.id } as const;
+      const startLabel = start.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+      const recipients = new Set<string>();
+      if (template.hostId) recipients.add(template.hostId);
+      template.coHostIds.forEach((id) => { if (id) recipients.add(id); });
+      const notifications: NotificationInput[] = Array.from(recipients).map((userId) => ({
+        userId,
+        type: 'event.series.next-created',
+        title: `???? ????? ??? ????? "${template.title}"`,
+        body: `????? ??? ?????? ?-${startLabel}`,
+        href: `/events/${event.id}?occurrenceStartAt=${encodeURIComponent(start.toISOString())}`,
+        metadata: { eventId: event.id, seriesId: currentSeries.id },
+      }));
+
+      return { created: event.id, notifications } as const;
     });
 
     results.push({ seriesId: series.id, ...outcome });
+    if ('notifications' in outcome && Array.isArray((outcome as any).notifications)) {
+      pendingNotifications.push(...((outcome as any).notifications as NotificationInput[]));
+    }
+  }
+
+  if (pendingNotifications.length) {
+    try {
+      await createNotifications(pendingNotifications);
+    } catch (error) {
+      console.error('Failed to create auto notifications', error);
+    }
   }
 
   return NextResponse.json({ processed: results.length, results });

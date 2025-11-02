@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useTheme } from '@/components/ThemeProvider';
 import { useSession, signOut } from 'next-auth/react';
 import FamilyMenu from '@/components/FamilyMenu';
+import NotificationBell from '@/components/NotificationBell';
 import { useEffect, useRef, useState } from 'react';
 
 export default function Nav() {
@@ -113,6 +114,7 @@ export default function Nav() {
 
         {/* Right side: Keep only group selector and theme toggle */}
         <div className="flex items-center gap-3">
+          {status === 'authenticated' && <NotificationBell />}
           {status === 'authenticated' && <FamilyMenu />}
           <button onClick={toggle} className="px-2 py-1 rounded border text-sm dark:border-gray-700">
             {theme === 'dark' ? '☀️' : '🌙'}

@@ -5,6 +5,7 @@ import { authOptions } from '@/auth';
 import { Prisma } from '@prisma/client';
 import { fetchIsraelHolidays } from '@/lib/holidays';
 import { buildTemplateData, computeNextOccurrence, computeReadyAt, deriveDurationMs, toJsonValue, type RecurrenceConfig } from '@/lib/recurrence';
+import { createNotifications } from '@/lib/notifications';
 
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;
@@ -242,6 +243,30 @@ export async function POST(req: Request) {
 
     return { event };
   });
+
+  const notifyTargets = new Set<string>();
+  if (hostId !== user.id) notifyTargets.add(hostId);
+  coHostIds.forEach((uid) => notifyTargets.add(uid));
+  if (notifyTargets.size) {
+    const startLabel = startAt.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+    const payloads = Array.from(notifyTargets).map((uid) => ({
+      userId: uid,
+      type: recurrenceConfig ? 'event.series.created' : 'event.created',
+      title: recurrenceConfig
+        ? `????? "${title}" ????`
+        : `???? ????? "${title}"`,
+      body: recurrenceConfig
+        ? `????? ?????? ?????? ?-${startLabel}`
+        : `?????? ?????? ?-${startLabel}`,
+      href: `/events/${result.event.id}`,
+      metadata: { eventId: result.event.id },
+    }));
+    try {
+      await createNotifications(payloads);
+    } catch (error) {
+      console.error('Failed to create notifications', error);
+    }
+  }
 
   return NextResponse.json({ event: result.event }, { status: 201 });
 }

@@ -260,3 +260,19 @@ model FamilyMembership {
   @@index([familyId])
   @@index([userId])
 }
+
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  type      String
+  title     String
+  body      String?
+  href      String?
+  metadata  Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+}
