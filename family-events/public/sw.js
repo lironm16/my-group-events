@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-events-static-v7';
+const CACHE_NAME = 'family-events-static-v8';
 const PRECACHE_URLS = ['/', '/manifest.json'];
 
 self.addEventListener('message', (event) => {
@@ -83,27 +83,8 @@ self.addEventListener('push', (event) => {
 
   console.log('[sw] raw push payload', payload);
 
-  const title = (typeof payload.title === 'string' && payload.title.trim().length) ? payload.title : DEFAULT_TITLE;
-  const bodyText = (typeof payload.body === 'string' && payload.body.trim().length) ? payload.body : DEFAULT_BODY;
-  let decodedTitle = title;
-  let decodedBody = bodyText;
-  if (payload.encoded) {
-    try {
-      const titleBuffer = Uint8Array.from(atob(title), (c) => c.charCodeAt(0));
-      decodedTitle = new TextDecoder('utf-8').decode(titleBuffer);
-    } catch (error) {
-      console.error('[sw] failed to decode title', error);
-    }
-    try {
-      const bodyBuffer = Uint8Array.from(atob(bodyText), (c) => c.charCodeAt(0));
-      decodedBody = new TextDecoder('utf-8').decode(bodyBuffer);
-    } catch (error) {
-      console.error('[sw] failed to decode body', error);
-    }
-  }
-
   const finalTitle = DEFAULT_TITLE;
-  const finalBody = decodedBody && decodedBody.trim().length ? decodedBody : DEFAULT_BODY;
+  const finalBody = DEFAULT_BODY;
 
   console.log('[sw] showing notification', { finalTitle, finalBody });
 
