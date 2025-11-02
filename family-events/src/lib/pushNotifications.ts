@@ -36,7 +36,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
             endpoint: subscription.endpoint,
             keys: { auth: subscription.auth, p256dh: subscription.p256dh },
           },
-          JSON.stringify(safePayload),
+          Buffer.from(JSON.stringify(safePayload), 'utf8'),
         );
       } catch (error: any) {
         if (error?.statusCode === 410 || error?.statusCode === 404) {
