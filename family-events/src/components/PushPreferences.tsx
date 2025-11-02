@@ -27,20 +27,24 @@ export default function PushPreferences() {
   useEffect(() => {
     const isSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
     setSupported(isSupported);
-    if (typeof window !== 'undefined') {
-      const mediaQuery = window.matchMedia('(display-mode: standalone)');
-      setStandalone(mediaQuery.matches);
-      const handler = () => setStandalone(mediaQuery.matches);
-      if ('addEventListener' in mediaQuery) {
-        mediaQuery.addEventListener('change', handler);
-      } else {
-        mediaQuery.addListener(handler);
-      }
-      return () => {
-        if ('removeEventListener' in mediaQuery) mediaQuery.removeEventListener('change', handler);
-        else mediaQuery.removeListener(handler);
-      };
+    if (typeof window === 'undefined') {
+      return undefined;
     }
+
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    setStandalone(mediaQuery.matches);
+    const listener = (event: MediaQueryListEvent) => setStandalone(event.matches);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener?.('change', listener);
+    }
+
+    if (typeof mediaQuery.addListener === 'function') {
+      mediaQuery.addListener(listener);
+      return () => mediaQuery.removeListener?.(listener);
+    }
+
     return undefined;
   }, []);
 
