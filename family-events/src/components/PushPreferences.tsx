@@ -33,15 +33,20 @@ const TEXT = {
   toggleOff: 'כבה',
   toggleOn: 'הפעל',
   vapidMissing: 'יש להגדיר מפתחות VAPID בצד השרת כדי לאפשר את ההתראות.',
+  testButton: 'שלח התראת בדיקה',
+  testSuccess: 'התראת בדיקה נשלחה.',
+  testFailed: 'שליחת ההתראה נכשלה.',
+  noSubscription: 'אין הרשמה פעילה להתראות במכשיר זה.',
 } as const;
 
 export default function PushPreferences() {
-  const [supported, setSupported] = useState(true);
+  const [supported, setSupported] = useState(false);
   const [standalone, setStandalone] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [status, setStatus] = useState<StatusState>('idle');
   const [message, setMessage] = useState<string | null>(null);
   const [vapidKey, setVapidKey] = useState<string | null>(null);
+  const [testStatus, setTestStatus] = useState<StatusState>('idle');
 
   useEffect(() => {
     const isSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
@@ -69,6 +74,7 @@ export default function PushPreferences() {
 
   const fetchStatus = useCallback(async () => {
     if (!supported) return;
+    setMessage(null);
     try {
       const response = await fetch('/api/push/subscriptions', { method: 'GET' });
       if (!response.ok) {
@@ -76,11 +82,19 @@ export default function PushPreferences() {
         throw new Error(data.error || TEXT.serverError);
       }
       const data = await response.json();
-      setEnabled(Boolean(data.hasSubscription));
       setVapidKey(data.vapidPublicKey ?? null);
-      setMessage(null);
     } catch (error) {
       setMessage((error as Error).message);
+    }
+
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        setEnabled(Boolean(subscription));
+      } catch (error) {
+        console.error('Failed to inspect push subscription', error);
+      }
     }
   }, [supported]);
 
@@ -124,6 +138,7 @@ export default function PushPreferences() {
       setEnabled(true);
       setStatus('success');
       setMessage(TEXT.activated);
+      setTestStatus('idle');
     } catch (error) {
       console.error(error);
       setStatus('error');
@@ -150,12 +165,34 @@ export default function PushPreferences() {
       setEnabled(false);
       setStatus('success');
       setMessage(TEXT.deactivated);
+      setTestStatus('idle');
     } catch (error) {
       console.error(error);
       setStatus('error');
       setMessage((error as Error).message);
     }
   }, []);
+
+  const handleSendTest = useCallback(async () => {
+    setTestStatus('loading');
+    setMessage(null);
+    setStatus('idle');
+    try {
+      const response = await fetch('/api/push/test', { method: 'POST' });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || TEXT.testFailed);
+      }
+      setTestStatus('success');
+      setMessage(TEXT.testSuccess);
+    } catch (error) {
+      console.error(error);
+      setTestStatus('error');
+      setMessage((error as Error).message || TEXT.testFailed);
+    }
+  }, []);
+
+  const messageIsError = status === 'error' || testStatus === 'error';
 
   if (!supported) {
     return (
@@ -194,8 +231,20 @@ export default function PushPreferences() {
           {enabled ? TEXT.toggleOff : TEXT.toggleOn}
         </button>
       </div>
+      {enabled && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleSendTest}
+            disabled={testStatus === 'loading'}
+            className="rounded px-4 py-2 text-sm font-semibold border border-emerald-500 text-emerald-600 hover:bg-emerald-50 disabled:opacity-60"
+          >
+            {testStatus === 'loading' ? 'שולח...' : TEXT.testButton}
+          </button>
+        </div>
+      )}
       {message && (
-        <p className={`text-sm ${status === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>{message}</p>
+        <p className={`text-sm ${messageIsError ? 'text-red-600' : 'text-emerald-600'}`}>{message}</p>
       )}
       {!vapidKey && (
         <p className="text-sm text-red-600">{TEXT.vapidMissing}</p>
