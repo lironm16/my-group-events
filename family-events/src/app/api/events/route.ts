@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { Prisma } from '@prisma/client';
+import { fetchIsraelHolidays } from '@/lib/holidays';
+import { buildTemplateData, computeNextOccurrence, computeReadyAt, deriveDurationMs, toJsonValue, type RecurrenceConfig } from '@/lib/recurrence';
 
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;
@@ -108,71 +110,138 @@ export async function POST(req: Request) {
   const user = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json();
-  // Build recurrence configuration if provided
-  let recurrence: any = undefined;
-  if (body?.repeat?.weeklyUntil) {
-    recurrence = {
-      freq: 'WEEKLY',
-      until: new Date(body.repeat.weeklyUntil).toISOString(),
-      skipHolidays: !!body.repeat.skipHolidays,
+  const title = typeof body.title === 'string' ? body.title.trim() : '';
+  const startAt = body.startAt ? new Date(body.startAt) : null;
+  const endAt = body.endAt ? new Date(body.endAt) : null;
+  if (!title) return NextResponse.json({ error: 'Missing title' }, { status: 400 });
+  if (!startAt || Number.isNaN(startAt.getTime())) return NextResponse.json({ error: 'Invalid startAt' }, { status: 400 });
+  if (endAt && Number.isNaN(endAt.getTime())) return NextResponse.json({ error: 'Invalid endAt' }, { status: 400 });
+  if (endAt && endAt < startAt) return NextResponse.json({ error: 'End must be after start' }, { status: 400 });
+
+  const hostId = typeof body.hostId === 'string' && body.hostId ? body.hostId : user.id;
+  const coHostIds = Array.isArray(body?.coHostIds)
+    ? Array.from(new Set(body.coHostIds.filter((value: unknown): value is string => typeof value === 'string' && value)))
+    : [];
+
+  let guestIds: string[] = [];
+  try {
+    const parsed = JSON.parse(String(body?.guestSelection || '[]'));
+    if (Array.isArray(parsed)) guestIds = Array.from(new Set(parsed.filter((value): value is string => typeof value === 'string' && value)));
+  } catch {
+    guestIds = [];
+  }
+
+  const recurrenceInput = body?.repeat || null;
+  let recurrenceConfig: RecurrenceConfig | null = null;
+  if (recurrenceInput && (recurrenceInput.weeklyUntil || recurrenceInput.noEndDate)) {
+    const untilDate = recurrenceInput.noEndDate ? null : recurrenceInput.weeklyUntil ? new Date(recurrenceInput.weeklyUntil) : null;
+    if (untilDate && Number.isNaN(untilDate.getTime())) return NextResponse.json({ error: 'Invalid repeat until date' }, { status: 400 });
+    recurrenceConfig = {
+      frequency: 'WEEKLY',
+      interval: 1,
+      skipHolidays: !!recurrenceInput.skipHolidays,
+      until: untilDate,
+      noEndDate: !!recurrenceInput.noEndDate,
     };
   }
-  const created = await prisma.event.create({
-    data: {
-      title: body.title,
-      description: body.description ?? null,
-      location: body.location ?? null,
-      image: body.image ?? null,
-      startAt: new Date(body.startAt),
-      endAt: body.endAt ? new Date(body.endAt) : null,
-      externalLink: body.externalLink ?? null,
-      isHolidayGenerated: body.holidayKey ? true : false,
-      holidayKey: body.holidayKey ?? null,
-      hostId: (body.hostId && typeof body.hostId === 'string') ? body.hostId : user.id,
-      familyId: user.familyId ?? null,
-      recurrence,
-      recurrenceExceptions: undefined,
-    },
-  });
-  // Add co-hosts if provided
-  if (Array.isArray(body?.coHostIds) && body.coHostIds.length) {
-    const uniqueIds: string[] = Array.from(new Set(body.coHostIds.filter((x: any) => typeof x === 'string')));
-    if (uniqueIds.length) {
-      await prisma.eventHost.createMany({
-        data: uniqueIds.map((uid) => ({ eventId: created.id, userId: uid })),
+
+  const durationMs = deriveDurationMs(startAt, endAt);
+  let holidaysList: Awaited<ReturnType<typeof fetchIsraelHolidays>> = [];
+  if (recurrenceConfig?.skipHolidays) {
+    const year = startAt.getFullYear();
+    const nextYear = year + 1;
+    const [curr, next] = await Promise.all([fetchIsraelHolidays(year), fetchIsraelHolidays(nextYear)]);
+    holidaysList = [...curr, ...next];
+  }
+  const nextOccurrence = recurrenceConfig
+    ? computeNextOccurrence(startAt, recurrenceConfig, durationMs ?? undefined, holidaysList)
+    : null;
+  const readyAt = recurrenceConfig && nextOccurrence ? computeReadyAt(startAt, endAt ?? null, durationMs ?? undefined) : null;
+
+  const templateData = recurrenceConfig
+    ? buildTemplateData({
+        title,
+        description: body.description ?? null,
+        location: body.location ?? null,
+        image: body.image ?? null,
+        externalLink: body.externalLink ?? null,
+        holidayKey: body.holidayKey ?? null,
+        visibleToAll: body.visibleToAll !== undefined ? !!body.visibleToAll : true,
+        rsvpOpenToAll: body.rsvpOpenToAll !== undefined ? !!body.rsvpOpenToAll : false,
+        hostId,
+        coHostIds,
+        guestUserIds: guestIds,
+        familyId: user.familyId ?? null,
+      })
+    : null;
+
+  const recurrenceJson = recurrenceConfig
+    ? toJsonValue({
+        freq: recurrenceConfig.frequency,
+        interval: recurrenceConfig.interval,
+        skipHolidays: recurrenceConfig.skipHolidays,
+        until: recurrenceConfig.until ? recurrenceConfig.until.toISOString() : null,
+        noEndDate: !!recurrenceConfig.noEndDate,
+      })
+    : undefined;
+
+  const seriesPayload = recurrenceConfig && templateData
+    ? {
+        frequency: recurrenceConfig.frequency,
+        interval: recurrenceConfig.interval,
+        skipHolidays: recurrenceConfig.skipHolidays,
+        until: recurrenceConfig.until ?? null,
+        noEndDate: !!recurrenceConfig.noEndDate,
+        templateData: toJsonValue(templateData),
+        baseDurationMs: durationMs != null ? BigInt(Math.round(durationMs)) : null,
+        nextOccurrenceStart: nextOccurrence?.start ?? null,
+        nextOccurrenceEnd: nextOccurrence?.end ?? null,
+        nextReadyAt: readyAt,
+        ownerId: hostId,
+        familyId: user.familyId ?? null,
+      }
+    : null;
+
+  const result = await prisma.$transaction(async (tx) => {
+    const seriesRecord = seriesPayload
+      ? await tx.eventSeries.create({ data: seriesPayload })
+      : null;
+
+    const event = await tx.event.create({
+      data: {
+        title,
+        description: body.description ?? null,
+        location: body.location ?? null,
+        image: body.image ?? null,
+        startAt,
+        endAt: endAt ?? null,
+        externalLink: body.externalLink ?? null,
+        isHolidayGenerated: !!body.holidayKey,
+        holidayKey: body.holidayKey ?? null,
+        hostId,
+        familyId: user.familyId ?? null,
+        recurrence: recurrenceJson,
+        recurrenceExceptions: undefined,
+        seriesId: seriesRecord?.id ?? null,
+        seriesOccurrence: seriesRecord ? 1 : null,
+      },
+    });
+
+    if (coHostIds.length) {
+      await tx.eventHost.createMany({
+        data: coHostIds.map((uid) => ({ eventId: event.id, userId: uid })),
         skipDuplicates: true,
       });
     }
-  }
-  // Create RSVPs for selected guests
-  try {
-    const guestIds: string[] = JSON.parse(String(body?.guestSelection || '[]'));
-    if (Array.isArray(guestIds) && guestIds.length) {
-      const unique = Array.from(new Set(guestIds));
-      await prisma.rSVP.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid, status: 'NA' })) });
+    if (guestIds.length) {
+      await tx.rSVP.createMany({
+        data: guestIds.map((uid) => ({ eventId: event.id, userId: uid, status: 'NA' })),
+        skipDuplicates: true,
+      });
     }
-  } catch {}
-  return NextResponse.json({ event: created }, { status: 201 });
-}
 
-async function fetchIsraelHolidays(year: number) {
-  try {
-    const url = `https://www.hebcal.com/hebcal?cfg=json&v=1&maj=on&min=on&mod=on&year=${year}&month=x&i=on&geo=geoname&lg=h&d=on&b=18&mf=on&ss=on&tz=Asia/Jerusalem`; 
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) return [] as { date: string; title: string }[];
-    const j = await res.json();
-    const items = (j?.items || []) as any[];
-    return items.filter(x => x?.category === 'holiday').map(x => ({ date: x.date, title: x.title }));
-  } catch {
-    return [] as { date: string; title: string }[];
-  }
-}
+    return { event };
+  });
 
-function isHoliday(d: Date, holidays: { date: string; title: string }[]) {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const iso = `${yyyy}-${mm}-${dd}`;
-  return holidays.some(h => h.date?.startsWith(iso));
+  return NextResponse.json({ event: result.event }, { status: 201 });
 }
-

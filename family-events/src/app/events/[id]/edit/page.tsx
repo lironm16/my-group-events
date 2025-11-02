@@ -11,6 +11,12 @@ type EventDetail = {
   startAt: string;
   endAt: string | null;
   externalLink: string | null;
+  series?: {
+    id: string;
+    skipHolidays: boolean;
+    noEndDate: boolean;
+    until: string | null;
+  } | null;
 };
 
 export default function EditEventPage({ params }: { params: { id: string } }) {
@@ -19,6 +25,11 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '' });
+  const [seriesId, setSeriesId] = useState<string | null>(null);
+  const [applyMode, setApplyMode] = useState<'single' | 'future'>('single');
+  const [repeatNoEnd, setRepeatNoEnd] = useState(false);
+  const [repeatUntil, setRepeatUntil] = useState('');
+  const [skipHolidays, setSkipHolidays] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -39,18 +50,41 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
         endAt: e.endAt ? new Date(e.endAt).toISOString().slice(0,16) : '',
         externalLink: e.externalLink ?? '',
       });
+      if (e.series) {
+        setSeriesId(e.series.id);
+        setApplyMode('single');
+        setRepeatNoEnd(!!e.series.noEndDate);
+        setSkipHolidays(!!e.series.skipHolidays);
+        if (e.series.until) {
+          try {
+            setRepeatUntil(new Date(e.series.until).toISOString().slice(0,16));
+          } catch {
+            setRepeatUntil('');
+          }
+        } else {
+          setRepeatUntil('');
+        }
+      } else {
+        setSeriesId(null);
+        setRepeatNoEnd(false);
+        setRepeatUntil('');
+        setSkipHolidays(false);
+      }
       setLoading(false);
     })();
   }, [params.id]);
 
+  const hasSeries = !!seriesId;
+
   const errors = useMemo(() => {
-    const errs: Partial<Record<keyof typeof form, string>> = {};
+    const errs: Record<string, string> = {};
     if (!form.title.trim()) errs.title = 'יש להזין כותרת';
     if (!form.startAt) errs.startAt = 'יש להזין תאריך התחלה';
     if (form.endAt && form.startAt && new Date(form.endAt) < new Date(form.startAt)) errs.endAt = 'תאריך הסיום חייב להיות אחרי ההתחלה';
     if (form.externalLink && !/^https?:\/\//.test(form.externalLink)) errs.externalLink = 'קישור לא תקין (חייב להתחיל ב-http/https)';
+    if (hasSeries && applyMode === 'future' && !repeatNoEnd && !repeatUntil) errs.repeatUntil = 'יש לבחור תאריך סיום או לסמן ללא תאריך סיום';
     return errs;
-  }, [form]);
+  }, [form, hasSeries, applyMode, repeatNoEnd, repeatUntil]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,7 +113,18 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
         }
       }
     } catch {}
-    const res = await fetch(`/api/events/${params.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const payload: any = { ...form };
+    if (hasSeries) {
+      payload.applyMode = applyMode;
+      if (applyMode === 'future') {
+        payload.repeat = {
+          skipHolidays,
+          noEndDate: repeatNoEnd,
+        };
+        if (!repeatNoEnd && repeatUntil) payload.repeat.weeklyUntil = repeatUntil;
+      }
+    }
+    const res = await fetch(`/api/events/${params.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     setSaving(false);
     if (res.ok) router.push(`/events/${params.id}`);
   }
@@ -113,6 +158,43 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
           {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
         </div>
         <InvitesEditor eventId={params.id} />
+      {hasSeries && (
+        <div className="space-y-3 border-t border-gray-200 dark:border-gray-800 pt-3">
+          <div className="text-sm font-semibold text-gray-800 dark:text-gray-200">החלת השינויים</div>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="radio" name="applyMode" value="single" checked={applyMode === 'single'} onChange={() => setApplyMode('single')} />
+              <span>אירוע זה בלבד</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="radio" name="applyMode" value="future" checked={applyMode === 'future'} onChange={() => setApplyMode('future')} />
+              <span>אירוע זה וכל הבאים</span>
+            </label>
+          </div>
+          {applyMode === 'future' && (
+            <div className="space-y-2">
+              <DateTimePicker label="חוזר עד" value={repeatUntil} onChange={setRepeatUntil} disabled={repeatNoEnd} />
+              {errors.repeatUntil && <p className={errorCls}>{errors.repeatUntil}</p>}
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={repeatNoEnd}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setRepeatNoEnd(checked);
+                    if (checked) setRepeatUntil('');
+                  }}
+                />
+                <span>ללא תאריך סיום</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={skipHolidays} onChange={(e) => setSkipHolidays(e.target.checked)} />
+                <span>דלג על חגים</span>
+              </label>
+            </div>
+          )}
+        </div>
+      )}
         <div className="flex gap-2">
           <button disabled={saving || Object.keys(errors).length > 0} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
           <button type="button" onClick={()=>router.push(`/events/${params.id}`)} className="px-3 py-2 bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded">ביטול</button>
