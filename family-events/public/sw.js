@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-events-static-v3';
+const CACHE_NAME = 'family-events-static-v4';
 const PRECACHE_URLS = ['/', '/manifest.json'];
 
 self.addEventListener('message', (event) => {
@@ -82,8 +82,12 @@ self.addEventListener('push', (event) => {
   }
 
   const title = (typeof payload.title === 'string' && payload.title.trim().length) ? payload.title : DEFAULT_TITLE;
+  const bodyText = (typeof payload.body === 'string' && payload.body.trim().length) ? payload.body : DEFAULT_BODY;
+  const decodedTitle = payload.encoded ? decodeURIComponent(title) : title;
+  const decodedBody = payload.encoded ? decodeURIComponent(bodyText) : bodyText;
+
   const options = {
-    body: (typeof payload.body === 'string' && payload.body.trim().length) ? payload.body : DEFAULT_BODY,
+    body: decodedBody,
     icon: payload.icon || '/templates/party.jpg',
     badge: payload.badge || '/templates/party.jpg',
     lang: 'he',
@@ -92,7 +96,7 @@ self.addEventListener('push', (event) => {
     actions: payload.actions,
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(self.registration.showNotification(decodedTitle, options));
 });
 
 self.addEventListener('notificationclick', (event) => {

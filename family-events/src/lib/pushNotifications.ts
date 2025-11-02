@@ -28,8 +28,15 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
     actions: payload.actions,
   } satisfies PushPayload;
 
+  const encodedPayload = {
+    ...safePayload,
+    title: encodeURIComponent(safePayload.title),
+    body: encodeURIComponent(safePayload.body),
+    encoded: true,
+  };
+
   if (process.env.NODE_ENV !== 'production') {
-    console.log('[push] sending payload', safePayload);
+    console.log('[push] sending payload', encodedPayload);
   }
 
   await Promise.all(
@@ -40,7 +47,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
             endpoint: subscription.endpoint,
             keys: { auth: subscription.auth, p256dh: subscription.p256dh },
           },
-          JSON.stringify(safePayload),
+          JSON.stringify(encodedPayload),
           {
             headers: {
               'content-type': 'application/json; charset=utf-8',
