@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-events-static-v5';
+const CACHE_NAME = 'family-events-static-v6';
 const PRECACHE_URLS = ['/', '/manifest.json'];
 
 self.addEventListener('message', (event) => {
@@ -89,12 +89,14 @@ self.addEventListener('push', (event) => {
   let decodedBody = bodyText;
   if (payload.encoded) {
     try {
-      decodedTitle = atob(title);
+      const titleBuffer = Uint8Array.from(atob(title), (c) => c.charCodeAt(0));
+      decodedTitle = new TextDecoder('utf-8').decode(titleBuffer);
     } catch (error) {
       console.error('[sw] failed to decode title', error);
     }
     try {
-      decodedBody = atob(bodyText);
+      const bodyBuffer = Uint8Array.from(atob(bodyText), (c) => c.charCodeAt(0));
+      decodedBody = new TextDecoder('utf-8').decode(bodyBuffer);
     } catch (error) {
       console.error('[sw] failed to decode body', error);
     }
