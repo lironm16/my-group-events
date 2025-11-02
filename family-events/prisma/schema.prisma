@@ -18,6 +18,7 @@ model Family {
   memberships FamilyMembership[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  series     EventSeries[]
 }
 
 model User {
