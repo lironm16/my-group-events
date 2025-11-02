@@ -19,7 +19,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   const subscriptions = await prisma.pushSubscription.findMany({ where: { userId } });
   if (!subscriptions.length) return;
 
-  const safePayload = {
+  const payloadToSend = {
     title: payload.title ?? DEFAULT_TITLE,
     body: payload.body ?? DEFAULT_BODY,
     icon: payload.icon,
@@ -28,15 +28,8 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
     actions: payload.actions,
   } satisfies PushPayload;
 
-  const encodedPayload = {
-    ...safePayload,
-    title: Buffer.from(safePayload.title, 'utf8').toString('base64'),
-    body: Buffer.from(safePayload.body, 'utf8').toString('base64'),
-    encoded: true,
-  };
-
   if (process.env.NODE_ENV !== 'production') {
-    console.log('[push] sending payload', encodedPayload);
+    console.log('[push] sending payload', payloadToSend);
   }
 
   await Promise.all(
@@ -47,7 +40,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
             endpoint: subscription.endpoint,
             keys: { auth: subscription.auth, p256dh: subscription.p256dh },
           },
-          JSON.stringify(encodedPayload),
+          JSON.stringify(payloadToSend),
           {
             headers: {
               'content-type': 'application/json; charset=utf-8',

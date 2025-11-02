@@ -59,8 +59,8 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-const DEFAULT_TITLE = '\u05d0\u05d9\u05e8\u05d5\u05e2\u05d9 \u05de\u05e9\u05e4\u05d7\u05ea \u05de\u05ea\u05ea\u05d9\u05d4\u05d5';
-const DEFAULT_BODY = '\u05d4\u05ea\u05e8\u05d0\u05d4 \u05d7\u05d3\u05e9\u05d4';
+const DEFAULT_TITLE = 'אירועי משפחת מתתיהו';
+const DEFAULT_BODY = 'התראה חדשה';
 
 self.addEventListener('push', (event) => {
   if (!event.data) {
