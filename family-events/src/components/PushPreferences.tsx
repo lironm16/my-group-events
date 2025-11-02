@@ -102,7 +102,7 @@ export default function PushPreferences() {
     fetchStatus();
   }, [fetchStatus]);
 
-  const canToggle = useMemo(() => supported && vapidKey, [supported, vapidKey]);
+  const canToggle = useMemo(() => supported && vapidKey && status !== 'loading', [supported, vapidKey, status]);
 
   const handleSubscribe = useCallback(async () => {
     if (!canToggle || !vapidKey) return;
@@ -120,7 +120,12 @@ export default function PushPreferences() {
         await existing.unsubscribe();
       }
 
-      const subscription = await registration.pushManager.subscribe({
+      let subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await subscription.unsubscribe().catch((error) => console.warn('Unsubscribe failed', error));
+      }
+
+      subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
