@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-events-static-v6';
+const CACHE_NAME = 'family-events-static-v7';
 const PRECACHE_URLS = ['/', '/manifest.json'];
 
 self.addEventListener('message', (event) => {
@@ -102,8 +102,13 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  const finalTitle = DEFAULT_TITLE;
+  const finalBody = decodedBody && decodedBody.trim().length ? decodedBody : DEFAULT_BODY;
+
+  console.log('[sw] showing notification', { finalTitle, finalBody });
+
   const options = {
-    body: decodedBody,
+    body: finalBody,
     icon: payload.icon || '/templates/party.jpg',
     badge: payload.badge || '/templates/party.jpg',
     lang: 'he',
@@ -112,7 +117,7 @@ self.addEventListener('push', (event) => {
     actions: payload.actions,
   };
 
-  event.waitUntil(self.registration.showNotification(decodedTitle, options));
+  event.waitUntil(self.registration.showNotification(finalTitle, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
