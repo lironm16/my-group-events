@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-events-static-v1';
+const CACHE_NAME = 'family-events-static-v2';
 const PRECACHE_URLS = ['/', '/manifest.json'];
 
 self.addEventListener('message', (event) => {
@@ -73,9 +73,9 @@ self.addEventListener('push', (event) => {
     payload = { title: DEFAULT_TITLE, body: event.data.text() };
   }
 
-  const title = payload.title || DEFAULT_TITLE;
+  const title = (typeof payload.title === 'string' && payload.title.trim().length) ? payload.title : DEFAULT_TITLE;
   const options = {
-    body: payload.body || DEFAULT_BODY,
+    body: (typeof payload.body === 'string' && payload.body.trim().length) ? payload.body : DEFAULT_BODY,
     icon: payload.icon || '/templates/party.jpg',
     badge: payload.badge || '/templates/party.jpg',
     data: payload.data,
@@ -87,7 +87,13 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/';
+  const rawTarget = typeof event.notification.data?.url === 'string' ? event.notification.data.url : '/';
+  let targetUrl;
+  try {
+    targetUrl = new URL(rawTarget, self.location.origin).href;
+  } catch (error) {
+    targetUrl = self.location.origin;
+  }
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
