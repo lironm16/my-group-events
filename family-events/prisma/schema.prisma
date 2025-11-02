@@ -48,6 +48,7 @@ model User {
   familyMemberships FamilyMembership[]
   sentMessages     Message[]       @relation("MessageSender")
   messageReads     MessageRead[]
+  notifications    Notification[]
 }
 
 model Group {
