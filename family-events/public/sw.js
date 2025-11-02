@@ -83,8 +83,20 @@ self.addEventListener('push', (event) => {
 
   console.log('[sw] raw push payload', payload);
 
-  const finalTitle = DEFAULT_TITLE;
-  const finalBody = DEFAULT_BODY;
+  const decodeText = (value) => {
+    if (typeof value !== 'string' || !value.trim()) return null;
+    try {
+      const buffer = Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+      return new TextDecoder('utf-8').decode(buffer);
+    } catch (error) {
+      console.error('[sw] failed to decode base64', error);
+      return null;
+    }
+  };
+
+  const data = (payload && typeof payload === 'object' ? payload.data : undefined) as Record<string, unknown> | undefined;
+  const finalTitle = decodeText(data?.titleB64 as string) || DEFAULT_TITLE;
+  const finalBody = decodeText(data?.bodyB64 as string) || DEFAULT_BODY;
 
   console.log('[sw] showing notification', { finalTitle, finalBody });
 

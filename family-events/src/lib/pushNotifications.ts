@@ -19,12 +19,24 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   const subscriptions = await prisma.pushSubscription.findMany({ where: { userId } });
   if (!subscriptions.length) return;
 
+  const textTitle = payload.title ?? DEFAULT_TITLE;
+  const textBody = payload.body ?? DEFAULT_BODY;
+  const encodedTitle = Buffer.from(textTitle, 'utf8').toString('base64');
+  const encodedBody = Buffer.from(textBody, 'utf8').toString('base64');
+
+  const data: Record<string, unknown> = {
+    url: '/',
+    ...(payload.data ?? {}),
+    titleB64: encodedTitle,
+    bodyB64: encodedBody,
+  };
+
   const payloadToSend = {
-    title: payload.title ?? DEFAULT_TITLE,
-    body: payload.body ?? DEFAULT_BODY,
+    title: 'Family Events',
+    body: 'New notification',
     icon: payload.icon,
     badge: payload.badge,
-    data: { url: '/', ...(payload.data ?? {}) },
+    data,
     actions: payload.actions,
   } satisfies PushPayload;
 
