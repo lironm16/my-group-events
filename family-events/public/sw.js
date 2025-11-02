@@ -37,12 +37,20 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
 
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(request).catch(() => caches.match('/')));
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
       return fetch(request).then((response) => {
+        if (response.type === 'opaqueredirect') {
+          return response;
+        }
         const cloned = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
         return response;
@@ -78,6 +86,8 @@ self.addEventListener('push', (event) => {
     body: (typeof payload.body === 'string' && payload.body.trim().length) ? payload.body : DEFAULT_BODY,
     icon: payload.icon || '/templates/party.jpg',
     badge: payload.badge || '/templates/party.jpg',
+    lang: 'he',
+    dir: 'rtl',
     data: payload.data,
     actions: payload.actions,
   };
