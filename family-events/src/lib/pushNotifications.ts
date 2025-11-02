@@ -17,12 +17,10 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   if (!subscriptions.length) return;
 
   const safePayload = {
-    title: payload.title || undefined,
-    body: payload.body || undefined,
-    icon: payload.icon,
-    badge: payload.badge,
+    ...payload,
+    title: payload.title ?? undefined,
+    body: payload.body ?? undefined,
     data: payload.data ?? { url: '/' },
-    actions: payload.actions,
   } satisfies PushPayload;
 
   await Promise.all(
