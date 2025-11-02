@@ -28,6 +28,10 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
     actions: payload.actions,
   } satisfies PushPayload;
 
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[push] sending payload', safePayload);
+  }
+
   await Promise.all(
     subscriptions.map(async (subscription) => {
       try {
@@ -36,7 +40,12 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
             endpoint: subscription.endpoint,
             keys: { auth: subscription.auth, p256dh: subscription.p256dh },
           },
-          Buffer.from(JSON.stringify(safePayload), 'utf8'),
+          JSON.stringify(safePayload),
+          {
+            headers: {
+              'content-type': 'application/json; charset=utf-8',
+            },
+          },
         );
       } catch (error: any) {
         if (error?.statusCode === 410 || error?.statusCode === 404) {
