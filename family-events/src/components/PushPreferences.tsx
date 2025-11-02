@@ -16,6 +16,25 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
+const TEXT = {
+  serverError: 'שגיאת שרת',
+  permissionRequired: 'יש לאשר שליחת התראות כדי להפעיל את ההתראות.',
+  activationFailed: 'הפעלה נכשלה',
+  activated: 'התראות הופעלו בהצלחה.',
+  deactivated: 'התראות בוטלו.',
+  unsupportedTitle: 'הדפדפן הנוכחי לא תומך בהתראות דפדפן.',
+  unsupportedBody: 'ב-iOS יש להתקין את האפליקציה למסך הבית (PWA) ולהשתמש ב-iOS 16.4 ומעלה.',
+  iosHeading: 'הפעלת התראות ב-iOS:',
+  iosStep1: 'פתחו את תפריט השיתוף (Share).',
+  iosStep2: 'גללו ובחרו "הוסף למסך הבית".',
+  iosStep3: 'פתחו את האפליקציה מהמסך הבית והפעילו כאן את ההתראות.',
+  pushHeading: 'התראות דחיפה',
+  pushDescription: 'קבלו התראה על אירועים ועדכונים ישירות למסך.',
+  toggleOff: 'כבה',
+  toggleOn: 'הפעל',
+  vapidMissing: 'יש להגדיר מפתחות VAPID בצד השרת כדי לאפשר את ההתראות.',
+} as const;
+
 export default function PushPreferences() {
   const [supported, setSupported] = useState(true);
   const [standalone, setStandalone] = useState(false);
@@ -54,7 +73,7 @@ export default function PushPreferences() {
       const response = await fetch('/api/push/subscriptions', { method: 'GET' });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || '????? ???');
+        throw new Error(data.error || TEXT.serverError);
       }
       const data = await response.json();
       setEnabled(Boolean(data.hasSubscription));
@@ -78,7 +97,7 @@ export default function PushPreferences() {
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        throw new Error('?? ???? ????? ?????? ??? ?????? ?? ???????.');
+        throw new Error(TEXT.permissionRequired);
       }
 
       const registration = await navigator.serviceWorker.ready;
@@ -99,12 +118,12 @@ export default function PushPreferences() {
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || '????? ?????');
+        throw new Error(data.error || TEXT.activationFailed);
       }
 
       setEnabled(true);
       setStatus('success');
-      setMessage('?????? ?????? ??????.');
+      setMessage(TEXT.activated);
     } catch (error) {
       console.error(error);
       setStatus('error');
@@ -130,7 +149,7 @@ export default function PushPreferences() {
       }
       setEnabled(false);
       setStatus('success');
-      setMessage('?????? ?????.');
+      setMessage(TEXT.deactivated);
     } catch (error) {
       console.error(error);
       setStatus('error');
@@ -141,8 +160,8 @@ export default function PushPreferences() {
   if (!supported) {
     return (
       <div className="rounded border border-yellow-300 bg-yellow-50 p-4 text-right" dir="rtl">
-        <p className="font-medium text-yellow-800">?????? ?????? ?? ???? ??????? ?????.</p>
-        <p className="text-sm text-yellow-700">?-iOS ?? ?????? ?? ????????? ???? ???? (PWA) ??????? ?-iOS 16.4 ?????.</p>
+        <p className="font-medium text-yellow-800">{TEXT.unsupportedTitle}</p>
+        <p className="text-sm text-yellow-700">{TEXT.unsupportedBody}</p>
       </div>
     );
   }
@@ -151,18 +170,18 @@ export default function PushPreferences() {
     <section className="space-y-3" dir="rtl">
       {!standalone && (
         <div className="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-          <p className="font-medium">?????? ?????? ?-iOS:</p>
+          <p className="font-medium">{TEXT.iosHeading}</p>
           <ol className="list-decimal list-inside space-y-1">
-            <li>???? ?? ?????? <span aria-hidden>Share</span>.</li>
-            <li>???? ????? &quot;???? ???? ????&quot;.</li>
-            <li>???? ?? ????????? ????? ???? ??????? ??? ?? ???????.</li>
+            <li>{TEXT.iosStep1}</li>
+            <li>{TEXT.iosStep2}</li>
+            <li>{TEXT.iosStep3}</li>
           </ol>
         </div>
       )}
       <div className="flex items-center justify-between rounded border p-3">
         <div>
-          <p className="font-semibold">?????? ?????</p>
-          <p className="text-sm text-gray-600">???? ????? ?? ??????? ???????? ?????? ????.</p>
+          <p className="font-semibold">{TEXT.pushHeading}</p>
+          <p className="text-sm text-gray-600">{TEXT.pushDescription}</p>
         </div>
         <button
           type="button"
@@ -172,14 +191,14 @@ export default function PushPreferences() {
             enabled ? 'bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300' : 'bg-emerald-500 text-white hover:bg-emerald-600 disabled:bg-emerald-300'
           }`}
         >
-          {enabled ? '???' : '????'}
+          {enabled ? TEXT.toggleOff : TEXT.toggleOn}
         </button>
       </div>
       {message && (
         <p className={`text-sm ${status === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>{message}</p>
       )}
       {!vapidKey && (
-        <p className="text-sm text-red-600">?? ?????? ?????? VAPID ??? ???? ??? ????? ?? ???????.</p>
+        <p className="text-sm text-red-600">{TEXT.vapidMissing}</p>
       )}
     </section>
   );
