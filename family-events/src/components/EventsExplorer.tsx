@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import EventsSearch from '@/components/EventsSearch';
 import CalendarMonth, { type CalendarEvent } from '@/components/CalendarMonth';
@@ -138,18 +138,21 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
     }
   }, [sortOpen, sortKey]);
 
-  const getGroupLabel = (key: ScopeKey): string => {
-    if (key === 'all') return 'כל האירועים';
-    if (key === 'mine') return 'האירועים שלי';
-    if (key.startsWith('group:')) {
-      const id = key.slice('group:'.length);
-      return groupOptions.find((g) => g.id === id)?.nickname ?? 'קבוצה';
-    }
-    return 'כל האירועים';
-  };
+  const getGroupLabel = useCallback(
+    (key: ScopeKey): string => {
+      if (key === 'all') return 'כל האירועים';
+      if (key === 'mine') return 'האירועים שלי';
+      if (key.startsWith('group:')) {
+        const id = key.slice('group:'.length);
+        return groupOptions.find((g) => g.id === id)?.nickname ?? 'קבוצה';
+      }
+      return 'כל האירועים';
+    },
+    [groupOptions],
+  );
 
-  const getTimeLabel = (key: TimeKey): string => TIME_OPTIONS.find((opt) => opt.key === key)?.label ?? '';
-  const getRsvpLabel = (key: RsvpKey): string => RSVP_OPTIONS.find((opt) => opt.key === key)?.label ?? '';
+  const getTimeLabel = useCallback((key: TimeKey): string => TIME_OPTIONS.find((opt) => opt.key === key)?.label ?? '', []);
+  const getRsvpLabel = useCallback((key: RsvpKey): string => RSVP_OPTIONS.find((opt) => opt.key === key)?.label ?? '', []);
 
   const groupFilterOptions = useMemo(() => {
     const base: { key: ScopeKey; label: string }[] = [
@@ -175,7 +178,7 @@ export default function EventsExplorer({ initial }: { initial: EventCard[] }) {
       items.push({ type: 'sort', value: sortKey, label: SORT_OPTIONS.find((opt) => opt.key === sortKey)?.label ?? '' });
     }
     return items;
-  }, [filterKey, timeKey, rsvpFilter, sortKey, groupOptions]);
+  }, [filterKey, timeKey, rsvpFilter, sortKey, getGroupLabel, getTimeLabel, getRsvpLabel]);
 
   const hasActiveFilters = activeFilters.length > 0;
 
