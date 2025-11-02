@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
+import { Prisma } from '@prisma/client';
 
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;
@@ -42,9 +43,9 @@ export async function GET(req: Request) {
   const order: 'asc' | 'desc' = orderParam === 'desc' ? 'desc' : 'asc';
   const cursorParam = searchParams.get('cursor');
 
-  const visibilityClauses = [{ hostId: user.id }];
+  const visibilityClauses: Prisma.EventWhereInput[] = [{ hostId: user.id }];
   if (user.familyId) visibilityClauses.push({ familyId: user.familyId });
-  const where = { OR: visibilityClauses };
+  const where: Prisma.EventWhereInput = { OR: visibilityClauses };
   const orderBy = [{ startAt: order }, { id: order }];
   const include = { rsvps: true, host: true } as const;
 
