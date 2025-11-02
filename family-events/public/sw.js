@@ -51,11 +51,14 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+const DEFAULT_TITLE = '\u05d0\u05d9\u05e8\u05d5\u05e2\u05d9 \u05de\u05e9\u05e4\u05d7\u05ea \u05de\u05ea\u05ea\u05d9\u05d4\u05d5';
+const DEFAULT_BODY = '\u05d4\u05ea\u05e8\u05d0\u05d4 \u05d7\u05d3\u05e9\u05d4';
+
 self.addEventListener('push', (event) => {
   if (!event.data) {
     event.waitUntil(
-      self.registration.showNotification('?????? ????? ??????', {
-        body: '????? ????',
+      self.registration.showNotification(DEFAULT_TITLE, {
+        body: DEFAULT_BODY,
         icon: '/templates/party.jpg',
         badge: '/templates/party.jpg',
       }),
@@ -67,12 +70,12 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json();
   } catch (error) {
-    payload = { title: '?????? ????? ??????', body: event.data.text() };
+    payload = { title: DEFAULT_TITLE, body: event.data.text() };
   }
 
-  const title = payload.title || '?????? ????? ??????';
+  const title = payload.title || DEFAULT_TITLE;
   const options = {
-    body: payload.body,
+    body: payload.body || DEFAULT_BODY,
     icon: payload.icon || '/templates/party.jpg',
     badge: payload.badge || '/templates/party.jpg',
     data: payload.data,
