@@ -117,15 +117,10 @@ export default function PushPreferences() {
       const registration = await navigator.serviceWorker.ready;
       const existing = await registration.pushManager.getSubscription();
       if (existing) {
-        await existing.unsubscribe();
+        await existing.unsubscribe().catch((error) => console.warn('Unsubscribe failed', error));
       }
 
-      let subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        await subscription.unsubscribe().catch((error) => console.warn('Unsubscribe failed', error));
-      }
-
-      subscription = await registration.pushManager.subscribe({
+      const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
@@ -140,7 +135,8 @@ export default function PushPreferences() {
         throw new Error(data.error || TEXT.activationFailed);
       }
 
-      setEnabled(true);
+      const refreshed = await registration.pushManager.getSubscription();
+      setEnabled(Boolean(refreshed));
       setStatus('success');
       setMessage(TEXT.activated);
       setTestStatus('idle');
@@ -158,16 +154,20 @@ export default function PushPreferences() {
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
+      let endpoint: string | undefined;
       if (subscription) {
-        const endpoint = subscription.endpoint;
+        endpoint = subscription.endpoint;
         await subscription.unsubscribe();
+      }
+      if (endpoint) {
         await fetch('/api/push/subscriptions', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ endpoint }),
         });
       }
-      setEnabled(false);
+      const refreshed = await registration.pushManager.getSubscription();
+      setEnabled(Boolean(refreshed));
       setStatus('success');
       setMessage(TEXT.deactivated);
       setTestStatus('idle');
