@@ -1,4 +1,4 @@
-const CACHE_NAME = 'family-events-static-v2';
+const CACHE_NAME = 'family-events-static-v3';
 const PRECACHE_URLS = ['/', '/manifest.json'];
 
 self.addEventListener('message', (event) => {
