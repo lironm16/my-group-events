@@ -115,7 +115,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           interval: config.interval,
           until: config.until ?? null,
           noEndDate: !!config.noEndDate,
-          templateData: toJsonValue(templateData),
+          templateData: toJsonValue(templateData) ?? undefined,
           baseDurationMs: durationMs != null ? BigInt(Math.round(durationMs)) : null,
         },
       });
