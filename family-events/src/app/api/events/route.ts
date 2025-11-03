@@ -120,7 +120,7 @@ export async function POST(req: Request) {
   if (endAt && endAt < startAt) return NextResponse.json({ error: 'End must be after start' }, { status: 400 });
 
   const hostId = typeof body.hostId === 'string' && body.hostId ? body.hostId : user.id;
-  const coHostIds = Array.isArray(body?.coHostIds)
+  const coHostIds: string[] = Array.isArray(body?.coHostIds)
     ? Array.from(new Set(body.coHostIds.filter((value: unknown): value is string => typeof value === 'string' && value.length > 0)))
     : [];
 
@@ -176,7 +176,7 @@ export async function POST(req: Request) {
         visibleToAll: body.visibleToAll !== undefined ? !!body.visibleToAll : true,
         rsvpOpenToAll: body.rsvpOpenToAll !== undefined ? !!body.rsvpOpenToAll : false,
         hostId,
-        coHostIds,
+        coHostIds: coHostIds as string[],
         guestUserIds: guestIds,
         familyId: user.familyId ?? null,
       })
