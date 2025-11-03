@@ -152,7 +152,7 @@ export default function NewEventPage() {
           </label>
           {repeatWeekly && (
             <div className="space-y-2">
-              <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} disabled={repeatNoEnd} />
+              <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} allowDateOnly timeToggle />
               {errors.repeatUntil && <p className="text-xs text-red-600">{errors.repeatUntil}</p>}
               <label className="inline-flex items-center gap-2 text-sm">
                 <input

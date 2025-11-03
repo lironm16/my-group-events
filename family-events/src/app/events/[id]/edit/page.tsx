@@ -173,7 +173,7 @@ export default function EditEventPage({ params }: { params: { id: string } }) {
           </div>
           {applyMode === 'future' && (
             <div className="space-y-2">
-              <DateTimePicker label="חוזר עד" value={repeatUntil} onChange={setRepeatUntil} disabled={repeatNoEnd} />
+              <DateTimePicker label="חוזר עד" value={repeatUntil} onChange={setRepeatUntil} allowDateOnly timeToggle />
               {errors.repeatUntil && <p className={errorCls}>{errors.repeatUntil}</p>}
               <label className="flex items-center gap-2 text-sm">
                 <input
