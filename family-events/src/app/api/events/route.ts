@@ -127,7 +127,13 @@ export async function POST(req: Request) {
   let guestIds: string[] = [];
   try {
     const parsed = JSON.parse(String(body?.guestSelection || '[]'));
-    if (Array.isArray(parsed)) guestIds = Array.from(new Set(parsed.filter((value): value is string => typeof value === 'string' && value)));
+    if (Array.isArray(parsed)) {
+      guestIds = Array.from(
+        new Set(
+          parsed.filter((value): value is string => typeof value === 'string' && value.length > 0),
+        ),
+      );
+    }
   } catch {
     guestIds = [];
   }
