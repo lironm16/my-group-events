@@ -3,6 +3,7 @@ import './globals.css';
 import Nav from '@/components/Nav';
 import ThemeProvider from '@/components/ThemeProvider';
 import AuthProvider from '@/components/AuthProvider';
+import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import Script from 'next/script';
@@ -10,7 +11,18 @@ import Script from 'next/script';
 export const metadata: Metadata = {
   title: 'אירועי משפחת מתתיהו',
   description: 'ניהול אירועים למשפחת מתתיהו',
-  icons: { icon: '/templates/party.jpg' },
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/templates/party.jpg',
+    apple: '/templates/party.jpg',
+    shortcut: ['/templates/party.jpg'],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'אירועי משפחת מתתיהו',
+    statusBarStyle: 'default',
+  },
+  themeColor: '#1f2937',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -33,6 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </Script>
         <ThemeProvider>
           <AuthProvider session={session}>
+            <ServiceWorkerRegistrar />
             <Nav />
             <div className="max-w-6xl mx-auto px-4">
               {children}

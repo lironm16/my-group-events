@@ -46,3 +46,30 @@ npm run dev
   - GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (optional)
 - Build runs: `prisma migrate deploy && next build`
 - Every PR will get a unique preview URL
+
+## PWA & Web Push Notifications
+- The app now exposes a manifest (`/manifest.json`) and a service worker (`/sw.js`) so it can be installed as a PWA (including on iOS ?16.4).
+- Users can enable push notifications in `?????? ? ?????? ? ?????? ?????` once the app is installed on the home screen.
+
+### Configure VAPID keys
+Generate a key pair once and add the values to your environment:
+
+```bash
+npx web-push generate-vapid-keys
+# copy the keys into the env
+WEB_PUSH_VAPID_PUBLIC_KEY=...
+WEB_PUSH_VAPID_PRIVATE_KEY=...
+WEB_PUSH_CONTACT_EMAIL=mailto:alerts@yourdomain.com # optional but recommended
+NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=$WEB_PUSH_VAPID_PUBLIC_KEY
+```
+
+### Sending push notifications from the backend
+- Use `sendPushToUser(userId, payload)` from `src/lib/pushNotifications.ts` to deliver alerts to all of a user?s registered devices.
+- The helper automatically removes expired subscriptions (HTTP 404/410 responses).
+- Example payload: `{ title: '????? ?????', body: '?????? ???? ????? ???? ???', data: { url: '/events/123' } }`.
+
+### Testing on iOS
+1. Open the site in Safari, tap ?Share ? Add to Home Screen?.
+2. Launch the app from the home screen and navigate to notification settings.
+3. Tap ?????? to subscribe; you should receive the standard iOS prompt.
+4. Trigger a test push by calling `sendPushToUser` from a server console / script (or add a temporary API route) using the same session user.

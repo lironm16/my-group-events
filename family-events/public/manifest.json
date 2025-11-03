@@ -1,0 +1,24 @@
+{
+  "name": "\u05d0\u05d9\u05e8\u05d5\u05e2\u05d9 \u05de\u05e9\u05e4\u05d7\u05ea \u05de\u05ea\u05ea\u05d9\u05d4\u05d5",
+  "short_name": "\u05d0\u05d9\u05e8\u05d5\u05e2\u05d9 \u05de\u05e9\u05e4\u05d7\u05d4",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "he",
+  "background_color": "#f5f5f5",
+  "theme_color": "#1f2937",
+  "description": "\u05e0\u05d9\u05d4\u05d5\u05dc \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05dc\u05de\u05e9\u05e4\u05d7\u05ea \u05de\u05ea\u05ea\u05d9\u05d4\u05d5",
+  "icons": [
+    {
+      "src": "/templates/party.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/templates/party.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

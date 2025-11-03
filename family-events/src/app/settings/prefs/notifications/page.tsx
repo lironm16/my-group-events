@@ -3,6 +3,7 @@ import { authOptions } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import DirtySubmit from '@/components/DirtySubmit';
+import PushPreferences from '@/components/PushPreferences';
 import { revalidatePath } from 'next/cache';
 
 export default async function SettingsPrefsNotificationsPage() {
@@ -33,15 +34,22 @@ export default async function SettingsPrefsNotificationsPage() {
         <h1 className="text-2xl font-bold">התראות RSVP</h1>
         <Link className="px-3 py-2 rounded border" href="/settings">חזרה להגדרות</Link>
       </div>
-      <form className="space-y-2" action={update}>
-        <label className="inline-flex items-center gap-2">
-          <input name="on" type="checkbox" defaultChecked={Boolean((me as any)?.notifyRsvpEmails)} />
-          <span>קבל מייל כשיש שינוי באישורי הגעה לאירועים שלי</span>
-        </label>
-        <div>
-          <DirtySubmit names={["on"]} initial={{ on: Boolean((me as any)?.notifyRsvpEmails) ? 'on' : '' }} />
-        </div>
-      </form>
+      <section className="space-y-2">
+        <h2 className="text-xl font-semibold">התראות במייל</h2>
+        <form className="space-y-2" action={update}>
+          <label className="inline-flex items-center gap-2">
+            <input name="on" type="checkbox" defaultChecked={Boolean((me as any)?.notifyRsvpEmails)} />
+            <span>קבל מייל כשיש שינוי באישורי הגעה לאירועים שלי</span>
+          </label>
+          <div>
+            <DirtySubmit names={["on"]} initial={{ on: Boolean((me as any)?.notifyRsvpEmails) ? 'on' : '' }} />
+          </div>
+        </form>
+      </section>
+      <section className="space-y-2">
+        <h2 className="text-xl font-semibold">התראות דחיפה</h2>
+        <PushPreferences />
+      </section>
     </main>
   );
 }
