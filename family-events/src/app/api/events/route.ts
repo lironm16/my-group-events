@@ -182,14 +182,14 @@ export async function POST(req: Request) {
       })
     : null;
 
-  const recurrenceJson = recurrenceConfig
+  const recurrenceJson: Prisma.InputJsonValue | undefined = recurrenceConfig
     ? toJsonValue({
         freq: recurrenceConfig.frequency,
         interval: recurrenceConfig.interval,
         skipHolidays: recurrenceConfig.skipHolidays,
         until: recurrenceConfig.until ? recurrenceConfig.until.toISOString() : null,
         noEndDate: !!recurrenceConfig.noEndDate,
-      })
+      }) as Prisma.InputJsonValue
     : undefined;
 
   const seriesPayload = recurrenceConfig && templateData

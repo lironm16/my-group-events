@@ -61,7 +61,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     config: RecurrenceConfig;
     templateData: ReturnType<typeof buildTemplateData>;
     durationMs: number | null;
-    recurrenceJson: Prisma.JsonValue;
+    recurrenceJson: Prisma.InputJsonValue;
   } | null = null;
 
   if (applyMode === 'future' && existing.seriesId && existing.series) {
@@ -99,7 +99,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       skipHolidays: config.skipHolidays,
       until: config.until ? config.until.toISOString() : null,
       noEndDate: !!config.noEndDate,
-    });
+    }) as Prisma.InputJsonValue;
     seriesUpdatePayload = { config, templateData, durationMs, recurrenceJson };
   }
 
