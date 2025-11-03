@@ -121,7 +121,7 @@ export async function POST(req: Request) {
 
   const hostId = typeof body.hostId === 'string' && body.hostId ? body.hostId : user.id;
   const coHostIds = Array.isArray(body?.coHostIds)
-    ? Array.from(new Set(body.coHostIds.filter((value: unknown): value is string => typeof value === 'string' && value)))
+    ? Array.from(new Set(body.coHostIds.filter((value: unknown): value is string => typeof value === 'string' && value.length > 0)))
     : [];
 
   let guestIds: string[] = [];
