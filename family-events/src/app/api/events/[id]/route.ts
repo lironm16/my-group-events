@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { fetchIsraelHolidays } from '@/lib/holidays';
 import {
   buildTemplateData,
@@ -115,7 +115,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           interval: config.interval,
           until: config.until ?? null,
           noEndDate: !!config.noEndDate,
-          templateData: toJsonValue(templateData) ?? undefined,
+          templateData: toJsonValue(templateData) ?? Prisma.DbNull,
           baseDurationMs: durationMs != null ? BigInt(Math.round(durationMs)) : null,
         },
       });
