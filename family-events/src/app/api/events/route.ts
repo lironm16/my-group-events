@@ -199,7 +199,7 @@ export async function POST(req: Request) {
         skipHolidays: recurrenceConfig.skipHolidays,
         until: recurrenceConfig.until ?? null,
         noEndDate: !!recurrenceConfig.noEndDate,
-        templateData: toJsonValue(templateData) ?? Prisma.DbNull,
+        templateData,
         baseDurationMs: durationMs != null ? BigInt(Math.round(durationMs)) : null,
         nextOccurrenceStart: nextOccurrence?.start ?? null,
         nextOccurrenceEnd: nextOccurrence?.end ?? null,
