@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { fetchIsraelHolidays } from '@/lib/holidays';
 import { computeNextOccurrence, computeReadyAt, parseTemplateData, toJsonValue, type RecurrenceConfig } from '@/lib/recurrence';
 import { createNotifications } from '@/lib/notifications';
