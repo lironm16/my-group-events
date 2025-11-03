@@ -117,7 +117,7 @@ export async function POST(req: Request) {
         skipHolidays: recurrenceConfig.skipHolidays,
         until: recurrenceConfig.until ? recurrenceConfig.until.toISOString() : null,
         noEndDate: !!recurrenceConfig.noEndDate,
-      });
+      }) as Prisma.InputJsonValue;
 
       const event = await tx.event.create({
         data: {
