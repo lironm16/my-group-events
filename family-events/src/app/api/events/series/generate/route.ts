@@ -40,18 +40,6 @@ export async function POST(req: Request) {
   const pendingNotifications: NotificationInput[] = [];
 
   for (const series of dueSeries) {
-    const holidays: Awaited<ReturnType<typeof fetchIsraelHolidays>> = [];
-    if (series.skipHolidays) {
-      const startDate = new Date(series.nextOccurrenceStart!);
-      const startYear = startDate.getFullYear();
-      for (const year of [startYear, startYear + 1]) {
-        if (!holidayCache.has(year)) {
-          holidayCache.set(year, await fetchIsraelHolidays(year));
-        }
-        holidays.push(...(holidayCache.get(year) || []));
-      }
-    }
-
     const outcome = await prisma.$transaction(async (tx) => {
       const currentSeries = await tx.eventSeries.findUnique({ where: { id: series.id } });
       if (!currentSeries) return { skipped: 'series_missed' } as const;
@@ -77,6 +65,24 @@ export async function POST(req: Request) {
         where: { seriesId: currentSeries.id, startAt: start },
         select: { id: true, endAt: true },
       });
+      const recurrenceConfig: RecurrenceConfig = {
+        frequency: currentSeries.frequency === 'WEEKLY' ? 'WEEKLY' : 'WEEKLY',
+        interval: currentSeries.interval || 1,
+        skipHolidays: currentSeries.skipHolidays,
+        until: currentSeries.until ?? null,
+        noEndDate: currentSeries.noEndDate,
+      };
+      const holidays: Awaited<ReturnType<typeof fetchIsraelHolidays>> = [];
+      if (currentSeries.skipHolidays) {
+        const startDate = new Date(start);
+        const startYear = startDate.getFullYear();
+        for (const year of [startYear, startYear + 1]) {
+          if (!holidayCache.has(year)) {
+            holidayCache.set(year, await fetchIsraelHolidays(year));
+          }
+          holidays.push(...(holidayCache.get(year) || []));
+        }
+      }
       if (existing) {
         const nextDuplicate = computeNextOccurrence(start, recurrenceConfig, durationMs ?? undefined, holidays);
         const readyAt = nextDuplicate ? computeReadyAt(start, end ?? null, durationMs ?? undefined) : null;
@@ -90,14 +96,6 @@ export async function POST(req: Request) {
         });
         return { skipped: 'duplicate' } as const;
       }
-
-      const recurrenceConfig: RecurrenceConfig = {
-        frequency: currentSeries.frequency === 'WEEKLY' ? 'WEEKLY' : 'WEEKLY',
-        interval: currentSeries.interval || 1,
-        skipHolidays: currentSeries.skipHolidays,
-        until: currentSeries.until ?? null,
-        noEndDate: currentSeries.noEndDate,
-      };
 
       if (!currentSeries.noEndDate && currentSeries.until && start > currentSeries.until) {
         await tx.eventSeries.update({
