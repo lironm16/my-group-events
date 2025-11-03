@@ -50,6 +50,7 @@ model User {
   sentMessages     Message[]       @relation("MessageSender")
   messageReads     MessageRead[]
   notifications    Notification[]
+  ownedSeries      EventSeries[]   @relation("EventSeriesOwner")
 }
 
 model Group {
@@ -117,7 +118,7 @@ model EventSeries {
   nextOccurrenceStart DateTime?
   nextOccurrenceEnd  DateTime?
   nextReadyAt        DateTime?
-  owner              User?    @relation(fields: [ownerId], references: [id])
+  owner              User?    @relation("EventSeriesOwner", fields: [ownerId], references: [id])
   ownerId            String?
   family             Family?  @relation(fields: [familyId], references: [id])
   familyId           String?
