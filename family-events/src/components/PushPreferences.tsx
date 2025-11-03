@@ -117,10 +117,15 @@ export default function PushPreferences() {
       const registration = await navigator.serviceWorker.ready;
       const existing = await registration.pushManager.getSubscription();
       if (existing) {
-        await existing.unsubscribe().catch((error) => console.warn('Unsubscribe failed', error));
+        await existing.unsubscribe();
       }
 
-      const subscription = await registration.pushManager.subscribe({
+      let subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await subscription.unsubscribe().catch((error) => console.warn('Unsubscribe failed', error));
+      }
+
+      subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
@@ -139,14 +144,13 @@ export default function PushPreferences() {
       setStatus('success');
       setMessage(TEXT.activated);
       setTestStatus('idle');
-      fetchStatus().catch(() => undefined);
     } catch (error) {
       console.error(error);
       setStatus('error');
       setMessage((error as Error).message);
       setEnabled(false);
     }
-  }, [canToggle, vapidKey, fetchStatus]);
+  }, [canToggle, vapidKey]);
 
   const handleUnsubscribe = useCallback(async () => {
     setStatus('loading');
@@ -154,12 +158,9 @@ export default function PushPreferences() {
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
-      let endpoint: string | undefined;
       if (subscription) {
-        endpoint = subscription.endpoint;
+        const endpoint = subscription.endpoint;
         await subscription.unsubscribe();
-      }
-      if (endpoint) {
         await fetch('/api/push/subscriptions', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
@@ -170,13 +171,12 @@ export default function PushPreferences() {
       setStatus('success');
       setMessage(TEXT.deactivated);
       setTestStatus('idle');
-      fetchStatus().catch(() => undefined);
     } catch (error) {
       console.error(error);
       setStatus('error');
       setMessage((error as Error).message);
     }
-  }, [fetchStatus]);
+  }, []);
 
   const handleSendTest = useCallback(async () => {
     setTestStatus('loading');
