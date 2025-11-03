@@ -103,7 +103,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     seriesUpdatePayload = { config, templateData, durationMs, recurrenceJson };
   }
 
-  if (seriesUpdatePayload) updateData.recurrence = seriesUpdatePayload.recurrenceJson;
+  if (seriesUpdatePayload) updateData.recurrence = seriesUpdatePayload.recurrenceJson ?? undefined;
 
   const updated = await prisma.$transaction(async (tx) => {
     if (seriesUpdatePayload && existing.seriesId) {
