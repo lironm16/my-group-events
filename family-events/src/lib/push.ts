@@ -1,6 +1,13 @@
 import webpush from 'web-push';
 import { prisma } from '@/lib/prisma';
 
+export type PushDispatchResult = {
+  attempted: number;
+  delivered: number;
+  staleSubscriptionIds: string[];
+  failures: { subscriptionId: string; statusCode?: number; message?: string }[];
+};
+
 type PushPayload = {
   title: string;
   body: string;
@@ -35,12 +42,13 @@ function ensureConfigured() {
   }
 }
 
-export async function sendPushToUsers(userIds: string[] | readonly string[], payload: PushPayload) {
-  if (!userIds || !userIds.length) return;
-  if (!ensureConfigured()) return;
+export async function sendPushToUsers(userIds: string[] | readonly string[], payload: PushPayload): Promise<PushDispatchResult> {
+  const empty: PushDispatchResult = { attempted: 0, delivered: 0, staleSubscriptionIds: [], failures: [] };
+  if (!userIds || !userIds.length) return empty;
+  if (!ensureConfigured()) return empty;
   const distinctIds = Array.from(new Set(userIds));
   const subscriptions = await prisma.pushSubscription.findMany({ where: { userId: { in: distinctIds as string[] } } });
-  if (!subscriptions.length) return;
+  if (!subscriptions.length) return empty;
 
   const message = JSON.stringify({
     title: payload.title,
@@ -56,6 +64,8 @@ export async function sendPushToUsers(userIds: string[] | readonly string[], pay
   });
 
   const staleIds: string[] = [];
+  const failures: { subscriptionId: string; statusCode?: number; message?: string }[] = [];
+  let delivered = 0;
 
   await Promise.allSettled(
     subscriptions.map(async (sub) => {
@@ -67,12 +77,14 @@ export async function sendPushToUsers(userIds: string[] | readonly string[], pay
           },
           message,
         );
+        delivered += 1;
       } catch (err: any) {
         const statusCode = err?.statusCode || err?.code;
         if (statusCode === 404 || statusCode === 410) {
           staleIds.push(sub.id);
         } else {
           console.error('[push] Failed to deliver notification', statusCode, err);
+          failures.push({ subscriptionId: sub.id, statusCode, message: err?.message });
         }
       }
     }),
@@ -81,6 +93,8 @@ export async function sendPushToUsers(userIds: string[] | readonly string[], pay
   if (staleIds.length) {
     await prisma.pushSubscription.deleteMany({ where: { id: { in: staleIds } } });
   }
+
+  return { attempted: subscriptions.length, delivered, staleSubscriptionIds: staleIds, failures };
 }
 
 export async function sendPushToUsersExcept(
@@ -88,10 +102,10 @@ export async function sendPushToUsersExcept(
   excludedUserIds: string[] | readonly string[] | undefined,
   payload: PushPayload,
 ) {
-  if (!userIds?.length) return;
+  if (!userIds?.length) return { attempted: 0, delivered: 0, staleSubscriptionIds: [], failures: [] };
   const excludedSet = new Set(excludedUserIds || []);
   const filtered = userIds.filter((id) => !excludedSet.has(id));
-  if (!filtered.length) return;
-  await sendPushToUsers(filtered, payload);
+  if (!filtered.length) return { attempted: 0, delivered: 0, staleSubscriptionIds: [], failures: [] };
+  return sendPushToUsers(filtered, payload);
 }
 

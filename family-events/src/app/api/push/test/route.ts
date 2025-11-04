@@ -26,13 +26,13 @@ export async function POST() {
     return NextResponse.json({ error: 'לא נמצאה הרשמה להתראות במכשיר הנוכחי. ודאו שהרשיתם קבלת התראות.' }, { status: 409 });
   }
 
-  await sendPushToUsers([user.id], {
+  const result = await sendPushToUsers([user.id], {
     title: 'בדיקת התראות',
     body: 'הרשמת ההתראות פעילה והודעת בדיקה נשלחה בהצלחה.',
     url: '/settings/prefs/notifications',
     tag: 'push-test',
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, result });
 }
 

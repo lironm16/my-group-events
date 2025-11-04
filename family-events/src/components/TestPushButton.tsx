@@ -39,8 +39,22 @@ export default function TestPushButton() {
         const res = await fetch('/api/push/test', { method: 'POST' });
         const json = await res.json().catch(() => ({}));
         if (res.ok && json?.ok) {
-          setStatus('success');
-          setMessage('התראת בדיקה נשלחה. אם לא התקבלה, ודאו שהדפדפן מאפשר התראות.');
+          const delivered: number = json?.result?.delivered ?? 0;
+          const attempted: number = json?.result?.attempted ?? 0;
+          const stale: number = json?.result?.staleSubscriptionIds?.length ?? 0;
+          const failures: number = json?.result?.failures?.length ?? 0;
+          if (delivered > 0) {
+            setStatus('success');
+            setMessage(`התראת בדיקה נשלחה למכשיר (${delivered}/${attempted}). אם לא התקבלה, בדקו את הגדרות ההתראות במכשיר.`);
+          } else {
+            setStatus('error');
+            const reason = failures
+              ? 'השרת דיווח על שגיאה בשליחה (ראו לוגים ב-Vercel).'
+              : stale
+                ? 'הרשמה ישנה נמחקה. נסו ללחוץ שוב כדי להירשם מחדש.'
+                : 'לא נמצאו מכשירים פעילים. ודאו שאישרתם התראות במכשיר זה.';
+            setMessage(reason);
+          }
         } else {
           setStatus('error');
           setMessage(json?.error || 'שליחת ההתראה נכשלה.');
