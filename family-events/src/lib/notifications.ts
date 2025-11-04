@@ -43,7 +43,7 @@ export async function createNotifications(payloads: Array<{
   title: string;
   body?: string | null;
   href?: string | null;
-  metadata?: Prisma.JsonValue;
+  metadata?: Prisma.InputJsonValue;
 }>): Promise<void> {
   if (!payloads.length) return;
   const data = payloads.map((item) => ({
@@ -52,7 +52,7 @@ export async function createNotifications(payloads: Array<{
     title: item.title,
     body: item.body ?? null,
     href: item.href ?? null,
-    metadata: item.metadata ?? null,
+    metadata: item.metadata ?? Prisma.DbNull,
   }));
   await prisma.notification.createMany({ data, skipDuplicates: true });
 }
