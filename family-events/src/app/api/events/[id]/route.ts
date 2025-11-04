@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
+import { sendPushToUsersExcept } from '@/lib/push';
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -36,6 +37,23 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       holidayKey: body.holidayKey ?? undefined,
     },
   });
+
+  try {
+    const invitees = await prisma.rSVP.findMany({ where: { eventId: params.id }, select: { userId: true } });
+    const coHosts = await prisma.eventHost.findMany({ where: { eventId: params.id }, select: { userId: true } });
+    const recipients = [...invitees.map(i => i.userId), ...coHosts.map(ch => ch.userId), event.hostId];
+    const formattedStart = event.startAt
+      ? new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt))
+      : undefined;
+    await sendPushToUsersExcept(recipients, [user.id], {
+      title: `${event.title} עודכן`,
+      body: formattedStart ? `האירוע עודכן ויתקיים ב-${formattedStart}` : 'האירוע עודכן. כדאי לבדוק את הפרטים החדשים.',
+      url: `/events/${event.id}`,
+      tag: `event-${event.id}`,
+    });
+  } catch (err) {
+    console.error('[push] Failed to enqueue event update notification', err);
+  }
   return NextResponse.json({ event });
 }
 

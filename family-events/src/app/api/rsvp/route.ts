@@ -2,21 +2,25 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
+import { sendPushToUsersExcept } from '@/lib/push';
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const user = await prisma.user.findFirst({ where: { email: session.user.email } });
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const body = await req.json();
   const eventId: string = body.eventId;
-  const status: 'APPROVED' | 'DECLINED' | 'MAYBE' | 'NA' | null = (body.status ?? null);
+  const status: 'APPROVED' | 'DECLINED' | 'MAYBE' | 'NA' | null = body.status ?? null;
   const note: string | null = body.note != null ? String(body.note) : null;
   const scope: 'self' | 'group' | 'all' = body.scope || 'self';
 
   // Load event and permissions
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { hostId: true, familyId: true } });
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { hostId: true, familyId: true, title: true, id: true } });
   if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
   const isHost = event.hostId === user.id || !!(await prisma.eventHost.findFirst({ where: { eventId, userId: user.id }, select: { id: true } }));
   const isAdmin = user.role === 'admin';
 
@@ -52,6 +56,31 @@ export async function POST(req: Request) {
       });
     }
   }
+
+  // Notify host(s) via push
+  try {
+    const coHosts = await prisma.eventHost.findMany({ where: { eventId }, select: { userId: true } });
+    const hostRecipients = [event.hostId, ...coHosts.map(ch => ch.userId)];
+    const statusLabels: Record<string, string> = {
+      APPROVED: 'מגיע/ה',
+      DECLINED: 'לא מגיע/ה',
+      MAYBE: 'אולי',
+      NA: 'ללא עדכון',
+    };
+    const actor = user.name || session.user.name || 'משתמש/ת';
+    const bodyText = status
+      ? `${actor} עדכן/ה את הסטטוס ל"${statusLabels[status] || status}"`
+      : `${actor} עדכן/ה את ההערות לאירוע`;
+    await sendPushToUsersExcept(hostRecipients, [user.id], {
+      title: `הגיע עדכון RSVP ל${event.title || 'אירוע'}`,
+      body: bodyText,
+      url: `/events/${event.id}`,
+      tag: `rsvp-${event.id}`,
+    });
+  } catch (err) {
+    console.error('[push] Failed to enqueue RSVP notification', err);
+  }
+
   // Notify host by email if enabled
   try {
     const host = await prisma.user.findUnique({ where: { id: event.hostId }, select: { email: true, notifyRsvpEmails: true, name: true } });
@@ -69,6 +98,7 @@ export async function POST(req: Request) {
       await tx.sendMail({ from: process.env.SMTP_FROM, to: host.email, subject, text, replyTo: process.env.SMTP_REPLY_TO });
     }
   } catch {}
+
   return NextResponse.json({ ok: true, updated: targetUserIds.length });
 }
 

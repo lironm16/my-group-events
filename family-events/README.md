@@ -12,6 +12,19 @@ cp .env.example .env
 # DATABASE_URL=postgresql://family:family@localhost:5432/family?schema=public
 ```
 
+### Push notifications
+
+Generate VAPID keys (for example via `npx web-push generate-vapid-keys`) and provide:
+
+```bash
+VAPID_PUBLIC_KEY= # server public key
+VAPID_PRIVATE_KEY= # server private key
+VAPID_CONTACT_EMAIL=mailto:team@example.com # optional but recommended
+NEXT_PUBLIC_VAPID_PUBLIC_KEY= # same value as VAPID_PUBLIC_KEY for the client
+```
+
+After setting the keys, reload the app so the service worker registers and users can subscribe via `/api/push`.
+
 ### SMTP (Emails)
 To enable email sending (password reset, activation), configure SMTP env vars:
 
