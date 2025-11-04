@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 type NotificationItem = {
   id: string;
@@ -39,8 +39,8 @@ export default function NotificationBell() {
       if (!containerRef.current) return;
       if (!containerRef.current.contains(event.target as Node)) setOpen(false);
     };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function NotificationBell() {
       </button>
       {open && (
         <div
-          className="absolute right-0 mt-2 w-80 max-h-[60vh] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl flex flex-col"
+          className="absolute right-0 mt-2 md:w-80 w-[calc(100vw-1.5rem)] max-h-[70vh] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl flex flex-col"
           dir="rtl"
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-800">
