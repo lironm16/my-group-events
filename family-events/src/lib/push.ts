@@ -18,8 +18,8 @@ function ensureConfigured() {
   if (configured) return true;
   if (configurationAttempted) return false;
   configurationAttempted = true;
-  const publicKey = process.env.VAPID_PUBLIC_KEY;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  const publicKey = process.env.WEB_PUSH_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY;
+  const privateKey = process.env.WEB_PUSH_VAPID_PRIVATE_KEY || process.env.VAPID_PRIVATE_KEY;
   if (!publicKey || !privateKey) {
     console.warn('[push] Missing VAPID keys; push delivery disabled');
     return false;

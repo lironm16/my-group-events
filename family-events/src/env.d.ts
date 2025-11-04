@@ -13,6 +13,9 @@ declare namespace NodeJS {
     VAPID_PRIVATE_KEY?: string;
     VAPID_CONTACT_EMAIL?: string;
     NEXT_PUBLIC_VAPID_PUBLIC_KEY?: string;
+    WEB_PUSH_VAPID_PUBLIC_KEY?: string;
+    WEB_PUSH_VAPID_PRIVATE_KEY?: string;
+    NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY?: string;
   }
 }
 

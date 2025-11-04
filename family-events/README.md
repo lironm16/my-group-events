@@ -14,13 +14,14 @@ cp .env.example .env
 
 ### Push notifications
 
-Generate VAPID keys (for example via `npx web-push generate-vapid-keys`) and provide:
+Generate VAPID keys (for example via `npx web-push generate-vapid-keys`) and provide either the `WEB_PUSH_*` or legacy names:
 
 ```bash
-VAPID_PUBLIC_KEY= # server public key
-VAPID_PRIVATE_KEY= # server private key
+WEB_PUSH_VAPID_PUBLIC_KEY= # server public key
+WEB_PUSH_VAPID_PRIVATE_KEY= # server private key
+NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY= # same value as the public key for the client
 VAPID_CONTACT_EMAIL=mailto:team@example.com # optional but recommended
-NEXT_PUBLIC_VAPID_PUBLIC_KEY= # same value as VAPID_PUBLIC_KEY for the client
+# (Legacy names supported as fallback: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, NEXT_PUBLIC_VAPID_PUBLIC_KEY)
 ```
 
 After setting the keys, reload the app so the service worker registers and users can subscribe via `/api/push`.
