@@ -31,9 +31,21 @@ function ensureConfigured() {
     console.warn('[push] Missing VAPID keys; push delivery disabled');
     return false;
   }
-  const contact = process.env.VAPID_CONTACT_EMAIL || `mailto:${process.env.SMTP_FROM || 'noreply@example.com'}`;
+  const rawContact = process.env.VAPID_CONTACT_EMAIL || process.env.SMTP_FROM || 'support@example.com';
+  const normalizedContact = (() => {
+    const trimmed = rawContact.trim();
+    if (!trimmed) return 'mailto:support@example.com';
+    if (/^https?:/i.test(trimmed) || /^mailto:/i.test(trimmed)) {
+      return trimmed;
+    }
+    if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
+      return `mailto:${trimmed}`;
+    }
+    // Fall back to default if value is not a bare email/URL/mailto
+    return 'mailto:support@example.com';
+  })();
   try {
-    webpush.setVapidDetails(contact, publicKey, privateKey);
+    webpush.setVapidDetails(normalizedContact, publicKey, privateKey);
     configured = true;
     return true;
   } catch (err) {
