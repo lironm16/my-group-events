@@ -34,6 +34,14 @@ function decodeEventCursor(value: string): EventCursorPayload | null {
   }
 }
 
+function formatNotificationDate(start: Date, end?: Date | null) {
+  const startLabel = start.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+  if (!end) return startLabel;
+  if (Math.abs(end.getTime() - start.getTime()) < 60 * 1000) return startLabel;
+  const endLabel = end.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  return `${startLabel} (?? ${endLabel})`;
+}
+
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -254,13 +262,13 @@ export async function POST(req: Request) {
   if (hostId !== user.id) notifyTargets.add(hostId);
   coHostIds.forEach((uid) => notifyTargets.add(uid));
   if (notifyTargets.size) {
-    const startLabel = startAt.toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' });
+    const startLabel = formatNotificationDate(startAt, endAt ?? undefined);
     const payloads = Array.from(notifyTargets).map((uid) => ({
       userId: uid,
       type: recurrenceConfig ? 'event.series.created' : 'event.created',
       title: recurrenceConfig
-        ? `????? "${title}" ????`
-        : `???? ????? "${title}"`,
+        ? `???? ???????? "${title}" ?????`
+        : `???? ????? ???: "${title}"`,
       body: recurrenceConfig
         ? `????? ?????? ?????? ?-${startLabel}`
         : `?????? ?????? ?-${startLabel}`,
