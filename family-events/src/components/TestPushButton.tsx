@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { ensurePushSubscription, ensureServiceWorker, isPushSupported } from '@/lib/clientPush';
 
 type Status = 'idle' | 'success' | 'error';
 
@@ -14,6 +15,27 @@ export default function TestPushButton() {
     setMessage('');
     startTransition(async () => {
       try {
+        if (!isPushSupported()) {
+          setStatus('error');
+          setMessage('הדפדפן לא תומך בהתראות Push.');
+          return;
+        }
+
+        await ensureServiceWorker();
+
+        let permission = Notification.permission;
+        if (permission === 'default') {
+          permission = await Notification.requestPermission();
+        }
+
+        if (permission !== 'granted') {
+          setStatus('error');
+          setMessage('יש לאשר קבלת התראות במכשיר כדי לשלוח בדיקה.');
+          return;
+        }
+
+        await ensurePushSubscription();
+
         const res = await fetch('/api/push/test', { method: 'POST' });
         const json = await res.json().catch(() => ({}));
         if (res.ok && json?.ok) {
