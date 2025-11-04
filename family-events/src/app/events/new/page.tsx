@@ -14,17 +14,19 @@ export default function NewEventPage() {
   const [hasEnd, setHasEnd] = useState<boolean>(false);
   const [repeatWeekly, setRepeatWeekly] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState('');
+  const [repeatNoEnd, setRepeatNoEnd] = useState(false);
   const [skipHolidays, setSkipHolidays] = useState(true);
   const [saving, setSaving] = useState(false);
   const [createdModal, setCreatedModal] = useState<{ id: string; startAt: string } | null>(null);
   const errors = useMemo(() => {
-    const errs: Partial<Record<keyof typeof form, string>> = {};
+    const errs: Record<string, string> = {};
     if (!form.title.trim()) errs.title = 'יש להזין כותרת';
     if (!form.startAt) errs.startAt = 'יש להזין תאריך התחלה';
     if (form.endAt && form.startAt && new Date(form.endAt) < new Date(form.startAt)) errs.endAt = 'תאריך הסיום חייב להיות אחרי ההתחלה';
     if (form.externalLink && !/^https?:\/\//.test(form.externalLink)) errs.externalLink = 'קישור לא תקין (חייב להתחיל ב-http/https)';
+    if (repeatWeekly && !repeatNoEnd && !repeatUntil) errs.repeatUntil = 'יש לבחור תאריך סיום או לסמן ללא תאריך סיום';
     return errs;
-  }, [form]);
+  }, [form, repeatWeekly, repeatNoEnd, repeatUntil]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,8 +39,9 @@ export default function NewEventPage() {
     } catch {}
     if (hostId) body.hostId = hostId;
     if (Array.isArray(coHostIds) && coHostIds.length) body.coHostIds = coHostIds;
-    if (repeatWeekly && repeatUntil) {
-      body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
+    if (repeatWeekly) {
+      body.repeat = { skipHolidays, noEndDate: repeatNoEnd };
+      if (!repeatNoEnd && repeatUntil) body.repeat.weeklyUntil = repeatUntil;
     }
     const res = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     setSaving(false);
@@ -133,12 +136,36 @@ export default function NewEventPage() {
         </div>
         <div className="mt-4 space-y-2">
           <label className="inline-flex items-center gap-2">
-            <input type="checkbox" checked={repeatWeekly} onChange={(e)=>setRepeatWeekly(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={repeatWeekly}
+              onChange={(e)=>{
+                const checked = e.target.checked;
+                setRepeatWeekly(checked);
+                if (!checked) {
+                  setRepeatUntil('');
+                  setRepeatNoEnd(false);
+                }
+              }}
+            />
             <span>חזרה כל שבוע</span>
           </label>
           {repeatWeekly && (
             <div className="space-y-2">
-              <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} />
+              <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} allowDateOnly timeToggle />
+              {errors.repeatUntil && <p className="text-xs text-red-600">{errors.repeatUntil}</p>}
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={repeatNoEnd}
+                  onChange={(e)=>{
+                    const checked = e.target.checked;
+                    setRepeatNoEnd(checked);
+                    if (checked) setRepeatUntil('');
+                  }}
+                />
+                <span>ללא תאריך סיום</span>
+              </label>
               <label className="inline-flex items-center gap-2">
                 <input type="checkbox" checked={skipHolidays} onChange={(e)=>setSkipHolidays(e.target.checked)} />
                 <span>דלג על חגים</span>

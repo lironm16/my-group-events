@@ -18,6 +18,7 @@ model Family {
   memberships FamilyMembership[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  series     EventSeries[]
 }
 
 model User {
@@ -48,6 +49,8 @@ model User {
   familyMemberships FamilyMembership[]
   sentMessages     Message[]       @relation("MessageSender")
   messageReads     MessageRead[]
+  notifications    Notification[]
+  ownedSeries      EventSeries[]   @relation("EventSeriesOwner")
 }
 
 model Group {
@@ -89,8 +92,41 @@ model Event {
   recurrence         Json?
   /// ISO date strings of occurrence start times to skip (deleted instances)
   recurrenceExceptions Json?
+  series             EventSeries? @relation(fields: [seriesId], references: [id])
+  seriesId           String?
+  seriesOccurrence   Int?
+  generatedFrom      Event?        @relation("EventRecurrenceChain", fields: [generatedFromEventId], references: [id])
+  generatedFromEventId String?
+  generatedChildren  Event[]       @relation("EventRecurrenceChain")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  @@index([seriesId])
+  @@index([generatedFromEventId])
+  @@unique([seriesId, seriesOccurrence])
+}
+
+model EventSeries {
+  id                 String   @id @default(cuid())
+  frequency          String
+  interval           Int      @default(1)
+  skipHolidays       Boolean  @default(false)
+  until              DateTime?
+  noEndDate          Boolean  @default(false)
+  templateData       Json
+  baseDurationMs     BigInt?
+  nextOccurrenceStart DateTime?
+  nextOccurrenceEnd  DateTime?
+  nextReadyAt        DateTime?
+  owner              User?    @relation("EventSeriesOwner", fields: [ownerId], references: [id])
+  ownerId            String?
+  family             Family?  @relation(fields: [familyId], references: [id])
+  familyId           String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  events             Event[]
+
+  @@index([nextReadyAt])
 }
 
 model EventHost {
@@ -226,4 +262,20 @@ model FamilyMembership {
   @@unique([userId, familyId])
   @@index([familyId])
   @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  type      String
+  title     String
+  body      String?
+  href      String?
+  metadata  Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }

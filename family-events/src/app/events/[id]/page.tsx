@@ -21,10 +21,19 @@ type EventDetail = {
   coHosts?: { id: string; name: string | null }[];
   rsvps: { id: string; status: string; note: string | null; user: { id: string; name: string | null; image?: string | null; groupId?: string | null; groupNickname?: string | null } }[];
   familyMembers?: { id: string; name: string | null }[];
+  seriesId?: string | null;
+  recurrenceSummary?: {
+    frequency: string;
+    interval: number;
+    skipHolidays: boolean;
+    until: string | null;
+    noEndDate: boolean;
+    nextOccurrenceStart: string | null;
+  };
 };
 
 async function fetchEvent(id: string): Promise<EventDetail | null> {
-  const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: { select: { id: true, name: true, image: true, groupId: true, group: { select: { id: true, nickname: true, parentId: true } } } } } }, host: true, family: { include: { members: true } }, coHosts: { include: { user: true } } } });
+  const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: { select: { id: true, name: true, image: true, groupId: true, group: { select: { id: true, nickname: true, parentId: true } } } } } }, host: true, family: { include: { members: true } }, coHosts: { include: { user: true } }, series: true } });
   if (!row) return null;
   return {
     id: row.id,
@@ -39,6 +48,17 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
     coHosts: (row.coHosts || []).map(h => ({ id: h.userId, name: h.user?.name ?? null })),
     rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null, image: (r.user as any)?.image ?? null, groupId: (r.user as any)?.groupId ?? null, groupNickname: (r.user as any)?.group?.nickname ?? null } })),
     familyMembers: (row.family?.members || []).map(m => ({ id: m.id, name: m.name ?? null })),
+    seriesId: row.seriesId ?? null,
+    recurrenceSummary: row.series
+      ? {
+          frequency: row.series.frequency,
+          interval: row.series.interval,
+          skipHolidays: row.series.skipHolidays,
+          until: row.series.until ? row.series.until.toISOString() : null,
+          noEndDate: row.series.noEndDate,
+          nextOccurrenceStart: row.series.nextOccurrenceStart ? row.series.nextOccurrenceStart.toISOString() : null,
+        }
+      : undefined,
   };
 }
 
@@ -88,6 +108,8 @@ export default async function EventDetailPage({ params, searchParams }: { params
   const shareUrl = `${base}/events/${event.id}`;
   const hasResponders = (event.rsvps || []).some((r) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED');
   const includeReminders = (event.rsvps || []).every((r) => r.status === 'NA');
+  const recurrenceInfo = event.recurrenceSummary;
+  const recurrenceSummaryText = recurrenceInfo ? buildRecurrenceSummary(recurrenceInfo) : null;
   const from = typeof searchParams?.from === 'string' ? (searchParams!.from as string) : undefined;
   const occurrenceStartAt = typeof searchParams?.occurrenceStartAt === 'string' ? (searchParams!.occurrenceStartAt as string) : undefined;
   return (
@@ -110,6 +132,7 @@ export default async function EventDetailPage({ params, searchParams }: { params
           hasResponders,
           includeReminders,
         }}
+        seriesId={event.seriesId ?? null}
       />
       <div className="rounded border border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900">
         {event.description && (
@@ -144,6 +167,15 @@ export default async function EventDetailPage({ params, searchParams }: { params
               <dd><a className="text-blue-600" href={event.externalLink} target="_blank" rel="noreferrer">פתיחה</a></dd>
             </div>
           )}
+          {recurrenceSummaryText && (
+            <div className="md:col-span-2">
+              <dt className="text-sm text-gray-500">חזרה</dt>
+              <dd className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                <div>{recurrenceSummaryText.summary}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{recurrenceSummaryText.next}</div>
+              </dd>
+            </div>
+          )}
         </dl>
         
         {/* RSVP quick section removed; using grouped editor below */}
@@ -175,7 +207,7 @@ type ShareProps = {
   includeReminders: boolean;
 };
 
-function HeaderActions({ id, occurrenceStartAt, ics, canEdit, canDelete, event, backHref, shareProps }: { id: string; occurrenceStartAt?: string; ics: string; canEdit: boolean; canDelete: boolean; event: any; backHref: string; shareProps: ShareProps }) {
+function HeaderActions({ id, occurrenceStartAt, ics, canEdit, canDelete, event, backHref, shareProps, seriesId }: { id: string; occurrenceStartAt?: string; ics: string; canEdit: boolean; canDelete: boolean; event: any; backHref: string; shareProps: ShareProps; seriesId?: string | null }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
@@ -184,11 +216,24 @@ function HeaderActions({ id, occurrenceStartAt, ics, canEdit, canDelete, event, 
           <WhatsAppShareButton {...shareProps} />
           <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={ics}>ייצוא ל-ICS</Link>
           {canEdit && <Link className="px-2 py-1 sm:px-3 sm:py-2 text-sm bg-gray-200 dark:bg-gray-800 dark:text-gray-100 rounded" href={`/events/${id}/edit`}>עריכה</Link>}
-          {canDelete && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} />}
+          {canDelete && <DeleteEventButton id={id} occurrenceStartAt={occurrenceStartAt} seriesId={seriesId} />}
         </div>
       </div>
       <h1 className="text-2xl font-bold">{event.title}</h1>
     </div>
   );
+}
+
+function buildRecurrenceSummary(info: NonNullable<EventDetail['recurrenceSummary']>) {
+  const parts: string[] = [];
+  if (info.frequency === 'WEEKLY') parts.push('חוזר כל שבוע');
+  if (info.skipHolidays) parts.push('מדלג על חגים');
+  if (info.noEndDate) parts.push('ללא תאריך סיום');
+  else if (info.until) parts.push(`עד ${new Date(info.until).toLocaleDateString('he-IL', { dateStyle: 'long' })}`);
+  const summary = parts.join(' · ');
+  const next = info.nextOccurrenceStart
+    ? `האירוע הבא יווצר לאחר ${new Date(info.nextOccurrenceStart).toLocaleString('he-IL', { dateStyle: 'full', timeStyle: 'short' })}`
+    : 'אין אירועים נוספים מתוכננים';
+  return { summary, next };
 }
 
