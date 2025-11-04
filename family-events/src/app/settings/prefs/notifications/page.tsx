@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import DirtySubmit from '@/components/DirtySubmit';
 import { revalidatePath } from 'next/cache';
+import TestPushButton from '@/components/TestPushButton';
 
 export default async function SettingsPrefsNotificationsPage() {
   const session = await getServerSession(authOptions);
@@ -42,6 +43,15 @@ export default async function SettingsPrefsNotificationsPage() {
           <DirtySubmit names={["on"]} initial={{ on: Boolean((me as any)?.notifyRsvpEmails) ? 'on' : '' }} />
         </div>
       </form>
+        <section className="space-y-3 border-t pt-4">
+          <div>
+            <h2 className="text-xl font-semibold">בדיקת התראות Push</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              לאחר שמאפשרים התראות בדפדפן, ניתן לשלוח בדיקה כדי לוודא שהכול עובד במכשיר הנוכחי.
+            </p>
+          </div>
+          <TestPushButton />
+        </section>
     </main>
   );
 }
