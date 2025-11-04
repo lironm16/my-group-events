@@ -11,7 +11,17 @@ import PushNotificationsInitializer from '@/components/PushNotificationsInitiali
 export const metadata: Metadata = {
   title: 'אירועי משפחת מתתיהו',
   description: 'ניהול אירועים למשפחת מתתיהו',
-  icons: { icon: '/templates/party.jpg' },
+  manifest: '/manifest.json',
+  themeColor: '#1d4ed8',
+  icons: {
+    icon: '/templates/party.jpg',
+    apple: '/templates/party.jpg',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'אירועי משפחת מתתיהו',
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
