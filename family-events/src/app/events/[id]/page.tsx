@@ -7,6 +7,7 @@ import RsvpSummary from '@/components/RsvpSummary';
 import RsvpInviteesList from '@/components/RsvpInviteesList';
 import RsvpActionPrompt from '@/components/RsvpActionPrompt';
 import WhatsAppShareButton from '@/components/WhatsAppShareButton';
+import RsvpReminderPanel from '@/components/RsvpReminderPanel';
 
 type EventDetail = {
   id: string;
@@ -75,19 +76,33 @@ export default async function EventDetailPage({ params, searchParams }: { params
   const normalizeStatus = (s: string | null | undefined): 'APPROVED' | 'DECLINED' | 'MAYBE' | 'NA' => {
     return s === 'APPROVED' || s === 'DECLINED' || s === 'MAYBE' ? s : 'NA';
   };
-  const viewerStatus = viewerRsvp ? normalizeStatus(viewerRsvp.status) : null;
-  const approvedCount = event.rsvps.filter(r => r.status === 'APPROVED').length;
-  const maybeCount = event.rsvps.filter(r => r.status === 'MAYBE').length;
-  const declinedCount = event.rsvps.filter(r => r.status === 'DECLINED').length;
-  const waitingCount = event.rsvps.filter(r => r.status === 'NA').length;
+    const viewerStatus = viewerRsvp ? normalizeStatus(viewerRsvp.status) : null;
+    const approvedCount = event.rsvps.filter(r => r.status === 'APPROVED').length;
+    const maybeCount = event.rsvps.filter(r => r.status === 'MAYBE').length;
+    const declinedCount = event.rsvps.filter(r => r.status === 'DECLINED').length;
+    const waitingCount = event.rsvps.filter(r => r.status === 'NA').length;
   const totalCount = event.rsvps.length;
   const allHosts = [
     ...(event.host?.name ? [{ id: event.host?.id || 'host', name: event.host?.name }] : []),
     ...((event.coHosts || []))
   ];
   const shareUrl = `${base}/events/${event.id}`;
-  const hasResponders = (event.rsvps || []).some((r) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED');
-  const includeReminders = (event.rsvps || []).every((r) => r.status === 'NA');
+    const hasResponders = (event.rsvps || []).some((r) => r.status === 'APPROVED' || r.status === 'MAYBE' || r.status === 'DECLINED');
+    const includeReminders = waitingCount > 0;
+    const groupStats = new Map<string, { id: string; name: string; waiting: number; total: number }>();
+    for (const r of event.rsvps) {
+      const gid = r.user.groupId;
+      if (!gid) continue;
+      const current = groupStats.get(gid) ?? { id: gid, name: r.user.groupNickname || 'קבוצה ללא שם', waiting: 0, total: 0 };
+      current.total += 1;
+      if (r.status === 'NA') current.waiting += 1;
+      groupStats.set(gid, current);
+    }
+    const groupOptions = Array.from(groupStats.values()).sort((a, b) => {
+      if (b.waiting !== a.waiting) return b.waiting - a.waiting;
+      return a.name.localeCompare(b.name || '', 'he');
+    });
+    const canSendReminders = canEdit || viewer?.role === 'admin';
   const from = typeof searchParams?.from === 'string' ? (searchParams!.from as string) : undefined;
   const occurrenceStartAt = typeof searchParams?.occurrenceStartAt === 'string' ? (searchParams!.occurrenceStartAt as string) : undefined;
   return (
@@ -148,6 +163,15 @@ export default async function EventDetailPage({ params, searchParams }: { params
         
         {/* RSVP quick section removed; using grouped editor below */}
       </div>
+        {canSendReminders && (
+          <RsvpReminderPanel
+            eventId={event.id}
+            eventTitle={event.title}
+            waitingCount={waitingCount}
+            maybeCount={maybeCount}
+            groups={groupOptions}
+          />
+        )}
       {/* RSVP actions */}
       <section className="space-y-3">
         {viewerStatus ? (

@@ -48,9 +48,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
 
   try {
-      const invitees = await prisma.rSVP.findMany({ where: { eventId: params.id }, select: { userId: true, status: true } });
+    const invitees = await prisma.rSVP.findMany({ where: { eventId: params.id }, select: { userId: true, status: true } });
     const coHosts = await prisma.eventHost.findMany({ where: { eventId: params.id }, select: { userId: true } });
-      const recipients = [...invitees.map(i => i.userId), ...coHosts.map(ch => ch.userId), event.hostId];
+    const recipients = [...invitees.map(i => i.userId), ...coHosts.map(ch => ch.userId), event.hostId];
     const changes: string[] = [];
     if (body.title !== undefined && body.title !== existing.title) changes.push('שם');
     if (body.location !== undefined && (body.location ?? '') !== (existing.location ?? '')) changes.push('מיקום');
@@ -61,18 +61,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (body.description !== undefined && (body.description ?? '') !== (existing.description ?? '')) changes.push('תיאור');
     if (body.externalLink !== undefined && (body.externalLink ?? '') !== (existing.externalLink ?? '')) changes.push('קישור');
 
-      const uniqueChanges = Array.from(new Set(changes));
-      const eventName = event.title || 'אירוע';
-      let pushBody = uniqueChanges.length
-        ? `האירוע "${eventName}" עודכן (${formatHebrewList(uniqueChanges)})`
-        : `האירוע "${eventName}" עודכן`;
+    const uniqueChanges = Array.from(new Set(changes));
+    const eventName = event.title || 'אירוע';
+    let pushBody = `האירוע "${eventName}" עודכן`;
+      if (uniqueChanges.length) {
+        pushBody += ` – ${formatHebrewList(uniqueChanges)}`;
+      }
       if (startChanged && event.startAt) {
         const formattedStart = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt));
         pushBody += ` זמן התחלה חדש: ${formattedStart}`;
       }
       const pendingInvitees = invitees.filter((r) => r.status === 'NA').length;
       if (pendingInvitees > 0) {
-        pushBody += ` מחכים עדיין לאישורי ${pendingInvitees} מוזמנים`;
+        pushBody += ` · מחכים עדיין לאישורי ${pendingInvitees} מוזמנים`;
       }
       await sendPushToUsersExcept(recipients, [user.id], {
       title: APP_NAME_HE,

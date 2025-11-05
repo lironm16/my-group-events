@@ -76,12 +76,14 @@ export async function POST(req: Request) {
 
       const templates = status
         ? [
+            `האירוע "${eventName}" קיבל עדכון הגעה עבור ${participantLabel} (על ידי ${actor}) – מצב חדש: "${statusLabels[status] || status}"`,
             `${actor} מעדכן/ת: ${participantLabel === 'משתתף אחד' ? 'אני' : participantLabel} עכשיו "${statusLabels[status] || status}" באירוע "${eventName}"`,
             `עדכון חם: ${participantLabel} באירוע "${eventName}" קופצים ל"${statusLabels[status] || status}" (תודה ל${actor})`,
             `${actor} התקשר ואמר ש${targetCount === 1 ? 'אני' : 'החבר׳ה'} בסטטוס "${statusLabels[status] || status}" לאירוע "${eventName}"`,
             `האירוע "${eventName}" קיבל שינוי מצב: ${participantLabel} עכשיו "${statusLabels[status] || status}" (יוזמת ${actor})`,
           ]
         : [
+            `האירוע "${eventName}" קיבל הערות חדשות עבור ${participantLabel} (על ידי ${actor})`,
             `${actor} שלח/ה הערה חדשה לאירוע "${eventName}" (${participantLabel})`,
             `יש חדשות באירוע "${eventName}" – ${actor} הוסיף/ה הערות עבור ${participantLabel}`,
             `${participantLabel} השאירו עדכון טעים לאירוע "${eventName}" (תודה ל${actor})`,
