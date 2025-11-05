@@ -3,6 +3,15 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { sendPushToUsersExcept } from '@/lib/push';
+import { APP_NAME_HE } from '@/lib/constants';
+
+function formatHebrewList(items: string[]) {
+  if (!items.length) return '';
+  if (items.length === 1) return items[0];
+  const last = items[items.length - 1];
+  const rest = items.slice(0, -1);
+  return `${rest.join(', ')} ו${last}`;
+}
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -42,12 +51,26 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const invitees = await prisma.rSVP.findMany({ where: { eventId: params.id }, select: { userId: true } });
     const coHosts = await prisma.eventHost.findMany({ where: { eventId: params.id }, select: { userId: true } });
     const recipients = [...invitees.map(i => i.userId), ...coHosts.map(ch => ch.userId), event.hostId];
-    const formattedStart = event.startAt
-      ? new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt))
-      : undefined;
+    const changes: string[] = [];
+    if (body.title !== undefined && body.title !== existing.title) changes.push('שם');
+    if (body.location !== undefined && (body.location ?? '') !== (existing.location ?? '')) changes.push('מיקום');
+    const startChanged = body.startAt !== undefined && Boolean(existing.startAt) && new Date(body.startAt).getTime() !== existing.startAt.getTime();
+    if (startChanged) changes.push('זמן התחלה');
+    const endChanged = body.endAt !== undefined && ((existing.endAt ? existing.endAt.getTime() : null) !== (body.endAt ? new Date(body.endAt).getTime() : null));
+    if (endChanged) changes.push('זמן סיום');
+    if (body.description !== undefined && (body.description ?? '') !== (existing.description ?? '')) changes.push('תיאור');
+    if (body.externalLink !== undefined && (body.externalLink ?? '') !== (existing.externalLink ?? '')) changes.push('קישור');
+
+    const summary = changes.length ? ` (${formatHebrewList(Array.from(new Set(changes)))})` : '';
+    const eventName = event.title || 'אירוע';
+    let pushBody = `האירוע "${eventName}" עודכן${summary}. הקש לצפייה בפרטים המעודכנים.`;
+    if (startChanged && event.startAt) {
+      const formattedStart = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt));
+      pushBody += ` זמן התחלה חדש: ${formattedStart}.`;
+    }
     await sendPushToUsersExcept(recipients, [user.id], {
-      title: `${event.title} עודכן`,
-      body: formattedStart ? `האירוע עודכן ויתקיים ב-${formattedStart}` : 'האירוע עודכן. כדאי לבדוק את הפרטים החדשים.',
+      title: APP_NAME_HE,
+      body: pushBody,
       url: `/events/${event.id}`,
       tag: `event-${event.id}`,
     });

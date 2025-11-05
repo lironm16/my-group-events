@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { sendPushToUsersExcept } from '@/lib/push';
+import { APP_NAME_HE } from '@/lib/constants';
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -58,26 +59,35 @@ export async function POST(req: Request) {
   }
 
   // Notify host(s) via push
-  try {
-    const coHosts = await prisma.eventHost.findMany({ where: { eventId }, select: { userId: true } });
-    const hostRecipients = [event.hostId, ...coHosts.map(ch => ch.userId)];
-    const statusLabels: Record<string, string> = {
-      APPROVED: 'מגיע/ה',
-      DECLINED: 'לא מגיע/ה',
-      MAYBE: 'אולי',
-      NA: 'ללא עדכון',
-    };
-    const actor = user.name || session.user.name || 'משתמש/ת';
-    const bodyText = status
-      ? `${actor} עדכן/ה את הסטטוס ל"${statusLabels[status] || status}"`
-      : `${actor} עדכן/ה את ההערות לאירוע`;
-    await sendPushToUsersExcept(hostRecipients, [user.id], {
-      title: `הגיע עדכון RSVP ל${event.title || 'אירוע'}`,
-      body: bodyText,
-      url: `/events/${event.id}`,
-      tag: `rsvp-${event.id}`,
-    });
-  } catch (err) {
+    try {
+      const coHosts = await prisma.eventHost.findMany({ where: { eventId }, select: { userId: true } });
+      const hostRecipients = [event.hostId, ...coHosts.map(ch => ch.userId)];
+      const statusLabels: Record<string, string> = {
+        APPROVED: 'מגיע',
+        DECLINED: 'לא מגיע',
+        MAYBE: 'אולי',
+        NA: 'ללא עדכון',
+      };
+      const actor = user.name || session.user.name || 'אחד מחברי המשפחה';
+      const eventName = event.title || 'אירוע';
+      const targetCount = targetUserIds.length;
+      const participantLabel = targetCount === 1 ? 'משתתף אחד' : `${targetCount} משתתפים`;
+      let bodyText: string;
+      if (status) {
+        const label = statusLabels[status] || status;
+        const prefix = targetCount === 1 ? 'סטטוס ההגעה עודכן' : `סטטוס ההגעה של ${participantLabel} עודכן`;
+        bodyText = `${prefix} ל"${label}" באירוע "${eventName}" על ידי ${actor}.`;
+      } else {
+        const prefix = targetCount === 1 ? 'התווספה הערה חדשה' : `התווספו הערות עבור ${participantLabel}`;
+        bodyText = `${prefix} באירוע "${eventName}" על ידי ${actor}.`;
+      }
+      await sendPushToUsersExcept(hostRecipients, [user.id], {
+        title: APP_NAME_HE,
+        body: bodyText,
+        url: `/events/${event.id}`,
+        tag: `rsvp-${event.id}`,
+      });
+    } catch (err) {
     console.error('[push] Failed to enqueue RSVP notification', err);
   }
 
