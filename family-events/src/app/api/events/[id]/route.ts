@@ -63,18 +63,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     const uniqueChanges = Array.from(new Set(changes));
     const eventName = event.title || 'אירוע';
-    let pushBody = uniqueChanges.length ? formatHebrewList(uniqueChanges) : 'פרטי האירוע עודכנו';
-      if (startChanged && event.startAt) {
-        const formattedStart = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt));
-      pushBody += ` · זמן התחלה חדש: ${formattedStart}`;
-      }
+    const changeSummary = uniqueChanges.length ? formatHebrewList(uniqueChanges) : 'פרטי האירוע';
+    const parts: string[] = [changeSummary];
+    if (startChanged && event.startAt) {
+      const formattedStart = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt));
+      parts.push(`זמן התחלה חדש: ${formattedStart}`);
+    }
     const pendingInvitees = invitees.filter((r) => r.status === 'NA');
     if (pendingInvitees.length > 0) {
       const sample = pendingInvitees.slice(0, 2).map((r) => r.user?.name || 'מוזמן');
       const extra = pendingInvitees.length - sample.length;
       const namesPart = sample.join(' ו');
-      pushBody += ` · מחכים עדיין לאישור של ${namesPart}${extra > 0 ? ` ועוד ${extra}` : ''}`;
+      parts.push(`מחכים עדיין לאישור של ${namesPart}${extra > 0 ? ` ועוד ${extra}` : ''}`);
       }
+    const pushBody = parts.join(' · ');
     await sendPushToUsersExcept(recipients, [user.id], {
       title: eventName,
       body: pushBody,
