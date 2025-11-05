@@ -120,15 +120,11 @@ export async function POST(req: Request) {
         const statusWord = statusLabels[status] || status;
         if (targetCount === 1) {
           templates = [
-            `${actor} עדכן את הסטטוס של ${targetName} ל"${statusWord}"`,
-            `${actor} סימן את ${targetName} בסטטוס "${statusWord}"`,
-            `${targetName} כעת "${statusWord}" לפי עדכון של ${actor}`,
+            `${actor} עדכן את הסטטוס ל"${statusWord}"`,
           ];
         } else {
           templates = [
             `${actor} עדכן סטטוסים עבור ${labelForSentence}`,
-            `הסטטוסים של ${labelForSentence} התעדכנו על ידי ${actor}`,
-            `${actor} ביצע עדכון סטטוס לקבוצה של ${participantPlural}`,
           ];
         }
       } else {
