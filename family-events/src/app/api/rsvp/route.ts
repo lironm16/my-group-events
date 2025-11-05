@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { sendPushToUsersExcept } from '@/lib/push';
 import { APP_NAME_HE } from '@/lib/constants';
+import crypto from 'crypto';
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -72,15 +73,26 @@ export async function POST(req: Request) {
       const eventName = event.title || 'אירוע';
       const targetCount = targetUserIds.length;
       const participantLabel = targetCount === 1 ? 'משתתף אחד' : `${targetCount} משתתפים`;
-      let bodyText: string;
-      if (status) {
-        const label = statusLabels[status] || status;
-        const prefix = targetCount === 1 ? 'סטטוס ההגעה עודכן' : `סטטוס ההגעה של ${participantLabel} עודכן`;
-        bodyText = `${prefix} ל"${label}" באירוע "${eventName}" על ידי ${actor}`;
-      } else {
-        const prefix = targetCount === 1 ? 'התווספה הערה חדשה' : `התווספו הערות עבור ${participantLabel}`;
-        bodyText = `${prefix} באירוע "${eventName}" על ידי ${actor}`;
-      }
+
+      const templates = status
+        ? [
+            `${actor} מעדכן/ת: ${participantLabel === 'משתתף אחד' ? 'אני' : participantLabel} עכשיו "${statusLabels[status] || status}" באירוע "${eventName}"`,
+            `עדכון חם: ${participantLabel} באירוע "${eventName}" קופצים ל"${statusLabels[status] || status}" (תודה ל${actor})`,
+            `${actor} התקשר ואמר ש${targetCount === 1 ? 'אני' : 'החבר׳ה'} בסטטוס "${statusLabels[status] || status}" לאירוע "${eventName}"`,
+            `האירוע "${eventName}" קיבל שינוי מצב: ${participantLabel} עכשיו "${statusLabels[status] || status}" (יוזמת ${actor})`,
+          ]
+        : [
+            `${actor} שלח/ה הערה חדשה לאירוע "${eventName}" (${participantLabel})`,
+            `יש חדשות באירוע "${eventName}" – ${actor} הוסיף/ה הערות עבור ${participantLabel}`,
+            `${participantLabel} השאירו עדכון טעים לאירוע "${eventName}" (תודה ל${actor})`,
+            `${actor} משאיר/ה לכם מסר באירוע "${eventName}". כדאי לבדוק!`,
+          ];
+
+      const hash = crypto.createHash('sha1');
+      hash.update(`${event.id}:${Date.now()}:${targetUserIds.join(',')}:${status || 'note'}`);
+      const digest = hash.digest('hex');
+      const idx = parseInt(digest.slice(0, 6), 16) % templates.length;
+      const bodyText = templates[idx];
       await sendPushToUsersExcept(hostRecipients, [user.id], {
         title: APP_NAME_HE,
         body: bodyText,
