@@ -62,7 +62,7 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
     host: { id: row.hostId, name: row.host?.name ?? null },
     coHosts: (row.coHosts || []).map(h => ({ id: h.userId, name: h.user?.name ?? null })),
       rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null, image: (r.user as any)?.image ?? null, gender: (r.user as any)?.gender ?? null, groupId: (r.user as any)?.groupId ?? null, groupNickname: (r.user as any)?.group?.nickname ?? null } })),
-      groupNotes: row.groupNotes.map((n) => ({ groupId: n.groupId, note: n.note, updatedBy: n.updatedBy })),
+    groupNotes: row.groupNotes.map((n) => ({ groupId: n.groupId, note: n.note, updatedBy: n.updatedBy })),
     familyMembers: (row.family?.members || []).map(m => ({ id: m.id, name: m.name ?? null })),
   };
 }
