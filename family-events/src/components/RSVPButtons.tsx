@@ -5,32 +5,36 @@ import { useRouter } from "next/navigation";
 
 type RSVPStatus = "APPROVED" | "DECLINED" | "MAYBE" | "NA";
 
-export default function RSVPButtons({ eventId, initial, initialNote, canGroup, canAll, onSaved }: { eventId: string; initial?: RSVPStatus | null; initialNote?: string | null; canGroup?: boolean; canAll?: boolean; onSaved?: () => void }) {
+export default function RSVPButtons({ eventId, initial, initialNote, initialGroupNote, canGroup, canAll, onSaved }: { eventId: string; initial?: RSVPStatus | null; initialNote?: string | null; initialGroupNote?: string | null; canGroup?: boolean; canAll?: boolean; onSaved?: () => void }) {
   const router = useRouter();
   const [status, setStatus] = useState<RSVPStatus | null>(initial ?? 'NA');
   const [scope, setScope] = useState<'self' | 'group' | 'all'>('self');
   const normalizedInitialNote = (initialNote ?? '').trim();
-  const [note, setNote] = useState<string>(normalizedInitialNote);
+  const normalizedInitialGroupNote = (initialGroupNote ?? '').trim();
+  const [selfNote, setSelfNote] = useState<string>(normalizedInitialNote);
+  const [groupNote, setGroupNote] = useState<string>(normalizedInitialGroupNote);
   const [saving, setSaving] = useState(false);
   const initialStatusRef = useRef<RSVPStatus | null>(initial ?? 'NA');
-  const initialNoteRef = useRef<string>(normalizedInitialNote);
+  const initialSelfNoteRef = useRef<string>(normalizedInitialNote);
+  const initialGroupNoteRef = useRef<string>(normalizedInitialGroupNote);
 
   const save = useCallback(async () => {
-    const noteTrimmed = note.trim();
+      const currentNote = scope === 'group' ? groupNote : selfNote;
+      const noteTrimmed = currentNote.trim();
     const statusChanged = status !== initialStatusRef.current;
-    const noteChanged = noteTrimmed !== initialNoteRef.current;
+      const noteChanged = scope === 'group'
+        ? noteTrimmed !== initialGroupNoteRef.current
+        : noteTrimmed !== initialSelfNoteRef.current;
     if (!statusChanged && !noteChanged) return;
     setSaving(true);
     try {
       const payload: any = { eventId, scope };
-      if (!statusChanged && noteChanged) {
-        // Let server update note only without touching status
-        payload.status = null;
-        payload.note = noteTrimmed;
-      } else {
-        payload.status = status;
-        payload.note = noteTrimmed;
-      }
+        if (!statusChanged && noteChanged) {
+          payload.status = null;
+        } else {
+          payload.status = status;
+        }
+        payload.note = scope === 'group' ? (noteTrimmed || null) : noteTrimmed;
       const res = await fetch('/api/rsvp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!res.ok) return;
       try {
@@ -39,13 +43,18 @@ export default function RSVPButtons({ eventId, initial, initialNote, canGroup, c
       try {
         if (onSaved) onSaved();
       } catch {}
-      setNote(noteTrimmed);
       initialStatusRef.current = status;
-      initialNoteRef.current = noteTrimmed;
+        if (scope === 'group') {
+          initialGroupNoteRef.current = noteTrimmed;
+          setGroupNote(noteTrimmed);
+        } else {
+          initialSelfNoteRef.current = noteTrimmed;
+          setSelfNote(noteTrimmed);
+        }
     } finally {
       setSaving(false);
     }
-  }, [eventId, scope, note, status, router, onSaved]);
+    }, [eventId, scope, groupNote, selfNote, status, router, onSaved]);
 
   const btnCls = (active: boolean, color: string) => [
     'px-3 py-1 rounded text-sm border transition-colors',
@@ -57,7 +66,10 @@ export default function RSVPButtons({ eventId, initial, initialNote, canGroup, c
   const maybeActive = useMemo(() => status === 'MAYBE', [status]);
   const naActive = useMemo(() => status === 'NA' || status == null, [status]);
   const statusDirty = status !== initialStatusRef.current;
-  const noteDirty = note.trim() !== initialNoteRef.current;
+    const currentNote = scope === 'group' ? groupNote : selfNote;
+    const noteDirty = scope === 'group'
+      ? currentNote.trim() !== initialGroupNoteRef.current
+      : currentNote.trim() !== initialSelfNoteRef.current;
 
   return (
     <div className="flex flex-col gap-2">
@@ -94,17 +106,24 @@ export default function RSVPButtons({ eventId, initial, initialNote, canGroup, c
         )}
       </div>
       <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-        <div className="relative flex-1">
+          <div className="relative flex-1">
           <input
             className="w-full border pr-10 pl-3 p-2 rounded bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-sm"
             placeholder="הערה (אופציונלי)"
-            value={note}
-            onChange={(e)=>setNote(e.target.value)}
+              value={currentNote}
+              onChange={(e)=>{
+                const value = e.target.value;
+                if (scope === 'group') setGroupNote(value);
+                else setSelfNote(value);
+              }}
           />
-          {note && (
+            {currentNote && (
             <button
               type="button"
-              onClick={() => setNote('')}
+                onClick={() => {
+                  if (scope === 'group') setGroupNote('');
+                  else setSelfNote('');
+                }}
               className="absolute inset-y-0 left-0 flex items-center pl-3 pr-2 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
               aria-label="ניקוי ההערה"
             >

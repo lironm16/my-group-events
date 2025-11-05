@@ -16,7 +16,7 @@ type Item = {
 
 type FilterKey = 'all' | 'NA' | 'APPROVED' | 'DECLINED' | 'MAYBE';
 
-export default function RsvpInviteesList({ list }: { list: Item[] }) {
+export default function RsvpInviteesList({ list, groupNotes = {} }: { list: Item[]; groupNotes?: Record<string, string> }) {
   const [filter, setFilter] = useState<FilterKey>('all');
   const filtered = useMemo(() => {
     if (filter === 'all') return list.slice();
@@ -74,10 +74,13 @@ export default function RsvpInviteesList({ list }: { list: Item[] }) {
       </div>
         <div className="flex flex-col">
           {grouped.map((group, index) => {
-            const notes = group.members
-              .map((member) => (member.note || '').trim())
-              .filter((note) => note.length > 0);
-            const unifiedNote = notes.length > 0 && notes.every((note) => note === notes[0]) ? notes[0] : null;
+              const isSingle = group.key.startsWith('__single-');
+              const notes = group.members
+                .map((member) => (member.note || '').trim())
+                .filter((note) => note.length > 0);
+              const unifiedNote = notes.length > 0 && notes.every((note) => note === notes[0]) ? notes[0] : null;
+              const groupLevelNote = !isSingle ? groupNotes[group.key] : null;
+              const noteToDisplay = groupLevelNote || unifiedNote;
             return (
               <div key={group.key} className={index > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-3 mt-3' : ''}>
                 {group.members.length > 1 && (
@@ -86,9 +89,9 @@ export default function RsvpInviteesList({ list }: { list: Item[] }) {
                     <span>{group.members.length} משתתפים</span>
                   </div>
                 )}
-                {unifiedNote && (
+                  {noteToDisplay && (
                   <div className="text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded px-2 py-1 mb-2">
-                    “{unifiedNote}”
+                      “{noteToDisplay}”
                   </div>
                 )}
                 <ul className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -107,7 +110,7 @@ export default function RsvpInviteesList({ list }: { list: Item[] }) {
                             {member.status === 'APPROVED' ? 'אגיע' : member.status === 'DECLINED' ? 'לא אגיע' : member.status === 'MAYBE' ? 'אולי' : '—'}
                           </span>
                         </div>
-                        {!unifiedNote && member.note && member.note.trim() && (
+                          {!noteToDisplay && member.note && member.note.trim() && (
                           <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">“{member.note}”</div>
                         )}
                       </div>

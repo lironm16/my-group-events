@@ -21,11 +21,34 @@ type EventDetail = {
   host: { id?: string; name: string | null };
   coHosts?: { id: string; name: string | null }[];
     rsvps: { id: string; status: string; note: string | null; user: { id: string; name: string | null; image?: string | null; groupId?: string | null; groupNickname?: string | null; gender?: string | null } }[];
+    groupNotes: { groupId: string; note: string; updatedBy: string | null }[];
   familyMembers?: { id: string; name: string | null }[];
 };
 
 async function fetchEvent(id: string): Promise<EventDetail | null> {
-    const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: { select: { id: true, name: true, image: true, gender: true, groupId: true, group: { select: { id: true, nickname: true, parentId: true } } } } } }, host: true, family: { include: { members: true } }, coHosts: { include: { user: true } } } });
+    const row = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        rsvps: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                gender: true,
+                groupId: true,
+                group: { select: { id: true, nickname: true, parentId: true } },
+              },
+            },
+          },
+        },
+        host: true,
+        family: { include: { members: true } },
+        coHosts: { include: { user: true } },
+        groupNotes: { include: { group: { select: { id: true } } } },
+      },
+    });
   if (!row) return null;
   return {
     id: row.id,
@@ -39,6 +62,7 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
     host: { id: row.hostId, name: row.host?.name ?? null },
     coHosts: (row.coHosts || []).map(h => ({ id: h.userId, name: h.user?.name ?? null })),
       rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null, image: (r.user as any)?.image ?? null, gender: (r.user as any)?.gender ?? null, groupId: (r.user as any)?.groupId ?? null, groupNickname: (r.user as any)?.group?.nickname ?? null } })),
+      groupNotes: row.groupNotes.map((n) => ({ groupId: n.groupId, note: n.note, updatedBy: n.updatedBy })),
     familyMembers: (row.family?.members || []).map(m => ({ id: m.id, name: m.name ?? null })),
   };
 }
@@ -102,6 +126,11 @@ export default async function EventDetailPage({ params, searchParams }: { params
       if (b.waiting !== a.waiting) return b.waiting - a.waiting;
       return a.name.localeCompare(b.name || '', 'he');
     });
+    const groupNotesMap = event.groupNotes.reduce<Record<string, string>>((acc, note) => {
+      acc[note.groupId] = note.note;
+      return acc;
+    }, {});
+    const viewerGroupNote = viewer?.groupId ? groupNotesMap[viewer.groupId] : undefined;
     const canSendReminders = canEdit || viewer?.role === 'admin';
   const from = typeof searchParams?.from === 'string' ? (searchParams!.from as string) : undefined;
   const occurrenceStartAt = typeof searchParams?.occurrenceStartAt === 'string' ? (searchParams!.occurrenceStartAt as string) : undefined;
@@ -174,10 +203,17 @@ export default async function EventDetailPage({ params, searchParams }: { params
         )}
         {/* RSVP actions */}
       <section className="space-y-3">
-        {viewerStatus ? (
-          <RsvpActionPrompt eventId={event.id} status={viewerStatus} note={viewerRsvp?.note ?? null} canGroup={canGroup} canAll={canAll} />
+          {viewerStatus ? (
+            <RsvpActionPrompt
+              eventId={event.id}
+              status={viewerStatus}
+              note={viewerRsvp?.note ?? null}
+              groupNote={viewerGroupNote}
+              canGroup={canGroup}
+              canAll={canAll}
+            />
         ) : null}
-        <RsvpInviteesList list={event.rsvps} />
+          <RsvpInviteesList list={event.rsvps} groupNotes={groupNotesMap} />
       </section>
       <section>
         <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />

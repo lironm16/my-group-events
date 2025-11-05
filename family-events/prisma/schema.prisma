@@ -66,6 +66,7 @@ model Group {
   updatedAt DateTime @updatedAt
   memberships GroupMembership[]
   messages    Message[]
+  eventNotes  EventGroupNote[]
 }
 
 model Event {
@@ -87,6 +88,7 @@ model Event {
   familyId           String?
   rsvps              RSVP[]
   coHosts            EventHost[]
+  groupNotes         EventGroupNote[]
   /// Recurrence configuration JSON, e.g. {"freq":"WEEKLY","until":"2025-12-31T00:00:00.000Z","skipHolidays":true}
   recurrence         Json?
   /// ISO date strings of occurrence start times to skip (deleted instances)
@@ -185,6 +187,22 @@ model GroupMembership {
   @@unique([userId, groupId])
   @@index([groupId])
   @@index([userId])
+}
+
+model EventGroupNote {
+  id        String   @id @default(cuid())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  note      String
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, groupId])
+  @@index([groupId])
+  @@index([eventId])
 }
 
 model Message {
