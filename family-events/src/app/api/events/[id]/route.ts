@@ -73,7 +73,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         'קישור': () => 'קישור עודכן',
         'זמן התחלה': () => body.startAt ? `זמן התחלה עודכן ל${new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(body.startAt))}` : 'זמן התחלה עודכן',
         'זמן סיום': () => body.endAt ? `זמן סיום עודכן ל${new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(body.endAt))}` : 'זמן סיום עודכן',
-        'תיאור': () => 'התיאור עודכן',
       };
       changeSummary = valueMapper[field]?.() || `שדה ${field} עודכן`;
     } else if (uniqueChanges.length > 1) {
