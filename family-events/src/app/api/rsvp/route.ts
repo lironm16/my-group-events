@@ -88,36 +88,31 @@ export async function POST(req: Request) {
         MAYBE: 'אולי',
         NA: 'ללא עדכון',
       };
-      const actorName = (user.name && user.name.trim()) || (session.user.name as string | undefined) || genderWord(user.gender, { male: 'מארח המשפחה', female: 'מארחת המשפחה', other: 'חבר משפחה' });
+      const actorName = (user.name && user.name.trim()) || (session.user.name as string | undefined) || 'מארח האירוע';
       const actor = actorName;
-      const updateVerb = genderWord(user.gender, { male: 'עדכן', female: 'עדכנה', other: 'עדכנו' });
-      const shareVerb = genderWord(user.gender, { male: 'שיתף', female: 'שיתפה', other: 'שיתפו' });
-      const callVerb = genderWord(user.gender, { male: 'התקשר', female: 'התקשרה', other: 'פנו' });
-      const bringVerb = genderWord(user.gender, { male: 'הביא', female: 'הביאה', other: 'הביאו' });
       const eventName = event.title || 'אירוע';
       const targetCount = targetUserIds.length;
       const targetGender = targetCount === 1 ? event.rsvps?.find((r) => r.userId === targetUserIds[0])?.user?.gender : null;
-      const singularWithCount = genderWord(targetGender, { male: 'משתתף אחד', female: 'משתתפת אחת', other: 'משתתף אחד' });
-      const singularDefinite = genderWord(targetGender, { male: 'המשתתף', female: 'המשתתפת', other: 'המשתתף' });
-      const participantPlural = `${targetCount} משתתפים`;
+      const singularWithCount = genderWord(targetGender, { male: 'מוזמן אחד', female: 'מוזמנת אחת', other: 'מוזמן אחד' });
+      const singularDefinite = genderWord(targetGender, { male: 'המוזמן', female: 'המוזמנת', other: 'המוזמן' });
+      const participantPlural = `${targetCount} מוזמנים`;
       const labelForSentence = targetCount === 1 ? singularWithCount : participantPlural;
       const subjectForSentence = targetCount === 1 ? singularDefinite : participantPlural;
-      const friendlyGroupWord = targetCount === 1 ? singularDefinite : 'החבר׳ה';
 
       const templates = status
         ? [
-            `${actor} ${updateVerb} את הסטטוס ל"${statusLabels[status] || status}"`,
-            `${actor} ${updateVerb} את הסטטוס של ${subjectForSentence} ל"${statusLabels[status] || status}"`,
-            `עדכון חם: ${subjectForSentence} עכשיו "${statusLabels[status] || status}" (תודה ל${actor})`,
-            `${actor} ${callVerb} וסיפר לכבוד מה ${friendlyGroupWord} בסטטוס "${statusLabels[status] || status}"`,
-            `הסטטוס עודכן ל"${statusLabels[status] || status}" ביוזמת ${actor}`,
+            `${actor} עדכן את הסטטוס ל"${statusLabels[status] || status}"`,
+            `${actor} עדכן את הסטטוס של ${subjectForSentence} ל"${statusLabels[status] || status}"`,
+            `הסטטוס עודכן ל"${statusLabels[status] || status}" עבור ${labelForSentence}`,
+            `${actor} מסמן כעת "${statusLabels[status] || status}"`,
+            `${labelForSentence} עודכנו ל"${statusLabels[status] || status}" על ידי ${actor}`,
           ]
         : [
-            `${actor} ${shareVerb} הודעה באירוע`,
-            `${actor} ${bringVerb} הערה חדשה`,
-            `יש חדשות מה${friendlyGroupWord} – הודעה חדשה מחכה לכם`,
-            `${actor} משאיר מסר. כנסו לראות במה מדובר`,
-            `${actor} כתב משהו באירוע. תראו מה הוא אומר`,
+            `${actor} הוסיף הערה באירוע`,
+            `${actor} שיתף עדכון חדש`,
+            `נוספה הערה חדשה באירוע`,
+            `${actor} הוסיף הודעה – כדאי לבדוק`,
+            `${actor} עדכן פרטים באירוע`,
           ];
 
       const hash = crypto.createHash('sha1');

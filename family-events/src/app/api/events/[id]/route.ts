@@ -63,13 +63,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     const uniqueChanges = Array.from(new Set(changes));
     const eventName = event.title || 'אירוע';
-    let pushBody = `האירוע "${eventName}" עודכן`;
-      if (uniqueChanges.length) {
-        pushBody += ` – ${formatHebrewList(uniqueChanges)}`;
-      }
+    let pushBody = uniqueChanges.length ? formatHebrewList(uniqueChanges) : 'פרטי האירוע עודכנו';
       if (startChanged && event.startAt) {
         const formattedStart = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt));
-        pushBody += ` זמן התחלה חדש: ${formattedStart}`;
+      pushBody += ` · זמן התחלה חדש: ${formattedStart}`;
       }
     const pendingInvitees = invitees.filter((r) => r.status === 'NA');
     if (pendingInvitees.length > 0) {
