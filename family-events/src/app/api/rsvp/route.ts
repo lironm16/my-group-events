@@ -92,28 +92,44 @@ export async function POST(req: Request) {
       const actor = actorName;
       const eventName = event.title || 'אירוע';
       const targetCount = targetUserIds.length;
-      const targetGender = targetCount === 1 ? event.rsvps?.find((r) => r.userId === targetUserIds[0])?.user?.gender : null;
+      const targetEntry = targetCount === 1 ? event.rsvps?.find((r) => r.userId === targetUserIds[0]) : null;
+      const targetGender = targetEntry?.user?.gender ?? null;
+      const targetName = (targetEntry?.user?.name || '').trim() || genderWord(targetGender, { male: 'המוזמן', female: 'המוזמנת', other: 'המוזמן' });
       const singularWithCount = genderWord(targetGender, { male: 'מוזמן אחד', female: 'מוזמנת אחת', other: 'מוזמן אחד' });
-      const singularDefinite = genderWord(targetGender, { male: 'המוזמן', female: 'המוזמנת', other: 'המוזמן' });
       const participantPlural = `${targetCount} מוזמנים`;
       const labelForSentence = targetCount === 1 ? singularWithCount : participantPlural;
-      const subjectForSentence = targetCount === 1 ? singularDefinite : participantPlural;
 
-      const templates = status
-        ? [
-            `${actor} עדכן את הסטטוס ל"${statusLabels[status] || status}"`,
-            `${actor} עדכן את הסטטוס של ${subjectForSentence} ל"${statusLabels[status] || status}"`,
-            `הסטטוס עודכן ל"${statusLabels[status] || status}" עבור ${labelForSentence}`,
-            `${actor} מסמן כעת "${statusLabels[status] || status}"`,
-            `${labelForSentence} עודכנו ל"${statusLabels[status] || status}" על ידי ${actor}`,
-          ]
-        : [
-            `${actor} הוסיף הערה באירוע`,
-            `${actor} שיתף עדכון חדש`,
-            `נוספה הערה חדשה באירוע`,
-            `${actor} הוסיף הודעה – כדאי לבדוק`,
-            `${actor} עדכן פרטים באירוע`,
+      let templates: string[];
+      if (status) {
+        const statusWord = statusLabels[status] || status;
+        if (targetCount === 1) {
+          templates = [
+            `${actor} עדכן את הסטטוס של ${targetName} ל"${statusWord}"`,
+            `${actor} סימן את ${targetName} בסטטוס "${statusWord}"`,
+            `${targetName} כעת "${statusWord}" לפי עדכון של ${actor}`,
           ];
+        } else {
+          templates = [
+            `${actor} עדכן סטטוסים עבור ${labelForSentence}`,
+            `הסטטוסים של ${labelForSentence} התעדכנו על ידי ${actor}`,
+            `${actor} ביצע עדכון סטטוס לקבוצה של ${participantPlural}`,
+          ];
+        }
+      } else {
+        if (targetCount === 1) {
+          templates = [
+            `${actor} הוסיף הערה עבור ${targetName}`,
+            `${actor} כתב הודעה חדשה ל${targetName}`,
+            `${targetName} קיבל/ה הערה חדשה מאת ${actor}`,
+          ];
+        } else {
+          templates = [
+            `${actor} שיתף הודעה עבור ${participantPlural}`,
+            `${actor} הוסיף הערות לקבוצה של ${participantPlural}`,
+            `${participantPlural} קיבלו עדכון מאת ${actor}`,
+          ];
+        }
+      }
 
       const hash = crypto.createHash('sha1');
       hash.update(`${event.id}:${Date.now()}:${targetUserIds.join(',')}:${status || 'note'}`);
