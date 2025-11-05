@@ -22,6 +22,7 @@ self.addEventListener('push', (event) => {
     body: payload.body,
     icon: payload.icon || '/templates/party.jpg',
     badge: payload.badge || '/templates/party.jpg',
+    image: payload.image,
     data: payload.data || {},
     tag: payload.tag,
   };

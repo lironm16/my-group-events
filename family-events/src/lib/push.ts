@@ -15,6 +15,7 @@ type PushPayload = {
   tag?: string;
   icon?: string;
   badge?: string;
+  image?: string;
   data?: Record<string, unknown>;
 };
 
@@ -67,6 +68,7 @@ export async function sendPushToUsers(userIds: string[] | readonly string[], pay
     body: payload.body,
     icon: payload.icon || '/templates/party.jpg',
     badge: payload.badge,
+    image: payload.image,
     tag: payload.tag,
     url: payload.url,
     data: {
