@@ -48,9 +48,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
 
   try {
-    const invitees = await prisma.rSVP.findMany({ where: { eventId: params.id }, select: { userId: true } });
+      const invitees = await prisma.rSVP.findMany({ where: { eventId: params.id }, select: { userId: true, status: true } });
     const coHosts = await prisma.eventHost.findMany({ where: { eventId: params.id }, select: { userId: true } });
-    const recipients = [...invitees.map(i => i.userId), ...coHosts.map(ch => ch.userId), event.hostId];
+      const recipients = [...invitees.map(i => i.userId), ...coHosts.map(ch => ch.userId), event.hostId];
     const changes: string[] = [];
     if (body.title !== undefined && body.title !== existing.title) changes.push('שם');
     if (body.location !== undefined && (body.location ?? '') !== (existing.location ?? '')) changes.push('מיקום');
@@ -66,12 +66,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       let pushBody = uniqueChanges.length
         ? `האירוע "${eventName}" עודכן (${formatHebrewList(uniqueChanges)})`
         : `האירוע "${eventName}" עודכן`;
-    if (startChanged && event.startAt) {
-      const formattedStart = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt));
+      if (startChanged && event.startAt) {
+        const formattedStart = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt));
         pushBody += ` זמן התחלה חדש: ${formattedStart}`;
-    }
-      pushBody += ' הקש לצפייה בפרטים המעודכנים';
-    await sendPushToUsersExcept(recipients, [user.id], {
+      }
+      const pendingInvitees = invitees.filter((r) => r.status === 'NA').length;
+      if (pendingInvitees > 0) {
+        pushBody += ` מחכים עדיין לאישורי ${pendingInvitees} מוזמנים`;
+      }
+      await sendPushToUsersExcept(recipients, [user.id], {
       title: APP_NAME_HE,
       body: pushBody,
       url: `/events/${event.id}`,

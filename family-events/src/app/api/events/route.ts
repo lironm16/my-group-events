@@ -89,7 +89,7 @@ export async function POST(req: Request) {
         : `נוסף אירוע חדש בשם "${eventName}"`;
       await sendPushToUsersExcept(recipients, [user.id], {
         title: APP_NAME_HE,
-        body: `${bodyText} הקש לצפייה בפרטים`,
+        body: bodyText,
         url: `/events/${created.id}`,
         tag: `event-${created.id}`,
       });
