@@ -22,6 +22,7 @@ WEB_PUSH_VAPID_PRIVATE_KEY= # server private key
 NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY= # same value as the public key for the client
 VAPID_CONTACT_EMAIL=mailto:team@example.com # optional but recommended
 # (Legacy names supported as fallback: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, NEXT_PUBLIC_VAPID_PUBLIC_KEY)
+# Optional: set WEB_PUSH_INCLUDE_INITIATOR=true to receive push notifications even on the device that triggered the action (useful for testing)
 ```
 
 After setting the keys, reload the app so the service worker registers and users can subscribe via `/api/push`.

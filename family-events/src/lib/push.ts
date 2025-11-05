@@ -115,6 +115,9 @@ export async function sendPushToUsersExcept(
   payload: PushPayload,
 ) {
   if (!userIds?.length) return { attempted: 0, delivered: 0, staleSubscriptionIds: [], failures: [] };
+  if (process.env.WEB_PUSH_INCLUDE_INITIATOR === 'true') {
+    return sendPushToUsers(userIds, payload);
+  }
   const excludedSet = new Set(excludedUserIds || []);
   const filtered = userIds.filter((id) => !excludedSet.has(id));
   if (!filtered.length) return { attempted: 0, delivered: 0, staleSubscriptionIds: [], failures: [] };

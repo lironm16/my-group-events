@@ -16,6 +16,7 @@ declare namespace NodeJS {
     WEB_PUSH_VAPID_PUBLIC_KEY?: string;
     WEB_PUSH_VAPID_PRIVATE_KEY?: string;
     NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY?: string;
+    WEB_PUSH_INCLUDE_INITIATOR?: string;
   }
 }
 
