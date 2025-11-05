@@ -69,7 +69,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const pendingCount = uniqueUserIds.length;
   const bodyMessage = body.message?.trim();
   const defaultMessage = pendingCount === 1
-    ? `${initiatorName} מחכה לאישורך באירוע "${eventName}"`;
+    ? `${initiatorName} מחכה לאישורך באירוע "${eventName}"`
     : `${initiatorName} מחכה לאישורים של ${pendingCount} משתתפים באירוע "${eventName}"`;
 
   const result = await sendPushToUsers(uniqueUserIds, {
