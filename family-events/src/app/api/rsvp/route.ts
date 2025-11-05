@@ -119,9 +119,11 @@ export async function POST(req: Request) {
       if (status) {
         const statusWord = statusLabels[status] || status;
         if (targetCount === 1) {
-          templates = [`${actor} עדכן${genderWord(user.gender, { male: '', female: 'ה', other: '' })} את הסטטוס ל"${statusWord}"`];
+          const suffix = genderWord(user.gender, { male: '', female: 'ה', other: '' });
+          templates = [`${actor} עדכנ${suffix} את הסטטוס ל"${statusWord}"`];
         } else {
-          templates = [`${actor} עדכן${genderWord(user.gender, { male: '', female: 'ה', other: '' })} סטטוסים עבור ${labelForSentence}`];
+          const suffix = genderWord(user.gender, { male: '', female: 'ה', other: '' });
+          templates = [`${actor} עדכנ${suffix} סטטוסים עבור ${labelForSentence}`];
         }
       } else {
         if (targetCount === 1) {

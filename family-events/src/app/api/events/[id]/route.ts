@@ -63,19 +63,39 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     const uniqueChanges = Array.from(new Set(changes));
     const eventName = event.title || 'אירוע';
-    const changeSummary = uniqueChanges.length ? formatHebrewList(uniqueChanges) : 'פרטי האירוע';
+    let changeSummary = '';
+    if (uniqueChanges.length === 1) {
+      const field = uniqueChanges[0];
+      const valueMapper: Record<string, () => string> = {
+        'שם': () => `שם עודכן ל"${body.title}"`,
+        'מיקום': () => body.location ? `מיקום עודכן ל"${body.location}"` : 'המיקום עודכן',
+        'תיאור': () => 'התיאור עודכן',
+        'קישור': () => 'קישור עודכן',
+        'זמן התחלה': () => body.startAt ? `זמן התחלה עודכן ל${new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(body.startAt))}` : 'זמן התחלה עודכן',
+        'זמן סיום': () => body.endAt ? `זמן סיום עודכן ל${new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(body.endAt))}` : 'זמן סיום עודכן',
+        'תיאור': () => 'התיאור עודכן',
+      };
+      changeSummary = valueMapper[field]?.() || `שדה ${field} עודכן`;
+    } else if (uniqueChanges.length > 1) {
+      changeSummary = `${eventName}: ${formatHebrewList(uniqueChanges)}`;
+    } else {
+      changeSummary = `${eventName}: פרטי האירוע עודכנו`;
+    }
+
     const parts: string[] = [changeSummary];
-    if (startChanged && event.startAt) {
+    if (startChanged && event.startAt && !uniqueChanges.includes('זמן התחלה')) {
       const formattedStart = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt));
       parts.push(`זמן התחלה חדש: ${formattedStart}`);
     }
+
     const pendingInvitees = invitees.filter((r) => r.status === 'NA');
     if (pendingInvitees.length > 0) {
       const sample = pendingInvitees.slice(0, 2).map((r) => r.user?.name || 'מוזמן');
       const extra = pendingInvitees.length - sample.length;
       const namesPart = sample.join(' ו');
       parts.push(`מחכים עדיין לאישור של ${namesPart}${extra > 0 ? ` ועוד ${extra}` : ''}`);
-      }
+    }
+
     const pushBody = parts.join(' · ');
     await sendPushToUsersExcept(recipients, [user.id], {
       title: eventName,
