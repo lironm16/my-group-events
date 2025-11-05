@@ -48,7 +48,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
 
   try {
-    const invitees = await prisma.rSVP.findMany({ where: { eventId: params.id }, select: { userId: true, status: true } });
+      const invitees = await prisma.rSVP.findMany({ where: { eventId: params.id }, select: { userId: true, status: true, user: { select: { name: true, gender: true } } } });
     const coHosts = await prisma.eventHost.findMany({ where: { eventId: params.id }, select: { userId: true } });
     const recipients = [...invitees.map(i => i.userId), ...coHosts.map(ch => ch.userId), event.hostId];
     const changes: string[] = [];
@@ -71,12 +71,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         const formattedStart = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt));
         pushBody += ` זמן התחלה חדש: ${formattedStart}`;
       }
-      const pendingInvitees = invitees.filter((r) => r.status === 'NA').length;
-      if (pendingInvitees > 0) {
-        pushBody += ` · מחכים עדיין לאישורי ${pendingInvitees} מוזמנים`;
+    const pendingInvitees = invitees.filter((r) => r.status === 'NA');
+    if (pendingInvitees.length > 0) {
+      const sample = pendingInvitees.slice(0, 2).map((r) => r.user?.name || 'מוזמן');
+      const extra = pendingInvitees.length - sample.length;
+      const namesPart = sample.join(' ו');
+      pushBody += ` · מחכים עדיין לאישור של ${namesPart}${extra > 0 ? ` ועוד ${extra}` : ''}`;
       }
-      await sendPushToUsersExcept(recipients, [user.id], {
-      title: APP_NAME_HE,
+    await sendPushToUsersExcept(recipients, [user.id], {
+      title: eventName,
       body: pushBody,
       url: `/events/${event.id}`,
       tag: `event-${event.id}`,

@@ -7,7 +7,6 @@ import RsvpSummary from '@/components/RsvpSummary';
 import RsvpInviteesList from '@/components/RsvpInviteesList';
 import RsvpActionPrompt from '@/components/RsvpActionPrompt';
 import WhatsAppShareButton from '@/components/WhatsAppShareButton';
-import RsvpReminderPanel from '@/components/RsvpReminderPanel';
 
 type EventDetail = {
   id: string;
@@ -163,15 +162,6 @@ export default async function EventDetailPage({ params, searchParams }: { params
         
         {/* RSVP quick section removed; using grouped editor below */}
       </div>
-        {canSendReminders && (
-          <RsvpReminderPanel
-            eventId={event.id}
-            eventTitle={event.title}
-            waitingCount={waitingCount}
-            maybeCount={maybeCount}
-            groups={groupOptions}
-          />
-        )}
       {/* RSVP actions */}
       <section className="space-y-3">
         {viewerStatus ? (
