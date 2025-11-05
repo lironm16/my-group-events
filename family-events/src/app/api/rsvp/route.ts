@@ -166,6 +166,7 @@ export async function POST(req: Request) {
   try {
     const host = await prisma.user.findUnique({ where: { id: event.hostId }, select: { email: true, notifyRsvpEmails: true, name: true } });
     if (host?.email && host.notifyRsvpEmails) {
+      const noteForEmail = scope === 'group' ? (noteTrimmed || '') : (applyIndividualNote ? noteTrimmed : '');
       const nodemailer = await import('nodemailer');
       const tx = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
@@ -175,7 +176,7 @@ export async function POST(req: Request) {
       });
       const who = targetUserIds.length === 1 ? 'משתמש אחד' : `${targetUserIds.length} משתמשים`;
       const subject = `RSVP התעדכן לאירוע`;
-      const text = `שלום ${host.name || ''},\n\nבעקבות פעולה באפליקציה התעדכנו אישורי הגעה (${who}).\nסטטוס: ${status}${note ? `\nהערה: ${note}` : ''}.\n\n`;
+      const text = `שלום ${host.name || ''},\n\nבעקבות פעולה באפליקציה התעדכנו אישורי הגעה (${who}).\nסטטוס: ${status ?? 'ללא שינוי'}${noteForEmail ? `\nהערה: ${noteForEmail}` : ''}.\n\n`;
       await tx.sendMail({ from: process.env.SMTP_FROM, to: host.email, subject, text, replyTo: process.env.SMTP_REPLY_TO });
     }
   } catch {}
