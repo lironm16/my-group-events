@@ -30,7 +30,16 @@ export async function POST(req: Request) {
   const scope: 'self' | 'group' | 'all' = body.scope || 'self';
 
   // Load event and permissions
-    const event = await prisma.event.findUnique({ where: { id: eventId }, select: { hostId: true, familyId: true, title: true, id: true, rsvps: { select: { userId: true, user: { select: { gender: true } } } } } });
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: {
+        hostId: true,
+        familyId: true,
+        title: true,
+        id: true,
+        rsvps: { select: { userId: true, user: { select: { gender: true, name: true } } } },
+      },
+    });
   if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const isHost = event.hostId === user.id || !!(await prisma.eventHost.findFirst({ where: { eventId, userId: user.id }, select: { id: true } }));
@@ -79,7 +88,8 @@ export async function POST(req: Request) {
         MAYBE: 'אולי',
         NA: 'ללא עדכון',
       };
-      const actor = user.name || session.user.name || genderWord(user.gender, { male: 'המארח', female: 'המארחת', other: 'אחד מבני המשפחה' });
+      const actorName = (user.name && user.name.trim()) || (session.user.name as string | undefined) || genderWord(user.gender, { male: 'מארח המשפחה', female: 'מארחת המשפחה', other: 'חבר משפחה' });
+      const actor = actorName;
       const updateVerb = genderWord(user.gender, { male: 'עדכן', female: 'עדכנה', other: 'עדכנו' });
       const shareVerb = genderWord(user.gender, { male: 'שיתף', female: 'שיתפה', other: 'שיתפו' });
       const callVerb = genderWord(user.gender, { male: 'התקשר', female: 'התקשרה', other: 'פנו' });
@@ -96,18 +106,18 @@ export async function POST(req: Request) {
 
       const templates = status
         ? [
-            `האירוע "${eventName}" קיבל עדכון הגעה עבור ${labelForSentence} על ידי ${actor} – מצב חדש: "${statusLabels[status] || status}"`,
-            `${actor} ${updateVerb} ש${subjectForSentence} עכשיו "${statusLabels[status] || status}" באירוע "${eventName}"`,
-            `עדכון חם: ${labelForSentence} באירוע "${eventName}" קופצים ל"${statusLabels[status] || status}" (תודה ל${actor})`,
-            `${actor} ${callVerb} וסיפר ש${friendlyGroupWord} בסטטוס "${statusLabels[status] || status}" לאירוע "${eventName}"`,
-            `האירוע "${eventName}" משנה מצב: ${subjectForSentence} כעת "${statusLabels[status] || status}" ביוזמת ${actor}`,
+            `${actor} ${updateVerb} את הסטטוס ל"${statusLabels[status] || status}"`,
+            `${actor} ${updateVerb} את הסטטוס של ${subjectForSentence} ל"${statusLabels[status] || status}"`,
+            `עדכון חם: ${subjectForSentence} עכשיו "${statusLabels[status] || status}" (תודה ל${actor})`,
+            `${actor} ${callVerb} וסיפר לכבוד מה ${friendlyGroupWord} בסטטוס "${statusLabels[status] || status}"`,
+            `הסטטוס עודכן ל"${statusLabels[status] || status}" ביוזמת ${actor}`,
           ]
         : [
-            `האירוע "${eventName}" קיבל הערות חדשות עבור ${subjectForSentence} על ידי ${actor}`,
-            `${actor} ${shareVerb} הערה חדשה לאירוע "${eventName}" (${subjectForSentence})`,
-            `יש חדשות באירוע "${eventName}" – ${actor} ${bringVerb} הערות עבור ${subjectForSentence}`,
-            `${labelForSentence} השאירו עדכון טעים לאירוע "${eventName}" (תודה ל${actor})`,
-            `${actor} משאיר מסר באירוע "${eventName}". כדאי לבדוק!`,
+            `${actor} ${shareVerb} הודעה באירוע`,
+            `${actor} ${bringVerb} הערה חדשה`,
+            `יש חדשות מה${friendlyGroupWord} – הודעה חדשה מחכה לכם`,
+            `${actor} משאיר מסר. כנסו לראות במה מדובר`,
+            `${actor} כתב משהו באירוע. תראו מה הוא אומר`,
           ];
 
       const hash = crypto.createHash('sha1');
@@ -116,7 +126,7 @@ export async function POST(req: Request) {
       const idx = parseInt(digest.slice(0, 6), 16) % templates.length;
       const bodyText = templates[idx];
       await sendPushToUsersExcept(hostRecipients, [user.id], {
-        title: APP_NAME_HE,
+        title: eventName,
         body: bodyText,
         url: `/events/${event.id}`,
         tag: `rsvp-${event.id}`,

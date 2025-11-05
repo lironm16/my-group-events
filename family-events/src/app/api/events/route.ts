@@ -88,7 +88,7 @@ export async function POST(req: Request) {
         ? `נוסף אירוע חדש בשם "${eventName}" והוא יתקיים ב-${formattedStart}`
         : `נוסף אירוע חדש בשם "${eventName}"`;
       await sendPushToUsersExcept(recipients, [user.id], {
-        title: APP_NAME_HE,
+        title: eventName,
         body: bodyText,
         url: `/events/${created.id}`,
         tag: `event-${created.id}`,
