@@ -2,9 +2,21 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
+const GENDER_VALUES = new Set(['male', 'female', 'unspecified']);
+
 export async function POST(req: Request) {
   const body = await req.json();
-  const { code, password, nickname, groupId, email, imageUrl, newGroup, familyName } = body as { code: string; password: string; nickname?: string; groupId?: string | null; email: string; imageUrl?: string | null; newGroup?: string | null; familyName?: string };
+  const { code, password, nickname, groupId, email, imageUrl, newGroup, familyName, gender } = body as {
+    code: string;
+    password: string;
+    nickname?: string;
+    groupId?: string | null;
+    email: string;
+    imageUrl?: string | null;
+    newGroup?: string | null;
+    familyName?: string;
+    gender?: string;
+  };
   const missing: string[] = [];
   // Invite code should come from the link; do not require manual entry
   const rawNickname = (nickname ?? '').trim();
@@ -55,6 +67,7 @@ export async function POST(req: Request) {
     const g = await prisma.group.create({ data: { nickname: newGroup.trim(), familyId: family.id } });
     finalGroupId = g.id;
   }
+  const genderValue = typeof gender === 'string' && GENDER_VALUES.has(gender) ? gender : 'unspecified';
   try {
     const user = await prisma.user.create({
       data: {
@@ -66,6 +79,7 @@ export async function POST(req: Request) {
         familyId: family?.id ?? null,
         groupId: finalGroupId,
         approved: shouldApprove,
+        gender: genderValue,
       },
     });
     // Record membership for the created/selected family when available

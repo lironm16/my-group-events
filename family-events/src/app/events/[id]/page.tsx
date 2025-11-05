@@ -20,12 +20,12 @@ type EventDetail = {
   holidayKey?: string | null;
   host: { id?: string; name: string | null };
   coHosts?: { id: string; name: string | null }[];
-  rsvps: { id: string; status: string; note: string | null; user: { id: string; name: string | null; image?: string | null; groupId?: string | null; groupNickname?: string | null } }[];
+    rsvps: { id: string; status: string; note: string | null; user: { id: string; name: string | null; image?: string | null; groupId?: string | null; groupNickname?: string | null; gender?: string | null } }[];
   familyMembers?: { id: string; name: string | null }[];
 };
 
 async function fetchEvent(id: string): Promise<EventDetail | null> {
-  const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: { select: { id: true, name: true, image: true, groupId: true, group: { select: { id: true, nickname: true, parentId: true } } } } } }, host: true, family: { include: { members: true } }, coHosts: { include: { user: true } } } });
+    const row = await prisma.event.findUnique({ where: { id }, include: { rsvps: { include: { user: { select: { id: true, name: true, image: true, gender: true, groupId: true, group: { select: { id: true, nickname: true, parentId: true } } } } } }, host: true, family: { include: { members: true } }, coHosts: { include: { user: true } } } });
   if (!row) return null;
   return {
     id: row.id,
@@ -38,7 +38,7 @@ async function fetchEvent(id: string): Promise<EventDetail | null> {
     holidayKey: row.holidayKey ?? null,
     host: { id: row.hostId, name: row.host?.name ?? null },
     coHosts: (row.coHosts || []).map(h => ({ id: h.userId, name: h.user?.name ?? null })),
-    rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null, image: (r.user as any)?.image ?? null, groupId: (r.user as any)?.groupId ?? null, groupNickname: (r.user as any)?.group?.nickname ?? null } })),
+      rsvps: row.rsvps.map(r => ({ id: r.id, status: r.status, note: r.note ?? null, user: { id: r.userId, name: r.user?.name ?? null, image: (r.user as any)?.image ?? null, gender: (r.user as any)?.gender ?? null, groupId: (r.user as any)?.groupId ?? null, groupNickname: (r.user as any)?.group?.nickname ?? null } })),
     familyMembers: (row.family?.members || []).map(m => ({ id: m.id, name: m.name ?? null })),
   };
 }

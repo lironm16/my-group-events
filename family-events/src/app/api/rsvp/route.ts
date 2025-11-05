@@ -6,11 +6,21 @@ import { sendPushToUsersExcept } from '@/lib/push';
 import { APP_NAME_HE } from '@/lib/constants';
 import crypto from 'crypto';
 
+function genderKey(g: string | null | undefined) {
+  if (g === 'male' || g === 'female') return g;
+  return 'other';
+}
+
+function genderWord(g: string | null | undefined, forms: { male: string; female: string; other: string }) {
+  const key = genderKey(g);
+  return forms[key as 'male' | 'female' | 'other'];
+}
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const user = await prisma.user.findFirst({ where: { email: session.user.email } });
+  const user = await prisma.user.findFirst({ where: { email: session.user.email }, select: { id: true, name: true, gender: true, role: true, groupId: true } });
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
@@ -20,7 +30,7 @@ export async function POST(req: Request) {
   const scope: 'self' | 'group' | 'all' = body.scope || 'self';
 
   // Load event and permissions
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { hostId: true, familyId: true, title: true, id: true } });
+    const event = await prisma.event.findUnique({ where: { id: eventId }, select: { hostId: true, familyId: true, title: true, id: true, rsvps: { select: { userId: true, user: { select: { gender: true } } } } } });
   if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const isHost = event.hostId === user.id || !!(await prisma.eventHost.findFirst({ where: { eventId, userId: user.id }, select: { id: true } }));
@@ -69,25 +79,35 @@ export async function POST(req: Request) {
         MAYBE: 'אולי',
         NA: 'ללא עדכון',
       };
-      const actor = user.name || session.user.name || 'אחד מחברי המשפחה';
+      const actor = user.name || session.user.name || genderWord(user.gender, { male: 'המארח', female: 'המארחת', other: 'אחד מבני המשפחה' });
+      const updateVerb = genderWord(user.gender, { male: 'עדכן', female: 'עדכנה', other: 'עדכנו' });
+      const shareVerb = genderWord(user.gender, { male: 'שיתף', female: 'שיתפה', other: 'שיתפו' });
+      const callVerb = genderWord(user.gender, { male: 'התקשר', female: 'התקשרה', other: 'פנו' });
+      const bringVerb = genderWord(user.gender, { male: 'הביא', female: 'הביאה', other: 'הביאו' });
       const eventName = event.title || 'אירוע';
       const targetCount = targetUserIds.length;
-      const participantLabel = targetCount === 1 ? 'משתתף אחד' : `${targetCount} משתתפים`;
+      const targetGender = targetCount === 1 ? event.rsvps?.find((r) => r.userId === targetUserIds[0])?.user?.gender : null;
+      const singularWithCount = genderWord(targetGender, { male: 'משתתף אחד', female: 'משתתפת אחת', other: 'משתתף אחד' });
+      const singularDefinite = genderWord(targetGender, { male: 'המשתתף', female: 'המשתתפת', other: 'המשתתף' });
+      const participantPlural = `${targetCount} משתתפים`;
+      const labelForSentence = targetCount === 1 ? singularWithCount : participantPlural;
+      const subjectForSentence = targetCount === 1 ? singularDefinite : participantPlural;
+      const friendlyGroupWord = targetCount === 1 ? singularDefinite : 'החבר׳ה';
 
       const templates = status
         ? [
-            `האירוע "${eventName}" קיבל עדכון הגעה עבור ${participantLabel} (על ידי ${actor}) – מצב חדש: "${statusLabels[status] || status}"`,
-            `${actor} מעדכן/ת: ${participantLabel === 'משתתף אחד' ? 'אני' : participantLabel} עכשיו "${statusLabels[status] || status}" באירוע "${eventName}"`,
-            `עדכון חם: ${participantLabel} באירוע "${eventName}" קופצים ל"${statusLabels[status] || status}" (תודה ל${actor})`,
-            `${actor} התקשר ואמר ש${targetCount === 1 ? 'אני' : 'החבר׳ה'} בסטטוס "${statusLabels[status] || status}" לאירוע "${eventName}"`,
-            `האירוע "${eventName}" קיבל שינוי מצב: ${participantLabel} עכשיו "${statusLabels[status] || status}" (יוזמת ${actor})`,
+            `האירוע "${eventName}" קיבל עדכון הגעה עבור ${labelForSentence} על ידי ${actor} – מצב חדש: "${statusLabels[status] || status}"`,
+            `${actor} ${updateVerb} ש${subjectForSentence} עכשיו "${statusLabels[status] || status}" באירוע "${eventName}"`,
+            `עדכון חם: ${labelForSentence} באירוע "${eventName}" קופצים ל"${statusLabels[status] || status}" (תודה ל${actor})`,
+            `${actor} ${callVerb} וסיפר ש${friendlyGroupWord} בסטטוס "${statusLabels[status] || status}" לאירוע "${eventName}"`,
+            `האירוע "${eventName}" משנה מצב: ${subjectForSentence} כעת "${statusLabels[status] || status}" ביוזמת ${actor}`,
           ]
         : [
-            `האירוע "${eventName}" קיבל הערות חדשות עבור ${participantLabel} (על ידי ${actor})`,
-            `${actor} שלח/ה הערה חדשה לאירוע "${eventName}" (${participantLabel})`,
-            `יש חדשות באירוע "${eventName}" – ${actor} הוסיף/ה הערות עבור ${participantLabel}`,
-            `${participantLabel} השאירו עדכון טעים לאירוע "${eventName}" (תודה ל${actor})`,
-            `${actor} משאיר/ה לכם מסר באירוע "${eventName}". כדאי לבדוק!`,
+            `האירוע "${eventName}" קיבל הערות חדשות עבור ${subjectForSentence} על ידי ${actor}`,
+            `${actor} ${shareVerb} הערה חדשה לאירוע "${eventName}" (${subjectForSentence})`,
+            `יש חדשות באירוע "${eventName}" – ${actor} ${bringVerb} הערות עבור ${subjectForSentence}`,
+            `${labelForSentence} השאירו עדכון טעים לאירוע "${eventName}" (תודה ל${actor})`,
+            `${actor} משאיר מסר באירוע "${eventName}". כדאי לבדוק!`,
           ];
 
       const hash = crypto.createHash('sha1');

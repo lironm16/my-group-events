@@ -64,40 +64,60 @@ export default function RsvpReminderPanel({ eventId, eventTitle, waitingCount, m
   }
 
   const messageLabel = customMessage.length ? ` (${customMessage.length} תווים)` : '';
-  const disabledClass = 'opacity-50 pointer-events-none';
+
+  const statusActions = [
+    {
+      key: 'waiting',
+      title: 'ממתינים לאישור',
+      description: waitingCount > 0 ? `${waitingCount} עדיין לא אישרו השתתפות` : 'אין ממתינים כרגע',
+      count: waitingCount,
+      disabled: waitingCount === 0,
+      action: () => sendReminder({ target: 'statuses', statuses: ['NA'], message: customMessage || undefined }, 'לא ניתן לשלוח תזכורת כרגע'),
+      tone: 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400',
+    },
+    {
+      key: 'maybe',
+      title: 'מסומנים כ״אולי״',
+      description: maybeCount > 0 ? `${maybeCount} עוד מתלבטים` : 'אף אחד לא מסומן כ״אולי״',
+      count: maybeCount,
+      disabled: maybeCount === 0,
+      action: () => sendReminder({ target: 'statuses', statuses: ['MAYBE'], message: customMessage || undefined }, 'לא ניתן לשלוח תזכורת כרגע'),
+      tone: 'bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300',
+    },
+  ];
 
   return (
-    <section className="space-y-3 rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
-      <div className="space-y-1">
+    <section className="space-y-4 rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <header className="space-y-1">
         <h2 className="text-lg font-semibold">תזכורות RSVP</h2>
         <p className="text-sm text-gray-600 dark:text-gray-300">
           {waitingCount > 0
             ? `${waitingCount} עדיין לא אישרו השתתפות באירוע "${eventTitle}"`
-            : 'כל המשתתפים כבר הגיבו, אבל אפשר לשלוח תזכורות ידניות'}
+            : 'כל המשתתפים כבר הגיבו, אבל אפשר לשלוח תזכורת ידנית במקרה הצורך'}
         </p>
-      </div>
+      </header>
 
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={isPending || waitingCount === 0}
-          className={`px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed ${waitingCount === 0 ? disabledClass : ''}`}
-          onClick={() => sendReminder({ target: 'statuses', statuses: ['NA'], message: customMessage || undefined }, 'לא ניתן לשלוח תזכורת כרגע')}
-        >
-          שלחו תזכורת לממתינים ({waitingCount})
-        </button>
-        <button
-          type="button"
-          disabled={isPending || maybeCount === 0}
-          className={`px-3 py-2 rounded bg-amber-500 text-white hover:bg-amber-600 disabled:bg-amber-300 disabled:cursor-not-allowed ${maybeCount === 0 ? disabledClass : ''}`}
-          onClick={() => sendReminder({ target: 'statuses', statuses: ['MAYBE'], message: customMessage || undefined }, 'לא ניתן לשלוח תזכורת כרגע')}
-        >
-          תזכורת ל״אולי״ ({maybeCount})
-        </button>
+      <div className="space-y-3">
+        {statusActions.map((action) => (
+          <div key={action.key} className="flex items-center justify-between gap-3 rounded border border-gray-200 dark:border-gray-800 px-3 py-2">
+            <div className="text-sm">
+              <div className="font-medium">{action.title}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{action.description}</div>
+            </div>
+            <button
+              type="button"
+              disabled={isPending || action.disabled}
+              className={`px-3 py-2 rounded text-white text-sm disabled:opacity-60 disabled:cursor-not-allowed transition ${action.tone}`}
+              onClick={action.action}
+            >
+              {isPending ? 'שולח…' : 'שלחו תזכורת'}
+            </button>
+          </div>
+        ))}
       </div>
 
       {groups.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2 border-t border-dashed pt-3">
           <label className="text-sm font-medium flex items-center gap-2">
             קבוצה פנימית
             <select
@@ -116,15 +136,15 @@ export default function RsvpReminderPanel({ eventId, eventTitle, waitingCount, m
           <button
             type="button"
             disabled={isPending || !selectedGroup}
-            className={`px-3 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed ${!selectedGroup ? disabledClass : ''}`}
+            className="px-3 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed transition text-sm"
             onClick={() => sendReminder({ target: 'group', groupId: selectedGroup, message: customMessage || undefined }, 'לא ניתן לשלוח תזכורת לקבוצה כרגע')}
           >
-            שלחו תזכורת לקבוצה
+            {isPending ? 'שולח…' : 'שלחו תזכורת לקבוצה'}
           </button>
         </div>
       )}
 
-      <div className="space-y-1">
+      <div className="space-y-1 border-t border-dashed pt-3">
         <label className="block text-sm font-medium" htmlFor="custom-reminder-message">מסר אישי{messageLabel}</label>
         <textarea
           id="custom-reminder-message"

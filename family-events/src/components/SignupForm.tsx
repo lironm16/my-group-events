@@ -11,6 +11,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [gender, setGender] = useState<'male' | 'female' | 'unspecified'>('unspecified');
   const [groupId, setGroupId] = useState<string>('');
   const [newGroup, setNewGroup] = useState('');
   const [groups, setGroups] = useState<{ id: string; nickname: string; members?: { id: string; name: string | null; image: string | null }[] }[]>([]);
@@ -46,7 +47,7 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
     setLoading(true);
     try {
       const finalImageUrl = (overrideImageUrl ?? imageUrl) || null;
-      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, password, nickname, groupId: groupId || null, email, imageUrl: finalImageUrl, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined }) });
+      const res = await fetch('/api/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, password, nickname, groupId: groupId || null, email, imageUrl: finalImageUrl, newGroup: newGroup || null, familyName: isFirst ? familyName : undefined, gender }) });
       if (res.ok) {
         // Try automatic login, then redirect to events
         const login = await signIn('credentials', { email: email.trim(), password, redirect: false });
@@ -102,6 +103,27 @@ export default function SignupForm({ initialCode }: { initialCode: string }) {
       {step === 2 && (
         <div className="space-y-3">
           <input className="w-full border p-2 rounded bg-white dark:bg-transparent border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" placeholder="כינוי" value={nickname} onChange={e=>setNickname(e.target.value)} />
+            <fieldset className="space-y-2">
+              <legend className="text-sm text-gray-600">איך לפנות אליך?</legend>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'female', label: 'אני אישה' },
+                  { value: 'male', label: 'אני גבר' },
+                  { value: 'unspecified', label: 'לא משנה / אחר' },
+                ].map(opt => (
+                  <label key={opt.value} className={`inline-flex items-center gap-2 px-3 py-2 rounded border text-sm ${gender === opt.value ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/40' : 'border-gray-200 dark:border-gray-700'}`}>
+                    <input
+                      type="radio"
+                      name="gender"
+                      value={opt.value}
+                      checked={gender === opt.value}
+                      onChange={() => setGender(opt.value as 'male' | 'female' | 'unspecified')}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           <div className="space-y-2">
             <div className="text-sm text-gray-600">בחרו אווטאר</div>
             <AvataaarsEditor value={imageUrl} onChange={setImageUrl} showExternalLink />
