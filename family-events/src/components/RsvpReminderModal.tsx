@@ -23,35 +23,41 @@ interface ReminderModalProps {
 
 const MAX_MESSAGE_LEN = 180;
 
+const DEFAULT_TIPS = [
+  'תזכורת ביום האירוע מגבירה היענות.',
+  'הזכירו תאריך או שעה כדי לרענן זיכרון.',
+  'נימה ידידותית והודיה מראש עובדות מצוין.',
+];
+
 export default function RsvpReminderModal({ eventId, eventTitle, open, onClose, waitingCount, maybeCount, groups }: ReminderModalProps) {
   const [target, setTarget] = useState<TargetOption>('waiting');
   const [groupId, setGroupId] = useState(groups[0]?.id ?? '');
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [feedback, setFeedback] = useState('');
-  const [isPending, startTransition] = useTransition();
   const [resultSummary, setResultSummary] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const selectedGroup = useMemo(() => groups.find((g) => g.id === groupId) || groups[0], [groups, groupId]);
 
   const placeholder = useMemo(() => {
     if (target === 'group' && selectedGroup) {
       if (selectedGroup.waiting > 0) {
-        return `היי ${selectedGroup.name}, המארחים מחכים לתשובה מכם לגבי האירוע.`;
+        return `היי ${selectedGroup.name}, המארחים מחכים לתשובה מכם לגבי ההשתתפות באירוע.`;
       }
-      return `היי ${selectedGroup.name}, נשמח לדעת אם אתם מצטרפים אלינו באירוע הקרוב.`;
+      return `היי ${selectedGroup.name}, נשמח לדעת אם נתראה באירוע הקרוב.`;
     }
     if (target === 'maybe') {
       return 'האירוע מתקרב ונשמח לדעת אם אתם מצטרפים כדי שניערך בהתאם.';
     }
-    return 'אנחנו בונים עליכם באירוע – אנא עדכנו סטטוס בקרוב.';
+    return 'אנחנו בונים עליכם באירוע – עדכנו אותנו אם אתם מצטרפים.';
   }, [target, selectedGroup]);
 
   const disabledReason = useMemo(() => {
     if (isPending) return 'שולח תזכורת…';
     if (target === 'waiting' && waitingCount === 0) return 'אין מוזמנים שממתינים לאישור.';
     if (target === 'maybe' && maybeCount === 0) return 'אין מוזמנים שמסומנים כ״אולי״.';
-    if (target === 'group' && !selectedGroup) return 'בחרו קבוצה לשליחת התזכורת.';
+    if (target === 'group' && !selectedGroup) return 'בחרו קבוצה.';
     return null;
   }, [isPending, target, waitingCount, maybeCount, selectedGroup]);
 
@@ -65,8 +71,6 @@ export default function RsvpReminderModal({ eventId, eventTitle, open, onClose, 
     resetState();
     onClose();
   }, [onClose, resetState]);
-
-  if (!open) return null;
 
   const payload = useMemo(() => {
     const baseMessage = message.trim() || placeholder;
@@ -95,8 +99,7 @@ export default function RsvpReminderModal({ eventId, eventTitle, open, onClose, 
         if (res.ok && json?.ok) {
           const delivered = json?.result?.delivered ?? 0;
           const attempted = json?.result?.attempted ?? 0;
-          const summary = attempted > 0 ? `נשלחו ${delivered} מתוך ${attempted} תזכורות.` : 'לא נמצאו נמענים מתאימים.';
-          setResultSummary(summary);
+          setResultSummary(attempted > 0 ? `נשלחו ${delivered} מתוך ${attempted} תזכורות.` : 'לא נמצאו נמענים מתאימים.');
           if (delivered > 0) {
             setStatus('success');
             setFeedback('התזכורות נשלחו בהצלחה.');
@@ -116,13 +119,18 @@ export default function RsvpReminderModal({ eventId, eventTitle, open, onClose, 
     });
   }, [payload, eventId]);
 
-  const availableTargets: TargetOption[] = useMemo(() => {
-    const targets: TargetOption[] = [];
-    targets.push('waiting');
-    targets.push('maybe');
-    if (groups.length) targets.push('group');
-    return targets;
-  }, [groups.length]);
+  const availableTargets = useMemo(() => {
+    const opts: TargetOption[] = [];
+    if (waitingCount > 0) opts.push('waiting');
+    if (maybeCount > 0) opts.push('maybe');
+    if (groups.length) opts.push('group');
+    if (opts.length === 0) opts.push('waiting');
+    return opts;
+  }, [waitingCount, maybeCount, groups.length]);
+
+  const buttonLabel = status === 'success' ? 'נשלח בהצלחה' : isPending ? 'שולח…' : 'שלחו תזכורת';
+
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-4">
@@ -160,7 +168,7 @@ export default function RsvpReminderModal({ eventId, eventTitle, open, onClose, 
                   <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {option === 'waiting' && 'כל מי שעדיין לא אישר הגעה'}
                     {option === 'maybe' && 'כל מי שמסומן כ״אולי״'}
-                    {option === 'group' && 'שלחו תזכורת לקבוצה פנימית אחת'}
+                    {option === 'group' && 'בחרו קבוצה פנימית אחת לשליחה'}
                   </div>
                 </button>
               ))}
@@ -193,4 +201,58 @@ export default function RsvpReminderModal({ eventId, eventTitle, open, onClose, 
                   <span className="text-xs text-gray-500">{message.length}/{MAX_MESSAGE_LEN}</span>
                 </div>
                 <textarea
-                  className="w-full rounded border border-gray-300 dark:border-gray->>
+                  className="w-full rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
+                  rows={3}
+                  maxLength={MAX_MESSAGE_LEN}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={placeholder}
+                  disabled={isPending}
+                />
+                <p className="text-xs text-gray-500">אם לא תקלידו מסר מותאם, נשלח טקסט מומלץ אוטומטי.</p>
+              </div>
+              <aside className="md:w-48 p-3 border border-dashed border-gray-300 dark:border-gray-700 rounded text-xs text-gray-500 space-y-2">
+                <p className="font-medium">טיפים לתזכורת טובה</p>
+                <ul className="list-disc pr-4 space-y-1">
+                  {DEFAULT_TIPS.map((tip) => (
+                    <li key={tip}>{tip}</li>
+                  ))}
+                </ul>
+              </aside>
+            </div>
+          </section>
+
+          <footer className="px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              {disabledReason ? (
+                <p className="text-xs text-gray-500">{disabledReason}</p>
+              ) : (
+                <p className="text-xs text-gray-500">התזכורת תישלח כהתראת Push לכל הנמענים הרלוונטיים.</p>
+              )}
+              {resultSummary && (
+                <p className="text-xs text-gray-500 mt-1">{resultSummary}</p>
+              )}
+              {feedback && (
+                <p className={`text-xs mt-1 ${status === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{feedback}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={closeModal} className="px-3 py-2 rounded border border-gray-300 dark:border-gray-700 text-sm">
+                סגירה
+              </button>
+              <button
+                type="button"
+                onClick={sendReminder}
+                disabled={Boolean(disabledReason)}
+                className="px-3 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {buttonLabel}
+              </button>
+            </div>
+          </footer>
+        </div>
+      </div>
+    </div>
+  );
+}
+

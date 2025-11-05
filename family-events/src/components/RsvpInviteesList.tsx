@@ -1,7 +1,18 @@
 "use client";
 import { useMemo, useState } from 'react';
 
-type Item = { id: string; status: string; note: string | null; user: { id: string; name: string | null; image?: string | null } };
+type Item = {
+  id: string;
+  status: string;
+  note: string | null;
+  user: {
+    id: string;
+    name: string | null;
+    image?: string | null;
+    groupId?: string | null;
+    groupNickname?: string | null;
+  };
+};
 
 type FilterKey = 'all' | 'NA' | 'APPROVED' | 'DECLINED' | 'MAYBE';
 
@@ -11,6 +22,21 @@ export default function RsvpInviteesList({ list }: { list: Item[] }) {
     if (filter === 'all') return list.slice();
     return list.filter((r) => r.status === filter);
   }, [list, filter]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, { label: string; members: Item[] }>();
+    filtered.forEach((item) => {
+      const groupId = item.user.groupId || `__single-${item.user.id}`;
+      const label = item.user.groupNickname || (item.user.groupId ? 'קבוצה ללא שם' : item.user.name || 'ללא קבוצה');
+      const entry = map.get(groupId);
+      if (entry) {
+        entry.members.push(item);
+      } else {
+        map.set(groupId, { label, members: [item] });
+      }
+    });
+    return Array.from(map.entries()).map(([key, value]) => ({ key, ...value }));
+  }, [filtered]);
 
   const tabActiveCls: Record<FilterKey | 'all', string> = {
     all: 'bg-slate-600 text-white',
@@ -46,25 +72,52 @@ export default function RsvpInviteesList({ list }: { list: Item[] }) {
           <button aria-pressed={filter==='MAYBE'} onClick={() => setFilter('MAYBE')} className={[ 'px-2 py-1 rounded', filter==='MAYBE' ? tabActiveCls.MAYBE : tabInactiveCls.MAYBE ].join(' ')}>אולי</button>
         </div>
       </div>
-      <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-        {filtered.map((r) => (
-          <li key={r.id} className="py-2 flex items-start gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={r.user?.image && /^https?:/i.test(r.user.image) ? r.user.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(r.user?.name || 'user')}`} alt="user" className="w-7 h-7 rounded-full" />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-sm truncate">{r.user?.name || '—'}</span>
-                <span className={[ 'text-xs rounded px-2 py-0.5 border', chipCls(r.status) ].join(' ')}>
-                  {r.status === 'APPROVED' ? 'אגיע' : r.status === 'DECLINED' ? 'לא אגיע' : r.status === 'MAYBE' ? 'אולי' : '—'}
-                </span>
+        <div className="flex flex-col">
+          {grouped.map((group, index) => {
+            const notes = group.members
+              .map((member) => (member.note || '').trim())
+              .filter((note) => note.length > 0);
+            const unifiedNote = notes.length > 0 && notes.every((note) => note === notes[0]) ? notes[0] : null;
+            return (
+              <div key={group.key} className={index > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-3 mt-3' : ''}>
+                {group.members.length > 1 && (
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    <span>{group.label || 'קבוצה'}</span>
+                    <span>{group.members.length} משתתפים</span>
+                  </div>
+                )}
+                {unifiedNote && (
+                  <div className="text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded px-2 py-1 mb-2">
+                    “{unifiedNote}”
+                  </div>
+                )}
+                <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {group.members.map((member) => (
+                    <li key={member.id} className="py-2 flex items-start gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={member.user?.image && /^https?:/i.test(member.user.image) ? member.user.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(member.user?.name || 'user')}`}
+                        alt="user"
+                        className="w-7 h-7 rounded-full"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-sm truncate">{member.user?.name || '—'}</span>
+                          <span className={[ 'text-xs rounded px-2 py-0.5 border', chipCls(member.status) ].join(' ')}>
+                            {member.status === 'APPROVED' ? 'אגיע' : member.status === 'DECLINED' ? 'לא אגיע' : member.status === 'MAYBE' ? 'אולי' : '—'}
+                          </span>
+                        </div>
+                        {!unifiedNote && member.note && member.note.trim() && (
+                          <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">“{member.note}”</div>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              {r.note && r.note.trim() && (
-                <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">“{r.note}”</div>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
+            );
+          })}
+        </div>
     </div>
   );
 }

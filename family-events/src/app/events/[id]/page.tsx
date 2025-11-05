@@ -7,6 +7,7 @@ import RsvpSummary from '@/components/RsvpSummary';
 import RsvpInviteesList from '@/components/RsvpInviteesList';
 import RsvpActionPrompt from '@/components/RsvpActionPrompt';
 import WhatsAppShareButton from '@/components/WhatsAppShareButton';
+import RsvpReminderLauncher from '@/components/RsvpReminderLauncher';
 
 type EventDetail = {
   id: string;
@@ -90,7 +91,7 @@ export default async function EventDetailPage({ params, searchParams }: { params
     const includeReminders = waitingCount > 0;
     const groupStats = new Map<string, { id: string; name: string; waiting: number; total: number }>();
     for (const r of event.rsvps) {
-      const gid = r.user.groupId;
+      const gid = r.user.groupId || undefined;
       if (!gid) continue;
       const current = groupStats.get(gid) ?? { id: gid, name: r.user.groupNickname || 'קבוצה ללא שם', waiting: 0, total: 0 };
       current.total += 1;
@@ -162,7 +163,16 @@ export default async function EventDetailPage({ params, searchParams }: { params
         
         {/* RSVP quick section removed; using grouped editor below */}
       </div>
-      {/* RSVP actions */}
+        {canSendReminders && (
+          <RsvpReminderLauncher
+            eventId={event.id}
+            eventTitle={event.title}
+            waitingCount={waitingCount}
+            maybeCount={maybeCount}
+            groups={groupOptions}
+          />
+        )}
+        {/* RSVP actions */}
       <section className="space-y-3">
         {viewerStatus ? (
           <RsvpActionPrompt eventId={event.id} status={viewerStatus} note={viewerRsvp?.note ?? null} canGroup={canGroup} canAll={canAll} />
