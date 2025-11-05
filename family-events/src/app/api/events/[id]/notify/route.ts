@@ -69,12 +69,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const pendingCount = uniqueUserIds.length;
   const bodyMessage = body.message?.trim();
   const defaultMessage = pendingCount === 1
-    ? `${initiatorName} מחכה לאישורך באירוע "${eventName}". עדכנו את הסטטוס שלכם.`
-    : `${initiatorName} מחכה לאישורים של ${pendingCount} משתתפים באירוע "${eventName}". עדכנו את הסטטוס שלכם.`;
+    ? `${initiatorName} מחכה לאישורך באירוע "${eventName}"`;
+    : `${initiatorName} מחכה לאישורים של ${pendingCount} משתתפים באירוע "${eventName}"`;
 
   const result = await sendPushToUsers(uniqueUserIds, {
     title: APP_NAME_HE,
-    body: bodyMessage && bodyMessage.length >= 4 ? bodyMessage : defaultMessage,
+    body: bodyMessage && bodyMessage.length >= 4 ? bodyMessage : `${defaultMessage} עדכנו את הסטטוס שלכם`,
     url: `/events/${event.id}`,
     tag: `event-${event.id}-reminder`,
     data: {

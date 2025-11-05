@@ -76,10 +76,10 @@ export async function POST(req: Request) {
       if (status) {
         const label = statusLabels[status] || status;
         const prefix = targetCount === 1 ? 'סטטוס ההגעה עודכן' : `סטטוס ההגעה של ${participantLabel} עודכן`;
-        bodyText = `${prefix} ל"${label}" באירוע "${eventName}" על ידי ${actor}.`;
+        bodyText = `${prefix} ל"${label}" באירוע "${eventName}" על ידי ${actor}`;
       } else {
         const prefix = targetCount === 1 ? 'התווספה הערה חדשה' : `התווספו הערות עבור ${participantLabel}`;
-        bodyText = `${prefix} באירוע "${eventName}" על ידי ${actor}.`;
+        bodyText = `${prefix} באירוע "${eventName}" על ידי ${actor}`;
       }
       await sendPushToUsersExcept(hostRecipients, [user.id], {
         title: APP_NAME_HE,

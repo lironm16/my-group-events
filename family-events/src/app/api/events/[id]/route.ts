@@ -61,13 +61,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (body.description !== undefined && (body.description ?? '') !== (existing.description ?? '')) changes.push('תיאור');
     if (body.externalLink !== undefined && (body.externalLink ?? '') !== (existing.externalLink ?? '')) changes.push('קישור');
 
-    const summary = changes.length ? ` (${formatHebrewList(Array.from(new Set(changes)))})` : '';
-    const eventName = event.title || 'אירוע';
-    let pushBody = `האירוע "${eventName}" עודכן${summary}. הקש לצפייה בפרטים המעודכנים.`;
+      const uniqueChanges = Array.from(new Set(changes));
+      const eventName = event.title || 'אירוע';
+      let pushBody = uniqueChanges.length
+        ? `האירוע "${eventName}" עודכן (${formatHebrewList(uniqueChanges)})`
+        : `האירוע "${eventName}" עודכן`;
     if (startChanged && event.startAt) {
       const formattedStart = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(event.startAt));
-      pushBody += ` זמן התחלה חדש: ${formattedStart}.`;
+        pushBody += ` זמן התחלה חדש: ${formattedStart}`;
     }
+      pushBody += ' הקש לצפייה בפרטים המעודכנים';
     await sendPushToUsersExcept(recipients, [user.id], {
       title: APP_NAME_HE,
       body: pushBody,

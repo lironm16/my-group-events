@@ -85,11 +85,11 @@ export async function POST(req: Request) {
         ? new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(created.startAt))
         : null;
       const bodyText = formattedStart
-        ? `נוסף אירוע חדש בשם "${eventName}". הוא יתקיים ב-${formattedStart}. הקש לצפייה בפרטים.`
-        : `נוסף אירוע חדש בשם "${eventName}". הקש לצפייה בפרטים ולבחירת סטטוס הגעה.`;
+        ? `נוסף אירוע חדש בשם "${eventName}" והוא יתקיים ב-${formattedStart}`
+        : `נוסף אירוע חדש בשם "${eventName}"`;
       await sendPushToUsersExcept(recipients, [user.id], {
         title: APP_NAME_HE,
-        body: bodyText,
+        body: `${bodyText} הקש לצפייה בפרטים`,
         url: `/events/${created.id}`,
         tag: `event-${created.id}`,
       });
