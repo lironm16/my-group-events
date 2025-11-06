@@ -67,7 +67,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       };
       changeSummary = valueMapper[field]?.() || `שדה ${field} עודכן`;
     } else if (uniqueChanges.length > 1) {
-      changeSummary = 'The date and desc were updated';
+      changeSummary = 'התאריך והתיאור עודכנו';
     } else {
       changeSummary = `${eventName}: פרטי האירוע עודכנו`;
     }
