@@ -651,6 +651,7 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
           </div>
         )}
       </div>
+    </div>
   );
 }
 
