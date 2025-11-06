@@ -3,15 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import { sendPushToUsersExcept } from '@/lib/push';
-import { APP_NAME_HE } from '@/lib/constants';
-
-function formatHebrewList(items: string[]) {
-  if (!items.length) return '';
-  if (items.length === 1) return items[0];
-  const last = items[items.length - 1];
-  const rest = items.slice(0, -1);
-  return `${rest.join(', ')} ו${last}`;
-}
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -76,7 +67,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       };
       changeSummary = valueMapper[field]?.() || `שדה ${field} עודכן`;
     } else if (uniqueChanges.length > 1) {
-      changeSummary = `${eventName}: ${formatHebrewList(uniqueChanges)}`;
+      changeSummary = 'The date and desc were updated';
     } else {
       changeSummary = `${eventName}: פרטי האירוע עודכנו`;
     }
