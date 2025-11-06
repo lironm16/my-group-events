@@ -213,7 +213,12 @@ export default async function EventDetailPage({ params, searchParams }: { params
               canAll={canAll}
             />
         ) : null}
-          <RsvpInviteesList list={event.rsvps} groupNotes={groupNotesMap} />
+            <RsvpInviteesList
+              eventId={event.id}
+              list={event.rsvps}
+              groupNotes={groupNotesMap}
+              canNotify={canSendReminders}
+            />
       </section>
       <section>
         <RsvpSummary approved={approvedCount} maybe={maybeCount} declined={declinedCount} waiting={waitingCount} total={totalCount} />
