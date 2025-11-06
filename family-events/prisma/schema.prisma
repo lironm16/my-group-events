@@ -31,6 +31,7 @@ model User {
   theme     String?
   notifyRsvpEmails Boolean @default(true)
   defaultLocation  String?
+  gender     String   @default("unspecified")
   family    Family?  @relation(fields: [familyId], references: [id])
   familyId  String?
   group     Group?   @relation(fields: [groupId], references: [id])
@@ -48,6 +49,7 @@ model User {
   familyMemberships FamilyMembership[]
   sentMessages     Message[]       @relation("MessageSender")
   messageReads     MessageRead[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Group {
@@ -64,6 +66,7 @@ model Group {
   updatedAt DateTime @updatedAt
   memberships GroupMembership[]
   messages    Message[]
+  eventNotes  EventGroupNote[]
 }
 
 model Event {
@@ -85,6 +88,7 @@ model Event {
   familyId           String?
   rsvps              RSVP[]
   coHosts            EventHost[]
+  groupNotes         EventGroupNote[]
   /// Recurrence configuration JSON, e.g. {"freq":"WEEKLY","until":"2025-12-31T00:00:00.000Z","skipHolidays":true}
   recurrence         Json?
   /// ISO date strings of occurrence start times to skip (deleted instances)
@@ -185,6 +189,22 @@ model GroupMembership {
   @@index([userId])
 }
 
+model EventGroupNote {
+  id        String   @id @default(cuid())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  note      String
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, groupId])
+  @@index([groupId])
+  @@index([eventId])
+}
+
 model Message {
   id         String   @id @default(cuid())
   group      Group    @relation(fields: [groupId], references: [id])
@@ -211,6 +231,21 @@ model MessageRead {
   readAt     DateTime @default(now())
 
   @@unique([messageId, userId])
+  @@index([userId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  userAgent String?
+  platform  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
 }
 

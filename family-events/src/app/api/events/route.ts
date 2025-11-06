@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
+import { sendPushToUsersExcept } from '@/lib/push';
+import { APP_NAME_HE } from '@/lib/constants';
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
@@ -56,23 +58,44 @@ export async function POST(req: Request) {
     },
   });
   // Add co-hosts if provided
-  if (Array.isArray(body?.coHostIds) && body.coHostIds.length) {
-    const uniqueIds: string[] = Array.from(new Set(body.coHostIds.filter((x: any) => typeof x === 'string')));
-    if (uniqueIds.length) {
-      await prisma.eventHost.createMany({
-        data: uniqueIds.map((uid) => ({ eventId: created.id, userId: uid })),
-        skipDuplicates: true,
-      });
-    }
+  const coHostIds: string[] = Array.isArray(body?.coHostIds)
+    ? Array.from(new Set(body.coHostIds.filter((x: any) => typeof x === 'string')))
+    : [];
+  if (coHostIds.length) {
+    await prisma.eventHost.createMany({
+      data: coHostIds.map((uid) => ({ eventId: created.id, userId: uid })),
+      skipDuplicates: true,
+    });
   }
-  // Create RSVPs for selected guests
-  try {
-    const guestIds: string[] = JSON.parse(String(body?.guestSelection || '[]'));
-    if (Array.isArray(guestIds) && guestIds.length) {
-      const unique = Array.from(new Set(guestIds));
-      await prisma.rSVP.createMany({ data: unique.map((uid) => ({ eventId: created.id, userId: uid, status: 'NA' })) });
+
+    // Create RSVPs for selected guests
+    let invitedGuestIds: string[] = [];
+    try {
+      const guestIds: string[] = JSON.parse(String(body?.guestSelection || '[]'));
+      if (Array.isArray(guestIds) && guestIds.length) {
+        invitedGuestIds = Array.from(new Set(guestIds));
+        await prisma.rSVP.createMany({ data: invitedGuestIds.map((uid) => ({ eventId: created.id, userId: uid, status: 'NA' })) });
+      }
+    } catch {}
+
+    try {
+      const recipients = Array.from(new Set([created.hostId, ...coHostIds, ...invitedGuestIds]));
+      const eventName = created.title;
+      const formattedStart = created.startAt
+        ? new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(created.startAt))
+        : null;
+      const bodyText = formattedStart
+        ? `נוסף אירוע חדש בשם "${eventName}" והוא יתקיים ב-${formattedStart}`
+        : `נוסף אירוע חדש בשם "${eventName}"`;
+      await sendPushToUsersExcept(recipients, [user.id], {
+        title: eventName,
+        body: bodyText,
+        url: `/events/${created.id}`,
+        tag: `event-${created.id}`,
+      });
+    } catch (err) {
+      console.error('[push] Failed to enqueue new event notification', err);
     }
-  } catch {}
   return NextResponse.json({ event: created }, { status: 201 });
 }
 

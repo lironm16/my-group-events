@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import DirtySubmit from '@/components/DirtySubmit';
 import { revalidatePath } from 'next/cache';
+import TestPushButton from '@/components/TestPushButton';
 
 export default async function SettingsPrefsNotificationsPage() {
   const session = await getServerSession(authOptions);
@@ -41,7 +42,21 @@ export default async function SettingsPrefsNotificationsPage() {
         <div>
           <DirtySubmit names={["on"]} initial={{ on: Boolean((me as any)?.notifyRsvpEmails) ? 'on' : '' }} />
         </div>
-      </form>
+        </form>
+        <section className="space-y-3 border-t pt-4">
+          <div>
+            <h2 className="text-xl font-semibold">בדיקת התראות Push</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              לוודא שהתראות עובדות במכשיר:
+            </p>
+            <ol className="list-decimal pr-5 space-y-1 text-sm text-gray-600 dark:text-gray-300">
+              <li>בדפדפן תומך (כרום או ספארי 16.4+). ב-iOS יש לפתוח את האתר בספארי ולהוסיף למסך הבית.</li>
+              <li>פתחו את האפליקציה מהמסך הבית ולחצו על הכפתור למטה כדי לאשר התראות.</li>
+              <li>אם לא מתקבלת בקשה, בדקו <span className="font-semibold">הגדרות &gt; התראות</span> במכשיר ואפשרו התראות לאפליקציה.</li>
+            </ol>
+          </div>
+          <TestPushButton />
+        </section>
     </main>
   );
 }

@@ -6,11 +6,22 @@ import AuthProvider from '@/components/AuthProvider';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth';
 import Script from 'next/script';
+import PushNotificationsInitializer from '@/components/PushNotificationsInitializer';
 
 export const metadata: Metadata = {
   title: 'אירועי משפחת מתתיהו',
   description: 'ניהול אירועים למשפחת מתתיהו',
-  icons: { icon: '/templates/party.jpg' },
+  manifest: '/manifest.json',
+  themeColor: '#1d4ed8',
+  icons: {
+    icon: '/templates/party.jpg',
+    apple: '/templates/party.jpg',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'אירועי משפחת מתתיהו',
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,16 +40,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               // Persist a data attribute to help CSS avoid flashes
               document.documentElement.setAttribute('data-theme', theme);
             } catch(e) {}
-          })();`}
-        </Script>
-        <ThemeProvider>
-          <AuthProvider session={session}>
-            <Nav />
-            <div className="max-w-6xl mx-auto px-4">
-              {children}
-            </div>
-          </AuthProvider>
-        </ThemeProvider>
+            })();`}
+          </Script>
+          <ThemeProvider>
+            <AuthProvider session={session}>
+              <PushNotificationsInitializer />
+              <Nav />
+              <div className="max-w-6xl mx-auto px-4">
+                {children}
+              </div>
+            </AuthProvider>
+          </ThemeProvider>
       </body>
     </html>
   );

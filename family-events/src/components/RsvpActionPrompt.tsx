@@ -28,7 +28,7 @@ const statusLabels: Record<RSVPStatus, { title: string; description: string; ton
   },
 };
 
-export default function RsvpActionPrompt({ eventId, status, note, canGroup, canAll }: { eventId: string; status: RSVPStatus; note?: string | null; canGroup: boolean; canAll: boolean }) {
+export default function RsvpActionPrompt({ eventId, status, note, groupNote, canGroup, canAll }: { eventId: string; status: RSVPStatus; note?: string | null; groupNote?: string | null; canGroup: boolean; canAll: boolean }) {
   const [open, setOpen] = useState(false);
   const tone = statusLabels[status];
   const existingNote = (note ?? '').trim();
@@ -87,7 +87,15 @@ export default function RsvpActionPrompt({ eventId, status, note, canGroup, canA
               </button>
             </div>
             <div className="mt-4">
-              <RSVPButtons eventId={eventId} initial={status} initialNote={existingNote} canGroup={canGroup} canAll={canAll} onSaved={() => setOpen(false)} />
+              <RSVPButtons
+                eventId={eventId}
+                initial={status}
+                initialNote={existingNote}
+                initialGroupNote={groupNote ?? ''}
+                canGroup={canGroup}
+                canAll={canAll}
+                onSaved={() => setOpen(false)}
+              />
             </div>
           </div>
         </div>
