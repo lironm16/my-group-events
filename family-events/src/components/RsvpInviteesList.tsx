@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Item = {
   id: string;
@@ -50,6 +50,45 @@ const FILTER_INACTIVE_CLASSES: Record<FilterKey, string> = {
   DECLINED: 'text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30',
   MAYBE: 'text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/30',
 };
+
+type SelectionState = 'all' | 'some' | 'none';
+
+function getSelectionState(userIds: string[], selected: Set<string>): SelectionState {
+  if (!userIds.length) return 'none';
+  const selectedCount = userIds.reduce((count, id) => (selected.has(id) ? count + 1 : count), 0);
+  if (selectedCount === 0) return 'none';
+  if (selectedCount === userIds.length) return 'all';
+  return 'some';
+}
+
+function SectionSelectCheckbox({
+  state,
+  onChange,
+  disabled,
+}: {
+  state: SelectionState;
+  onChange: (checked: boolean) => void;
+  disabled: boolean;
+}) {
+  const ref = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.indeterminate = state === 'some';
+    }
+  }, [state]);
+
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+      checked={state === 'all'}
+      onChange={(event) => onChange(event.target.checked)}
+      disabled={disabled}
+    />
+  );
+}
 
 function chipCls(status: string): string {
   if (status === 'APPROVED') {
@@ -151,6 +190,26 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
       });
     },
     [selectionMode, visibleUserIds],
+  );
+
+  const bulkSelect = useCallback(
+    (userIds: string[], checked: boolean) => {
+      if (!selectionMode) return;
+      const ids = userIds.filter((id): id is string => Boolean(id));
+      if (!ids.length) return;
+      setSelectedUserIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => {
+          if (checked) {
+            next.add(id);
+          } else {
+            next.delete(id);
+          }
+        });
+        return next;
+      });
+    },
+    [selectionMode],
   );
 
   const startSelection = useCallback(() => {
@@ -333,16 +392,30 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
               const unifiedNote = notes.length > 0 && notes.every((note) => note === notes[0]) ? notes[0] : null;
               const groupLevelNote = !group.isSingle ? groupNotes[group.key] : null;
               const noteToDisplay = groupLevelNote || unifiedNote;
+              const memberUserIds = group.members
+                .map((member) => member.user.id)
+                .filter((id): id is string => Boolean(id));
+              const groupSelectionState = getSelectionState(memberUserIds, selectedUserIds);
+              const showHeader = selectionMode || group.members.length > 1;
 
               return (
                 <div
                   key={group.key}
                   className={index > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-3 mt-3' : ''}
                 >
-                  {group.members.length > 1 && (
+                  {showHeader && (
                     <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
-                      <span>{group.label || 'קבוצה'}</span>
-                      <span>{group.members.length} משתתפים</span>
+                      <div className="flex items-center gap-2">
+                        {selectionMode && (
+                          <SectionSelectCheckbox
+                            state={groupSelectionState}
+                            onChange={(checked) => bulkSelect(memberUserIds, checked)}
+                            disabled={memberUserIds.length === 0}
+                          />
+                        )}
+                        <span>{group.label || 'קבוצה'}</span>
+                      </div>
+                      {group.members.length > 1 ? <span>{group.members.length} משתתפים</span> : null}
                     </div>
                   )}
                   {noteToDisplay && (
@@ -416,75 +489,91 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
         <p className="text-xs text-gray-500 dark:text-gray-400">אין מוזמנים בתצוגה זו.</p>
       ) : (
         <div className="space-y-3">
-          {groupedByStatus.map((section) => (
-            <div key={section.status} className="border border-gray-100 dark:border-gray-800 rounded">
-              <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
-                <span>{section.label}</span>
-                <span>{section.members.length}</span>
-              </div>
-              <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-                {section.members.map((member) => {
-                  const userId = member.user.id;
-                  const checked = userId ? selectedUserIds.has(userId) : false;
-                  const memberNote = member.note?.trim();
-                  const groupLabel = member.user.groupNickname;
+          {groupedByStatus.map((section) => {
+            const memberUserIds = section.members
+              .map((member) => member.user.id)
+              .filter((id): id is string => Boolean(id));
+            const sectionSelectionState = getSelectionState(memberUserIds, selectedUserIds);
 
-                  return (
-                    <li
-                      key={`${section.status}-${member.id}`}
-                      className={`py-2 px-3 ${
-                        selectionMode && checked ? 'bg-indigo-50 dark:bg-indigo-900/30 rounded-md' : ''
-                      }`}
-                    >
-                      <div className="flex items-start gap-2">
-                        {selectionMode && (
-                          <input
-                            type="checkbox"
-                            className="mt-1 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
-                            checked={checked}
-                            onChange={() => toggleSelection(userId)}
+            return (
+              <div key={section.status} className="border border-gray-100 dark:border-gray-800 rounded">
+                <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {selectionMode && (
+                      <SectionSelectCheckbox
+                        state={sectionSelectionState}
+                        onChange={(checked) => bulkSelect(memberUserIds, checked)}
+                        disabled={memberUserIds.length === 0}
+                      />
+                    )}
+                    <span>{section.label}</span>
+                  </div>
+                  <span>{section.members.length}</span>
+                </div>
+                <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {section.members.map((member) => {
+                    const userId = member.user.id;
+                    const checked = userId ? selectedUserIds.has(userId) : false;
+                    const memberNote = member.note?.trim();
+                    const groupLabel = member.user.groupNickname;
+
+                    return (
+                      <li
+                        key={`${section.status}-${member.id}`}
+                        className={`py-2 px-3 ${
+                          selectionMode && checked ? 'bg-indigo-50 dark:bg-indigo-900/30 rounded-md' : ''
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          {selectionMode && (
+                            <input
+                              type="checkbox"
+                              className="mt-1 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                              checked={checked}
+                              onChange={() => toggleSelection(userId)}
+                            />
+                          )}
+                          <img
+                            src={
+                              member.user?.image && /^https?:/i.test(member.user.image)
+                                ? member.user.image
+                                : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
+                                    member.user?.name || 'user',
+                                  )}`
+                            }
+                            alt="user"
+                            className="w-7 h-7 rounded-full"
                           />
-                        )}
-                        <img
-                          src={
-                            member.user?.image && /^https?:/i.test(member.user.image)
-                              ? member.user.image
-                              : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
-                                  member.user?.name || 'user',
-                                )}`
-                          }
-                          alt="user"
-                          className="w-7 h-7 rounded-full"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-medium text-sm truncate">{member.user?.name || '—'}</span>
-                            <span className={`text-xs rounded px-2 py-0.5 border ${chipCls(member.status)}`}>
-                              {
-                                STATUS_LABELS[
-                                  STATUS_ORDER.includes(member.status as StatusKey)
-                                    ? (member.status as StatusKey)
-                                    : 'NA'
-                                ]
-                              }
-                            </span>
-                          </div>
-                          {groupLabel && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{groupLabel}</div>
-                          )}
-                          {memberNote && (
-                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">
-                              “{memberNote}”
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-medium text-sm truncate">{member.user?.name || '—'}</span>
+                              <span className={`text-xs rounded px-2 py-0.5 border ${chipCls(member.status)}`}>
+                                {
+                                  STATUS_LABELS[
+                                    STATUS_ORDER.includes(member.status as StatusKey)
+                                      ? (member.status as StatusKey)
+                                      : 'NA'
+                                  ]
+                                }
+                              </span>
                             </div>
-                          )}
+                            {groupLabel && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{groupLabel}</div>
+                            )}
+                            {memberNote && (
+                              <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">
+                                “{memberNote}”
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
