@@ -323,6 +323,8 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
     }
   }, [canNotify, eventId, isSending, selectedUserIds]);
 
+  ;
+
   return (
     <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
