@@ -17,7 +17,6 @@ type Item = {
 
 type FilterKey = 'all' | 'NA' | 'APPROVED' | 'DECLINED' | 'MAYBE';
 type StatusKey = Exclude<FilterKey, 'all'>;
-type ViewMode = 'status' | 'group';
 type Feedback = { type: 'success' | 'error'; message: string };
 
 type Props = {
@@ -52,6 +51,22 @@ const FILTER_INACTIVE_CLASSES: Record<FilterKey, string> = {
 };
 
 type SelectionState = 'all' | 'some' | 'none';
+
+type GroupEntry = {
+  key: string;
+  label: string;
+  members: Item[];
+  userIds: string[];
+  isSingle: boolean;
+  noteToDisplay: string | null;
+};
+
+type StatusSection = {
+  status: StatusKey;
+  label: string;
+  members: Item[];
+  groups: GroupEntry[];
+};
 
 function getSelectionState(userIds: string[], selected: Set<string>): SelectionState {
   if (!userIds.length) return 'none';
@@ -104,12 +119,12 @@ function chipCls(status: string): string {
 }
 
 export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNotify = false }: Props) {
-  const [viewMode, setViewMode] = useState<ViewMode>('status');
   const [filter, setFilter] = useState<FilterKey>('all');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(() => new Set());
   const [isSending, setIsSending] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [collapsedStatuses, setCollapsedStatuses] = useState<Set<StatusKey>>(() => new Set());
 
   const filtered = useMemo(() => {
     if (filter === 'all') return list.slice();
@@ -121,40 +136,58 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
     [filtered],
   );
 
-  const groupedByGroup = useMemo(() => {
-    const map = new Map<string, { key: string; label: string; members: Item[]; isSingle: boolean }>();
-    filtered.forEach((item) => {
-      const groupId = item.user.groupId || `__single-${item.user.id}`;
-      const label =
-        item.user.groupNickname || (item.user.groupId ? 'קבוצה ללא שם' : item.user.name || 'ללא קבוצה');
-      if (map.has(groupId)) {
-        map.get(groupId)!.members.push(item);
-      } else {
-        map.set(groupId, { key: groupId, label, members: [item], isSingle: !item.user.groupId });
-      }
-    });
-    return Array.from(map.values());
-  }, [filtered]);
+  const statusSections = useMemo<StatusSection[]>(() => {
+    const baseMap = STATUS_ORDER.reduce((acc, status) => {
+      acc[status] = { status, label: STATUS_LABELS[status], members: [] as Item[] };
+      return acc;
+    }, {} as Record<StatusKey, { status: StatusKey; label: string; members: Item[] }>);
 
-  const groupedByStatus = useMemo(() => {
-    const sections = STATUS_ORDER.map((status) => ({
-      status,
-      label: STATUS_LABELS[status],
-      members: [] as Item[],
-    }));
-    const sectionMap: Record<StatusKey, { status: StatusKey; label: string; members: Item[] }> = sections.reduce(
-      (acc, section) => {
-        acc[section.status] = section;
-        return acc;
-      },
-      {} as Record<StatusKey, { status: StatusKey; label: string; members: Item[] }>,
-    );
     filtered.forEach((item) => {
       const statusKey = STATUS_ORDER.includes(item.status as StatusKey) ? (item.status as StatusKey) : 'NA';
-      (sectionMap[statusKey] || sectionMap.NA).members.push(item);
+      (baseMap[statusKey] || baseMap.NA).members.push(item);
     });
-    return sections.filter((section) => section.members.length > 0);
-  }, [filtered]);
+
+    return STATUS_ORDER.map((status) => {
+      const section = baseMap[status];
+      const groupMap = new Map<
+        string,
+        { key: string; label: string; members: Item[]; userIds: string[]; isSingle: boolean }
+      >();
+
+      section.members.forEach((member) => {
+        const groupId = member.user.groupId || `__single-${member.user.id}`;
+        const label =
+          member.user.groupNickname || (member.user.groupId ? 'קבוצה ללא שם' : member.user.name || 'ללא קבוצה');
+        const entry = groupMap.get(groupId);
+        if (entry) {
+          entry.members.push(member);
+          if (member.user.id) entry.userIds.push(member.user.id);
+        } else {
+          groupMap.set(groupId, {
+            key: groupId,
+            label,
+            members: [member],
+            userIds: member.user.id ? [member.user.id] : [],
+            isSingle: !member.user.groupId,
+          });
+        }
+      });
+
+      const groups: GroupEntry[] = Array.from(groupMap.values()).map((group) => {
+        const notes = group.members
+          .map((member) => (member.note || '').trim())
+          .filter((note) => note.length > 0);
+        const unifiedNote = notes.length > 0 && notes.every((note) => note === notes[0]) ? notes[0] : null;
+        const groupLevelNote = !group.isSingle ? groupNotes[group.key] : null;
+        const noteToDisplay = groupLevelNote || unifiedNote;
+        const entry: GroupEntry = { ...group, noteToDisplay };
+        return entry;
+      });
+
+      const sectionWithGroups: StatusSection = { ...section, groups };
+      return sectionWithGroups;
+    }).filter((section) => section.members.length > 0);
+  }, [filtered, groupNotes]);
 
   const selectedCount = selectedUserIds.size;
   const allVisibleSelected =
@@ -211,6 +244,18 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
     },
     [selectionMode],
   );
+
+  const toggleStatusSection = useCallback((status: StatusKey) => {
+    setCollapsedStatuses((prev) => {
+      const next = new Set(prev);
+      if (next.has(status)) {
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
+      return next;
+    });
+  }, []);
 
   const startSelection = useCallback(() => {
     if (!canNotify || selectionMode) return;
@@ -334,31 +379,7 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
         )}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded p-1">
-          <button
-            type="button"
-            onClick={() => setViewMode('status')}
-            className={`px-2 py-1 rounded ${
-              viewMode === 'status'
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60'
-            }`}
-          >
-            לפי סטטוס
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('group')}
-            className={`px-2 py-1 rounded ${
-              viewMode === 'group'
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60'
-            }`}
-          >
-            לפי קבוצה
-          </button>
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded p-1">
           {statusFilterButton('all', 'הכל')}
           {statusFilterButton('NA', 'לא השיבו')}
@@ -380,120 +401,16 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
         </div>
       )}
 
-      {viewMode === 'group' ? (
-        groupedByGroup.length === 0 ? (
-          <p className="text-xs text-gray-500 dark:text-gray-400">אין מוזמנים בתצוגה זו.</p>
-        ) : (
-          <div className="flex flex-col">
-            {groupedByGroup.map((group, index) => {
-              const notes = group.members
-                .map((member) => (member.note || '').trim())
-                .filter((note) => note.length > 0);
-              const unifiedNote = notes.length > 0 && notes.every((note) => note === notes[0]) ? notes[0] : null;
-              const groupLevelNote = !group.isSingle ? groupNotes[group.key] : null;
-              const noteToDisplay = groupLevelNote || unifiedNote;
-              const memberUserIds = group.members
-                .map((member) => member.user.id)
-                .filter((id): id is string => Boolean(id));
-              const groupSelectionState = getSelectionState(memberUserIds, selectedUserIds);
-              const showHeader = selectionMode || group.members.length > 1;
-
-              return (
-                <div
-                  key={group.key}
-                  className={index > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-3 mt-3' : ''}
-                >
-                  {showHeader && (
-                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
-                      <div className="flex items-center gap-2">
-                        {selectionMode && (
-                          <SectionSelectCheckbox
-                            state={groupSelectionState}
-                            onChange={(checked) => bulkSelect(memberUserIds, checked)}
-                            disabled={memberUserIds.length === 0}
-                          />
-                        )}
-                        <span>{group.label || 'קבוצה'}</span>
-                      </div>
-                      {group.members.length > 1 ? <span>{group.members.length} משתתפים</span> : null}
-                    </div>
-                  )}
-                  {noteToDisplay && (
-                    <div className="text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded px-2 py-1 mb-2">
-                      “{noteToDisplay}”
-                    </div>
-                  )}
-                  <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {group.members.map((member) => {
-                      const userId = member.user.id;
-                      const checked = userId ? selectedUserIds.has(userId) : false;
-                      const memberNote = member.note?.trim();
-
-                      return (
-                        <li
-                          key={member.id}
-                          className={`py-2 px-2 ${
-                            selectionMode && checked ? 'bg-indigo-50 dark:bg-indigo-900/30 rounded-md' : ''
-                          }`}
-                        >
-                          <div className="flex items-start gap-2">
-                            {selectionMode && (
-                              <input
-                                type="checkbox"
-                                className="mt-1 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
-                                checked={checked}
-                                onChange={() => toggleSelection(userId)}
-                              />
-                            )}
-                            <img
-                              src={
-                                member.user?.image && /^https?:/i.test(member.user.image)
-                                  ? member.user.image
-                                  : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
-                                      member.user?.name || 'user',
-                                    )}`
-                              }
-                              alt="user"
-                              className="w-7 h-7 rounded-full"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-medium text-sm truncate">{member.user?.name || '—'}</span>
-                                <span className={`text-xs rounded px-2 py-0.5 border ${chipCls(member.status)}`}>
-                                  {
-                                    STATUS_LABELS[
-                                      STATUS_ORDER.includes(member.status as StatusKey)
-                                        ? (member.status as StatusKey)
-                                        : 'NA'
-                                    ]
-                                  }
-                                </span>
-                              </div>
-                              {!noteToDisplay && memberNote && (
-                                <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">
-                                  “{memberNote}”
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-        )
-      ) : groupedByStatus.length === 0 ? (
+      {statusSections.length === 0 ? (
         <p className="text-xs text-gray-500 dark:text-gray-400">אין מוזמנים בתצוגה זו.</p>
       ) : (
         <div className="space-y-3">
-          {groupedByStatus.map((section) => {
-            const memberUserIds = section.members
-              .map((member) => member.user.id)
-              .filter((id): id is string => Boolean(id));
-            const sectionSelectionState = getSelectionState(memberUserIds, selectedUserIds);
+          {statusSections.map((section) => {
+            const sectionUserIds = Array.from(
+              new Set(section.groups.flatMap((group) => group.userIds))
+            );
+            const sectionSelectionState = getSelectionState(sectionUserIds, selectedUserIds);
+            const isCollapsed = collapsedStatuses.has(section.status);
 
             return (
               <div key={section.status} className="border border-gray-100 dark:border-gray-800 rounded">
@@ -502,75 +419,123 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
                     {selectionMode && (
                       <SectionSelectCheckbox
                         state={sectionSelectionState}
-                        onChange={(checked) => bulkSelect(memberUserIds, checked)}
-                        disabled={memberUserIds.length === 0}
+                        onChange={(checked) => bulkSelect(sectionUserIds, checked)}
+                        disabled={sectionUserIds.length === 0}
                       />
                     )}
-                    <span>{section.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => toggleStatusSection(section.status)}
+                      className="flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-gray-300"
+                      aria-expanded={!isCollapsed}
+                    >
+                      <span className={`transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}>▾</span>
+                      <span>{section.label}</span>
+                    </button>
                   </div>
                   <span>{section.members.length}</span>
                 </div>
-                <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {section.members.map((member) => {
-                    const userId = member.user.id;
-                    const checked = userId ? selectedUserIds.has(userId) : false;
-                    const memberNote = member.note?.trim();
-                    const groupLabel = member.user.groupNickname;
+                {!isCollapsed && (
+                  <div className="space-y-3 px-3 pb-3">
+                    {section.groups.map((group, groupIndex) => {
+                      const groupSelectionState = getSelectionState(group.userIds, selectedUserIds);
+                      const noteToDisplay = group.noteToDisplay;
+                      const isFirstGroup = groupIndex === 0;
 
-                    return (
-                      <li
-                        key={`${section.status}-${member.id}`}
-                        className={`py-2 px-3 ${
-                          selectionMode && checked ? 'bg-indigo-50 dark:bg-indigo-900/30 rounded-md' : ''
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          {selectionMode && (
-                            <input
-                              type="checkbox"
-                              className="mt-1 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
-                              checked={checked}
-                              onChange={() => toggleSelection(userId)}
-                            />
-                          )}
-                          <img
-                            src={
-                              member.user?.image && /^https?:/i.test(member.user.image)
-                                ? member.user.image
-                                : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
-                                    member.user?.name || 'user',
-                                  )}`
-                            }
-                            alt="user"
-                            className="w-7 h-7 rounded-full"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-medium text-sm truncate">{member.user?.name || '—'}</span>
-                              <span className={`text-xs rounded px-2 py-0.5 border ${chipCls(member.status)}`}>
-                                {
-                                  STATUS_LABELS[
-                                    STATUS_ORDER.includes(member.status as StatusKey)
-                                      ? (member.status as StatusKey)
-                                      : 'NA'
-                                  ]
-                                }
-                              </span>
-                            </div>
-                            {groupLabel && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{groupLabel}</div>
-                            )}
-                            {memberNote && (
-                              <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">
-                                “{memberNote}”
+                      const showHeader = selectionMode || !isFirstGroup || group.members.length > 1;
+                      const labelClassName = isFirstGroup
+                        ? 'text-transparent select-none'
+                        : '';
+
+                      return (
+                        <div
+                          key={group.key}
+                          className={groupIndex > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-3 mt-3' : ''}
+                        >
+                          {showHeader && (
+                            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
+                              <div className="flex items-center gap-2">
+                                {selectionMode && (
+                                  <SectionSelectCheckbox
+                                    state={groupSelectionState}
+                                    onChange={(checked) => bulkSelect(group.userIds, checked)}
+                                    disabled={group.userIds.length === 0}
+                                  />
+                                )}
+                                <span className={labelClassName} aria-hidden={isFirstGroup}>
+                                  {group.label || 'קבוצה'}
+                                </span>
                               </div>
-                            )}
-                          </div>
+                              {group.members.length > 1 ? <span>{group.members.length} משתתפים</span> : null}
+                            </div>
+                          )}
+                          {noteToDisplay && (
+                            <div className="text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded px-2 py-1 mb-2">
+                              “{noteToDisplay}”
+                            </div>
+                          )}
+                          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+                            {group.members.map((member) => {
+                              const userId = member.user.id;
+                              const checked = userId ? selectedUserIds.has(userId) : false;
+                              const memberNote = member.note?.trim();
+
+                              return (
+                                <li
+                                  key={member.id}
+                                  className={`py-2 px-2 ${
+                                    selectionMode && checked ? 'bg-indigo-50 dark:bg-indigo-900/30 rounded-md' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    {selectionMode && (
+                                      <input
+                                        type="checkbox"
+                                        className="mt-1 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                                        checked={checked}
+                                        onChange={() => toggleSelection(userId)}
+                                      />
+                                    )}
+                                    <img
+                                      src={
+                                        member.user?.image && /^https?:/i.test(member.user.image)
+                                          ? member.user.image
+                                          : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
+                                              member.user?.name || 'user',
+                                            )}`
+                                      }
+                                      alt="user"
+                                      className="w-7 h-7 rounded-full"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="font-medium text-sm truncate">{member.user?.name || '—'}</span>
+                                        <span className={`text-xs rounded px-2 py-0.5 border ${chipCls(member.status)}`}>
+                                          {
+                                            STATUS_LABELS[
+                                              STATUS_ORDER.includes(member.status as StatusKey)
+                                                ? (member.status as StatusKey)
+                                                : 'NA'
+                                            ]
+                                          }
+                                        </span>
+                                      </div>
+                                      {memberNote && (
+                                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">
+                                          “{memberNote}”
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ul>
                         </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
