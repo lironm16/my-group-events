@@ -15,8 +15,7 @@ type Item = {
   };
 };
 
-type FilterKey = 'all' | 'NA' | 'APPROVED' | 'DECLINED' | 'MAYBE';
-type StatusKey = Exclude<FilterKey, 'all'>;
+type StatusKey = 'NA' | 'APPROVED' | 'DECLINED' | 'MAYBE';
 type Feedback = { type: 'success' | 'error'; message: string };
 
 type Props = {
@@ -32,22 +31,6 @@ const STATUS_LABELS: Record<StatusKey, string> = {
   APPROVED: 'אגיע',
   MAYBE: 'אולי',
   DECLINED: 'לא אגיע',
-};
-
-const FILTER_ACTIVE_CLASSES: Record<FilterKey, string> = {
-  all: 'bg-slate-600 text-white',
-  NA: 'bg-gray-600 text-white',
-  APPROVED: 'bg-green-600 text-white',
-  DECLINED: 'bg-red-600 text-white',
-  MAYBE: 'bg-yellow-500 text-white',
-};
-
-const FILTER_INACTIVE_CLASSES: Record<FilterKey, string> = {
-  all: 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/30',
-  NA: 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
-  APPROVED: 'text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30',
-  DECLINED: 'text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30',
-  MAYBE: 'text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/30',
 };
 
 type SelectionState = 'all' | 'some' | 'none';
@@ -119,21 +102,16 @@ function chipCls(status: string): string {
 }
 
 export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNotify = false }: Props) {
-  const [filter, setFilter] = useState<FilterKey>('all');
+  const [viewMode, setViewMode] = useState<'status' | 'group'>('status');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(() => new Set());
   const [isSending, setIsSending] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [collapsedStatuses, setCollapsedStatuses] = useState<Set<StatusKey>>(() => new Set());
 
-  const filtered = useMemo(() => {
-    if (filter === 'all') return list.slice();
-    return list.filter((r) => r.status === filter);
-  }, [list, filter]);
-
   const visibleUserIds = useMemo(
-    () => filtered.map((item) => item.user?.id).filter((id): id is string => Boolean(id)),
-    [filtered],
+    () => list.map((item) => item.user?.id).filter((id): id is string => Boolean(id)),
+    [list],
   );
 
   const statusSections = useMemo<StatusSection[]>(() => {
@@ -142,7 +120,7 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
       return acc;
     }, {} as Record<StatusKey, { status: StatusKey; label: string; members: Item[] }>);
 
-    filtered.forEach((item) => {
+    list.forEach((item) => {
       const statusKey = STATUS_ORDER.includes(item.status as StatusKey) ? (item.status as StatusKey) : 'NA';
       (baseMap[statusKey] || baseMap.NA).members.push(item);
     });
@@ -187,7 +165,41 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
       const sectionWithGroups: StatusSection = { ...section, groups };
       return sectionWithGroups;
     }).filter((section) => section.members.length > 0);
-  }, [filtered, groupNotes]);
+  }, [list, groupNotes]);
+
+  const groupSections = useMemo<GroupEntry[]>(() => {
+    const map = new Map<string, GroupEntry>();
+    list.forEach((member) => {
+      const groupId = member.user.groupId || `__single-${member.user.id}`;
+      const label =
+        member.user.groupNickname || (member.user.groupId ? 'קבוצה ללא שם' : member.user.name || 'ללא קבוצה');
+      const existing = map.get(groupId);
+      const userIds = member.user.id ? [member.user.id] : [];
+      if (existing) {
+        existing.members.push(member);
+        existing.userIds.push(...userIds);
+      } else {
+        map.set(groupId, {
+          key: groupId,
+          label,
+          members: [member],
+          userIds: userIds.slice(),
+          isSingle: !member.user.groupId,
+          noteToDisplay: null,
+        });
+      }
+    });
+
+    return Array.from(map.values()).map((group) => {
+      const notes = group.members
+        .map((member) => (member.note || '').trim())
+        .filter((note) => note.length > 0);
+      const unifiedNote = notes.length > 0 && notes.every((note) => note === notes[0]) ? notes[0] : null;
+      const groupLevelNote = !group.isSingle ? groupNotes[group.key] : null;
+      const noteToDisplay = groupLevelNote || unifiedNote;
+      return { ...group, noteToDisplay };
+    });
+  }, [list, groupNotes]);
 
   const selectedCount = selectedUserIds.size;
   const allVisibleSelected =
@@ -311,18 +323,6 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
     }
   }, [canNotify, eventId, isSending, selectedUserIds]);
 
-  const statusFilterButton = (key: FilterKey, label: string) => (
-    <button
-      key={key}
-      type="button"
-      aria-pressed={filter === key}
-      onClick={() => setFilter(key)}
-      className={`px-2 py-1 rounded ${filter === key ? FILTER_ACTIVE_CLASSES[key] : FILTER_INACTIVE_CLASSES[key]}`}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div className="rounded border border-gray-200 dark:border-gray-800 p-3 bg-white dark:bg-gray-900 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -379,13 +379,30 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
         )}
       </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded p-1">
-          {statusFilterButton('all', 'הכל')}
-          {statusFilterButton('NA', 'לא השיבו')}
-          {statusFilterButton('APPROVED', 'אגיע')}
-          {statusFilterButton('DECLINED', 'לא אגיע')}
-          {statusFilterButton('MAYBE', 'אולי')}
+          <button
+            type="button"
+            onClick={() => setViewMode('status')}
+            className={`px-2 py-1 rounded ${
+              viewMode === 'status'
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60'
+            }`}
+          >
+            לפי סטטוס
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('group')}
+            className={`px-2 py-1 rounded ${
+              viewMode === 'group'
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60'
+            }`}
+          >
+            לפי קבוצה
+          </button>
         </div>
       </div>
 
@@ -401,147 +418,239 @@ export default function RsvpInviteesList({ eventId, list, groupNotes = {}, canNo
         </div>
       )}
 
-      {statusSections.length === 0 ? (
-        <p className="text-xs text-gray-500 dark:text-gray-400">אין מוזמנים בתצוגה זו.</p>
-      ) : (
-        <div className="space-y-3">
-          {statusSections.map((section) => {
-            const sectionUserIds = Array.from(
-              new Set(section.groups.flatMap((group) => group.userIds))
-            );
-            const sectionSelectionState = getSelectionState(sectionUserIds, selectedUserIds);
-            const isCollapsed = collapsedStatuses.has(section.status);
+      {viewMode === 'status' ? (
+        statusSections.length === 0 ? (
+          <p className="text-xs text-gray-500 dark:text-gray-400">אין מוזמנים בתצוגה זו.</p>
+        ) : (
+          <div className="space-y-3">
+            {statusSections.map((section) => {
+              const sectionUserIds = Array.from(new Set(section.groups.flatMap((group) => group.userIds)));
+              const sectionSelectionState = getSelectionState(sectionUserIds, selectedUserIds);
+              const isCollapsed = collapsedStatuses.has(section.status);
 
-            return (
-              <div key={section.status} className="border border-gray-100 dark:border-gray-800 rounded">
-                <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {selectionMode && (
-                      <SectionSelectCheckbox
-                        state={sectionSelectionState}
-                        onChange={(checked) => bulkSelect(sectionUserIds, checked)}
-                        disabled={sectionUserIds.length === 0}
-                      />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => toggleStatusSection(section.status)}
-                      className="flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-gray-300"
-                      aria-expanded={!isCollapsed}
-                    >
-                      <span className={`transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}>▾</span>
-                      <span>{section.label}</span>
-                    </button>
+              return (
+                <div key={section.status} className="border border-gray-100 dark:border-gray-800 rounded">
+                  <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {selectionMode && (
+                        <SectionSelectCheckbox
+                          state={sectionSelectionState}
+                          onChange={(checked) => bulkSelect(sectionUserIds, checked)}
+                          disabled={sectionUserIds.length === 0}
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => toggleStatusSection(section.status)}
+                        className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300"
+                        aria-expanded={!isCollapsed}
+                      >
+                        <span aria-hidden="true" className={`transition-transform ${isCollapsed ? 'rotate-0' : 'rotate-90'}`}>
+                          &gt;
+                        </span>
+                        <span>
+                          {section.label} · {section.members.length}{' '}
+                          {section.members.length === 1 ? 'משתתף' : 'משתתפים'}
+                        </span>
+                      </button>
+                    </div>
                   </div>
-                  <span>{section.members.length}</span>
-                </div>
-                {!isCollapsed && (
-                  <div className="space-y-3 px-3 pb-3">
-                    {section.groups.map((group, groupIndex) => {
-                      const groupSelectionState = getSelectionState(group.userIds, selectedUserIds);
-                      const noteToDisplay = group.noteToDisplay;
-                      const isFirstGroup = groupIndex === 0;
+                  {!isCollapsed && (
+                    <div className="space-y-3 px-3 pb-3">
+                      {section.groups.map((group, groupIndex) => {
+                        const groupSelectionState = getSelectionState(group.userIds, selectedUserIds);
+                        const noteToDisplay = group.noteToDisplay;
+                        const isFirstGroup = groupIndex === 0;
+                        const showHeader = selectionMode || !isFirstGroup || group.members.length > 1;
 
-                      const showHeader = selectionMode || !isFirstGroup || group.members.length > 1;
-                      const labelClassName = isFirstGroup
-                        ? 'text-transparent select-none'
-                        : '';
+                        return (
+                          <div
+                            key={group.key}
+                            className={groupIndex > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-3 mt-3' : ''}
+                          >
+                            {showHeader && (
+                              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                <div className="flex items-center gap-2">
+                                  {selectionMode && (
+                                    <SectionSelectCheckbox
+                                      state={groupSelectionState}
+                                      onChange={(checked) => bulkSelect(group.userIds, checked)}
+                                      disabled={group.userIds.length === 0}
+                                    />
+                                  )}
+                                  {isFirstGroup ? (
+                                    <span className="sr-only">{group.label || 'קבוצה'}</span>
+                                  ) : (
+                                    <span>{group.label || 'קבוצה'}</span>
+                                  )}
+                                </div>
+                                {group.members.length > 1 ? <span>{group.members.length} משתתפים</span> : null}
+                              </div>
+                            )}
+                            {noteToDisplay && (
+                              <div className="text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded px-2 py-1 mb-2">
+                                “{noteToDisplay}”
+                              </div>
+                            )}
+                            <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+                              {group.members.map((member) => {
+                                const userId = member.user.id;
+                                const checked = userId ? selectedUserIds.has(userId) : false;
+                                const memberNote = member.note?.trim();
+
+                                return (
+                                  <li
+                                    key={member.id}
+                                    className={`py-2 px-2 ${
+                                      selectionMode && checked ? 'bg-indigo-50 dark:bg-indigo-900/30 rounded-md' : ''
+                                    }`}
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      {selectionMode && (
+                                        <input
+                                          type="checkbox"
+                                          className="mt-1 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                                          checked={checked}
+                                          onChange={() => toggleSelection(userId)}
+                                        />
+                                      )}
+                                      <img
+                                        src={
+                                          member.user?.image && /^https?:/i.test(member.user.image)
+                                            ? member.user.image
+                                            : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
+                                                member.user?.name || 'user',
+                                              )}`
+                                        }
+                                        alt="user"
+                                        className="w-7 h-7 rounded-full"
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <span className="font-medium text-sm truncate">{member.user?.name || '—'}</span>
+                                          <span className={`text-xs rounded px-2 py-0.5 border ${chipCls(member.status)}`}>
+                                            {
+                                              STATUS_LABELS[
+                                                STATUS_ORDER.includes(member.status as StatusKey)
+                                                  ? (member.status as StatusKey)
+                                                  : 'NA'
+                                              ]
+                                            }
+                                          </span>
+                                        </div>
+                                        {memberNote && (
+                                          <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">
+                                            “{memberNote}”
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : groupSections.length === 0 ? (
+          <p className="text-xs text-gray-500 dark:text-gray-400">אין מוזמנים בתצוגה זו.</p>
+        ) : (
+          <div className="space-y-3">
+            {groupSections.map((group) => {
+              const groupSelectionState = getSelectionState(group.userIds, selectedUserIds);
+              const noteToDisplay = group.noteToDisplay;
+
+              return (
+                <div key={group.key} className="border border-gray-100 dark:border-gray-800 rounded">
+                  <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {selectionMode && (
+                        <SectionSelectCheckbox
+                          state={groupSelectionState}
+                          onChange={(checked) => bulkSelect(group.userIds, checked)}
+                          disabled={group.userIds.length === 0}
+                        />
+                      )}
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                        {group.label || 'קבוצה'} · {group.members.length}{' '}
+                        {group.members.length === 1 ? 'משתתף' : 'משתתפים'}
+                      </span>
+                    </div>
+                  </div>
+                  {noteToDisplay && (
+                    <div className="mx-3 mb-2 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded px-2 py-1">
+                      “{noteToDisplay}”
+                    </div>
+                  )}
+                  <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {group.members.map((member) => {
+                      const userId = member.user.id;
+                      const checked = userId ? selectedUserIds.has(userId) : false;
+                      const memberNote = member.note?.trim();
 
                       return (
-                        <div
-                          key={group.key}
-                          className={groupIndex > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-3 mt-3' : ''}
+                        <li
+                          key={member.id}
+                          className={`py-2 px-3 ${
+                            selectionMode && checked ? 'bg-indigo-50 dark:bg-indigo-900/30 rounded-md' : ''
+                          }`}
                         >
-                          {showHeader && (
-                            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
-                              <div className="flex items-center gap-2">
-                                {selectionMode && (
-                                  <SectionSelectCheckbox
-                                    state={groupSelectionState}
-                                    onChange={(checked) => bulkSelect(group.userIds, checked)}
-                                    disabled={group.userIds.length === 0}
-                                  />
-                                )}
-                                <span className={labelClassName} aria-hidden={isFirstGroup}>
-                                  {group.label || 'קבוצה'}
+                          <div className="flex items-start gap-2">
+                            {selectionMode && (
+                              <input
+                                type="checkbox"
+                                className="mt-1 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                                checked={checked}
+                                onChange={() => toggleSelection(userId)}
+                              />
+                            )}
+                            <img
+                              src={
+                                member.user?.image && /^https?:/i.test(member.user.image)
+                                  ? member.user.image
+                                  : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
+                                      member.user?.name || 'user',
+                                    )}`
+                              }
+                              alt="user"
+                              className="w-7 h-7 rounded-full"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-medium text-sm truncate">{member.user?.name || '—'}</span>
+                                <span className={`text-xs rounded px-2 py-0.5 border ${chipCls(member.status)}`}>
+                                  {
+                                    STATUS_LABELS[
+                                      STATUS_ORDER.includes(member.status as StatusKey)
+                                        ? (member.status as StatusKey)
+                                        : 'NA'
+                                    ]
+                                  }
                                 </span>
                               </div>
-                              {group.members.length > 1 ? <span>{group.members.length} משתתפים</span> : null}
+                              {memberNote && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">
+                                  “{memberNote}”
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {noteToDisplay && (
-                            <div className="text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded px-2 py-1 mb-2">
-                              “{noteToDisplay}”
-                            </div>
-                          )}
-                          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-                            {group.members.map((member) => {
-                              const userId = member.user.id;
-                              const checked = userId ? selectedUserIds.has(userId) : false;
-                              const memberNote = member.note?.trim();
-
-                              return (
-                                <li
-                                  key={member.id}
-                                  className={`py-2 px-2 ${
-                                    selectionMode && checked ? 'bg-indigo-50 dark:bg-indigo-900/30 rounded-md' : ''
-                                  }`}
-                                >
-                                  <div className="flex items-start gap-2">
-                                    {selectionMode && (
-                                      <input
-                                        type="checkbox"
-                                        className="mt-1 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
-                                        checked={checked}
-                                        onChange={() => toggleSelection(userId)}
-                                      />
-                                    )}
-                                    <img
-                                      src={
-                                        member.user?.image && /^https?:/i.test(member.user.image)
-                                          ? member.user.image
-                                          : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(
-                                              member.user?.name || 'user',
-                                            )}`
-                                      }
-                                      alt="user"
-                                      className="w-7 h-7 rounded-full"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center justify-between gap-2">
-                                        <span className="font-medium text-sm truncate">{member.user?.name || '—'}</span>
-                                        <span className={`text-xs rounded px-2 py-0.5 border ${chipCls(member.status)}`}>
-                                          {
-                                            STATUS_LABELS[
-                                              STATUS_ORDER.includes(member.status as StatusKey)
-                                                ? (member.status as StatusKey)
-                                                : 'NA'
-                                            ]
-                                          }
-                                        </span>
-                                      </div>
-                                      {memberNote && (
-                                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words">
-                                          “{memberNote}”
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
+                          </div>
+                        </li>
                       );
                     })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
   );
 }
 
