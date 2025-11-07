@@ -58,39 +58,48 @@ export default function Nav() {
           </button>
           {menuOpen && (
             <div className="absolute z-50 mt-2 right-0 min-w-[180px] rounded border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg overflow-hidden">
-              <ul className="text-sm">
-                <li>
-                  <a
-                    className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    href={status === 'authenticated' ? '/events' : '/'}
-                    onClick={() => setMenuOpen(false)}
-                  >בית</a>
-                </li>
-                <li>
-                  <a
-                    className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    href="/family"
-                    onClick={() => setMenuOpen(false)}
-                  >קבוצות</a>
-                </li>
-                {status === 'authenticated' && (
-                  <li>
-                    <a
-                      className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-green-700 dark:text-green-400"
-                      href="/events/new"
-                      onClick={() => setMenuOpen(false)}
-                    >יצירת אירוע</a>
-                  </li>
-                )}
-                {status === 'authenticated' && (
+                <ul className="text-sm">
                   <li>
                     <a
                       className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      href="/settings"
+                      href={status === 'authenticated' ? '/events' : '/'}
                       onClick={() => setMenuOpen(false)}
-                    >הגדרות</a>
+                    >בית</a>
                   </li>
-                )}
+                  <li>
+                    <a
+                      className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      href="/family"
+                      onClick={() => setMenuOpen(false)}
+                    >קבוצות</a>
+                  </li>
+                  {status === 'authenticated' && (
+                    <li>
+                      <a
+                        className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-green-700 dark:text-green-400"
+                        href="/events/new"
+                        onClick={() => setMenuOpen(false)}
+                      >יצירת אירוע</a>
+                    </li>
+                  )}
+                  {status === 'authenticated' && (
+                    <li>
+                      <a
+                        className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        href="/unavailability"
+                        onClick={() => setMenuOpen(false)}
+                      >חסימת זמינות</a>
+                    </li>
+                  )}
+                  {status === 'authenticated' && (
+                    <li>
+                      <a
+                        className="block px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        href="/settings"
+                        onClick={() => setMenuOpen(false)}
+                      >הגדרות</a>
+                    </li>
+                  )}
                 <li className="border-t border-gray-200 dark:border-gray-800" />
                 {status !== 'authenticated' ? (
                   <li>

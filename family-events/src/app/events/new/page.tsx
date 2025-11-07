@@ -5,6 +5,38 @@ import DateTimePicker from '@/components/DateTimePicker';
 import WhatsAppShare from '@/components/WhatsAppShare';
 import Script from 'next/script';
 
+type ConflictDetail = {
+  userId: string;
+  userName: string | null;
+  reason: string | null;
+  startAt: string;
+  endAt: string | null;
+  scope: 'INDIVIDUAL' | 'GROUP' | 'FAMILY';
+  unavailabilityId: string;
+  type: 'HOST' | 'CO_HOST' | 'GUEST';
+};
+
+const conflictDateTime = new Intl.DateTimeFormat('he-IL', { dateStyle: 'medium', timeStyle: 'short' });
+const conflictTimeOnly = new Intl.DateTimeFormat('he-IL', { timeStyle: 'short' });
+const conflictTypeLabels: Record<ConflictDetail['type'], string> = {
+  HOST: 'מארח',
+  CO_HOST: 'מארח נוסף',
+  GUEST: 'מוזמן',
+};
+
+function formatConflictRange(startISO: string, endISO: string | null) {
+  if (!startISO) return '';
+  const start = new Date(startISO);
+  if (Number.isNaN(start.getTime())) return '';
+  if (!endISO) return conflictDateTime.format(start);
+  const end = new Date(endISO);
+  if (Number.isNaN(end.getTime())) return conflictDateTime.format(start);
+  if (start.toDateString() === end.toDateString()) {
+    return `${conflictDateTime.format(start)} – ${conflictTimeOnly.format(end)}`;
+  }
+  return `${conflictDateTime.format(start)} – ${conflictDateTime.format(end)}`;
+}
+
 export default function NewEventPage() {
   const [form, setForm] = useState({ title: '', description: '', location: '', startAt: '', endAt: '', externalLink: '', image: '' });
   const [me, setMe] = useState<{ id: string; name: string | null } | null>(null);
@@ -17,6 +49,8 @@ export default function NewEventPage() {
   const [skipHolidays, setSkipHolidays] = useState(true);
   const [saving, setSaving] = useState(false);
   const [createdModal, setCreatedModal] = useState<{ id: string; startAt: string } | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitConflicts, setSubmitConflicts] = useState<ConflictDetail[]>([]);
   const errors = useMemo(() => {
     const errs: Partial<Record<keyof typeof form, string>> = {};
     if (!form.title.trim()) errs.title = 'יש להזין כותרת';
@@ -30,6 +64,8 @@ export default function NewEventPage() {
     e.preventDefault();
     if (Object.keys(errors).length > 0) return;
     setSaving(true);
+    setSubmitError(null);
+    setSubmitConflicts([]);
     const body: any = { ...form, holidayKey: (window as any).__holidayKey ?? null };
     try {
       const input = document.getElementById('guestSelection') as HTMLInputElement | null;
@@ -41,10 +77,22 @@ export default function NewEventPage() {
       body.repeat = { weeklyUntil: repeatUntil, skipHolidays };
     }
     const res = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    let data: any = null;
+    try {
+      data = await res.json();
+    } catch {}
     setSaving(false);
-    if (res.ok) {
-      const { event } = await res.json();
-      setCreatedModal({ id: event.id, startAt: event.startAt });
+    if (!res.ok) {
+      if (res.status === 409 && data?.conflicts) {
+        setSubmitError(data?.error || 'חלק מהמשתתפים אינם זמינים במועד הזה.');
+        setSubmitConflicts(Array.isArray(data.conflicts) ? data.conflicts : []);
+      } else {
+        setSubmitError(data?.error || 'שמירת האירוע נכשלה');
+      }
+      return;
+    }
+    if (data?.event) {
+      setCreatedModal({ id: data.event.id, startAt: data.event.startAt });
     }
   }
 
@@ -131,26 +179,46 @@ export default function NewEventPage() {
             </div>
           )}
         </div>
-        <div className="mt-4 space-y-2">
-          <label className="inline-flex items-center gap-2">
-            <input type="checkbox" checked={repeatWeekly} onChange={(e)=>setRepeatWeekly(e.target.checked)} />
-            <span>חזרה כל שבוע</span>
-          </label>
-          {repeatWeekly && (
-            <div className="space-y-2">
-              <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} />
-              <label className="inline-flex items-center gap-2">
-                <input type="checkbox" checked={skipHolidays} onChange={(e)=>setSkipHolidays(e.target.checked)} />
-                <span>דלג על חגים</span>
-              </label>
+          <div className="mt-4 space-y-2">
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={repeatWeekly} onChange={(e)=>setRepeatWeekly(e.target.checked)} />
+              <span>חזרה כל שבוע</span>
+            </label>
+            {repeatWeekly && (
+              <div className="space-y-2">
+                <DateTimePicker label="עד תאריך" value={repeatUntil} onChange={setRepeatUntil} />
+                <label className="inline-flex items-center gap-2">
+                  <input type="checkbox" checked={skipHolidays} onChange={(e)=>setSkipHolidays(e.target.checked)} />
+                  <span>דלג על חגים</span>
+                </label>
+              </div>
+            )}
+          </div>
+          <div>
+            <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
+            {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
+          </div>
+          <GuestSelector startAt={form.startAt} endAt={form.endAt} />
+          {submitError && (
+            <div className="p-3 rounded border border-red-200 bg-red-50 text-sm text-red-700 space-y-2">
+              <div>{submitError}</div>
+              {submitConflicts.length > 0 && (
+                <ul className="space-y-1">
+                  {submitConflicts.map((conflict) => (
+                    <li key={`${conflict.unavailabilityId}-${conflict.userId}`} className="text-xs text-gray-800 dark:text-gray-300">
+                      <div className="font-semibold text-red-700 dark:text-red-400">
+                        {conflict.userName || conflict.userId.slice(0, 6)} · {conflictTypeLabels[conflict.type]}
+                      </div>
+                      <div>{conflict.reason || 'לא זמין'}</div>
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                        {formatConflictRange(conflict.startAt, conflict.endAt)}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
-        </div>
-        <div>
-          <input className={inputCls} placeholder="קישור חיצוני (אופציונלי)" value={form.externalLink} onChange={e=>setForm({...form, externalLink:e.target.value})} />
-          {errors.externalLink && <p className={errorCls}>{errors.externalLink}</p>}
-        </div>
-        <GuestSelector />
         <button disabled={saving || Object.keys(errors).length > 0} onClick={()=>{}} className="px-3 py-2 bg-blue-600 text-white rounded disabled:opacity-60">{saving ? 'שומר…' : 'שמירה'}</button>
       </form>
       )}
@@ -330,33 +398,55 @@ function PlacesInput({ value, onChange }: { value: string; onChange: (v: string)
 
 // Image input removed per request; image is taken from selected template
 
-function GuestSelector() {
+function GuestSelector({ startAt, endAt }: { startAt: string; endAt: string }) {
   'use client';
   type GroupNode = { id: string; nickname: string; parentId: string | null; members: { id: string; name: string | null; image: string | null }[] };
+  type UnavailabilityEntry = {
+    id: string;
+    startAt: string;
+    endAt: string | null;
+    reason: string | null;
+    title: string | null;
+    scope: 'INDIVIDUAL' | 'GROUP' | 'FAMILY';
+    status: 'ACTIVE' | 'DRAFT' | 'CANCELLED' | 'ARCHIVED';
+    participants: { user: { id: string; name: string | null } }[];
+  };
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<{ id: string; groupId: string | null } | null>(null);
   const [groups, setGroups] = useState<GroupNode[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Record<string, boolean>>({});
   const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
   const [initialized, setInitialized] = useState(false);
+  const [unavailability, setUnavailability] = useState<UnavailabilityEntry[]>([]);
 
   useEffect(() => {
     (async () => {
       try {
-        const m = await fetch('/api/users/me', { cache: 'no-store' });
-        const mj = await m.json();
-        setMe(mj.user);
-        const g = await fetch('/api/family/groups', { cache: 'no-store' });
-        const gj = await g.json();
-        const nodes: GroupNode[] = (gj.groups || [])
-          .map((gr: any) => ({
-            id: gr.id,
-            nickname: gr.nickname,
-            parentId: gr.parent?.id || null,
-            members: (gr.members || []).map((u: any) => ({ id: u.id, name: u.name || null, image: u.image || null })),
-          }))
-          .filter((g: GroupNode) => g.members.length > 0);
-        setGroups(nodes);
+        const [m, g, u] = await Promise.all([
+          fetch('/api/users/me', { cache: 'no-store' }),
+          fetch('/api/family/groups', { cache: 'no-store' }),
+          fetch('/api/unavailability?includeArchived=false', { cache: 'no-store' }),
+        ]);
+        if (m.ok) {
+          const mj = await m.json();
+          setMe(mj.user);
+        }
+        if (g.ok) {
+          const gj = await g.json();
+          const nodes: GroupNode[] = (gj.groups || [])
+            .map((gr: any) => ({
+              id: gr.id,
+              nickname: gr.nickname,
+              parentId: gr.parent?.id || null,
+              members: (gr.members || []).map((u: any) => ({ id: u.id, name: u.name || null, image: u.image || null })),
+            }))
+            .filter((group: GroupNode) => group.members.length > 0);
+          setGroups(nodes);
+        }
+        if (u.ok) {
+          const uj = await u.json();
+          setUnavailability(Array.isArray(uj.unavailabilities) ? uj.unavailabilities : []);
+        }
       } finally {
         setLoading(false);
       }
@@ -378,6 +468,62 @@ function GuestSelector() {
     return map;
   }, [groups]);
   const roots = useMemo(() => byParent.get(null) || [], [byParent]);
+
+  const userInfo = useMemo(() => {
+    const map = new Map<string, { name: string | null }>();
+    groups.forEach((group) => {
+      group.members.forEach((member) => {
+        if (!map.has(member.id)) map.set(member.id, { name: member.name ?? null });
+      });
+    });
+    return map;
+  }, [groups]);
+
+  const blockedUsers = useMemo(() => {
+    if (!startAt) return {} as Record<string, { reason: string; startAt: string; endAt: string | null; scope: string }>;
+    const eventStart = new Date(startAt);
+    if (Number.isNaN(eventStart.getTime())) return {};
+    let eventEnd: Date;
+    if (endAt) {
+      const parsedEnd = new Date(endAt);
+      eventEnd = Number.isNaN(parsedEnd.getTime()) ? new Date(eventStart.getTime() + 60_000) : parsedEnd;
+    } else {
+      eventEnd = new Date(eventStart.getTime() + 60_000);
+    }
+    if (eventEnd.getTime() <= eventStart.getTime()) {
+      eventEnd = new Date(eventStart.getTime() + 60_000);
+    }
+    const map: Record<string, { reason: string; startAt: string; endAt: string | null; scope: string }> = {};
+    for (const entry of unavailability) {
+      if (entry.status && entry.status !== 'ACTIVE') continue;
+      const entryStart = new Date(entry.startAt);
+      if (Number.isNaN(entryStart.getTime())) continue;
+      if (entryStart >= eventEnd) continue;
+      const entryEnd = entry.endAt ? new Date(entry.endAt) : null;
+      if (entryEnd && entryEnd <= eventStart) continue;
+      for (const participant of entry.participants || []) {
+        const uid = participant?.user?.id;
+        if (!uid || map[uid]) continue;
+        const reason = entry.reason?.trim() || entry.title?.trim() || 'לא זמין';
+        map[uid] = { reason, startAt: entry.startAt, endAt: entry.endAt, scope: entry.scope };
+      }
+    }
+    return map;
+  }, [startAt, endAt, unavailability]);
+
+  useEffect(() => {
+    setSelectedUsers((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const uid of Object.keys(blockedUsers)) {
+        if (next[uid]) {
+          next[uid] = false;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [blockedUsers]);
 
   function collectDescendantUserIds(groupId: string): string[] {
     const res: string[] = [];
@@ -401,14 +547,18 @@ function GuestSelector() {
     const nextUsers: Record<string, boolean> = {};
     for (const g of groups) {
       nextGroups[g.id] = true;
-      for (const u of g.members) nextUsers[u.id] = true;
+      for (const u of g.members) {
+        if (blockedUsers[u.id]) continue;
+        nextUsers[u.id] = true;
+      }
     }
     setSelectedGroups(nextGroups);
     setSelectedUsers(nextUsers);
     setInitialized(true);
-  }, [initialized, loading, groups]);
+  }, [initialized, loading, groups, blockedUsers]);
 
   function toggleUser(userId: string) {
+    if (blockedUsers[userId]) return;
     setSelectedUsers((s) => ({ ...s, [userId]: !s[userId] }));
   }
 
@@ -418,7 +568,13 @@ function GuestSelector() {
       const userIds = collectDescendantUserIds(groupId);
       setSelectedUsers((s) => {
         const ns = { ...s };
-        for (const uid of userIds) ns[uid] = on;
+        for (const uid of userIds) {
+          if (blockedUsers[uid]) {
+            ns[uid] = false;
+          } else {
+            ns[uid] = on;
+          }
+        }
         return ns;
       });
       return { ...prev, [groupId]: on };
@@ -436,19 +592,43 @@ function GuestSelector() {
   if (loading) return <div className="text-sm text-gray-600 dark:text-gray-300">טוען קבוצות…</div>;
   if (!groups.length) return <div className="text-sm text-gray-600 dark:text-gray-300">אין קבוצות עדיין.</div>;
 
+  const blockedEntries = Object.entries(blockedUsers);
   return (
     <div className="space-y-2">
       <h3 className="font-semibold">מוזמנים</h3>
       <input type="hidden" id="guestSelection" name="guestSelection" />
+      {blockedEntries.length > 0 && (
+        <div className="p-2 border border-amber-200 bg-amber-50 text-xs text-amber-800 rounded">
+          אי אפשר להזמין כרגע את{' '}
+          {blockedEntries
+            .map(([uid, info]) => {
+              const name = userInfo.get(uid)?.name || '';
+              const base = name || uid.slice(0, 6);
+              return info.reason ? `${base} (${info.reason})` : base;
+            })
+            .join(', ')}
+          .
+        </div>
+      )}
       <div className="space-y-3">
         {roots.map((root) => (
-          <GroupItem key={root.id} node={root} level={0} byParent={byParent} selectedGroups={selectedGroups} onToggleGroup={toggleGroupRecursive} selectedUsers={selectedUsers} onToggleUser={toggleUser} />
+          <GroupItem
+            key={root.id}
+            node={root}
+            level={0}
+            byParent={byParent}
+            selectedGroups={selectedGroups}
+            onToggleGroup={toggleGroupRecursive}
+            selectedUsers={selectedUsers}
+            onToggleUser={toggleUser}
+            blockedUsers={blockedUsers}
+          />
         ))}
       </div>
     </div>
   );
 
-  function GroupItem({ node, level, byParent, selectedGroups, onToggleGroup, selectedUsers, onToggleUser }: { node: GroupNode; level: number; byParent: Map<string | null, GroupNode[]>; selectedGroups: Record<string, boolean>; onToggleGroup: (id: string) => void; selectedUsers: Record<string, boolean>; onToggleUser: (id: string) => void; }) {
+  function GroupItem({ node, level, byParent, selectedGroups, onToggleGroup, selectedUsers, onToggleUser, blockedUsers }: { node: GroupNode; level: number; byParent: Map<string | null, GroupNode[]>; selectedGroups: Record<string, boolean>; onToggleGroup: (id: string) => void; selectedUsers: Record<string, boolean>; onToggleUser: (id: string) => void; blockedUsers: Record<string, { reason: string; startAt: string; endAt: string | null; scope: string }>; }) {
     const children = byParent.get(node.id) || [];
     return (
       <div className="rounded border border-gray-200 dark:border-gray-800 p-3">
@@ -459,20 +639,47 @@ function GuestSelector() {
         </label>
         {node.members.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
-            {node.members.map((u) => (
-              <label key={u.id} className={`inline-flex items-center gap-2 px-2 py-1 rounded border text-sm ${selectedUsers[u.id] ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-700 dark:border-blue-700 dark:text-white' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
-                <span>{u.name || ''}</span>
-                <input type="checkbox" className="ml-1" checked={!!selectedUsers[u.id]} onChange={() => onToggleUser(u.id)} />
-              </label>
-            ))}
+            {node.members.map((u) => {
+              const blocked = blockedUsers[u.id];
+              const checked = !!selectedUsers[u.id];
+              return (
+                <label
+                  key={u.id}
+                  className={`flex flex-col items-start gap-1 px-2 py-1 rounded border text-sm ${
+                    checked
+                      ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-700 dark:border-blue-700 dark:text-white'
+                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                  } ${blocked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  title={blocked ? `לא זמין: ${blocked.reason}` : undefined}
+                >
+                  <span className="flex items-center gap-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={u.image && u.image.startsWith('http') ? u.image : `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(u.name || 'user')}`} alt={u.name || ''} className="w-5 h-5" />
+                    <span>{u.name || ''}</span>
+                  </span>
+                  <div className="flex items-center gap-2 text-xs">
+                    <input type="checkbox" className="ml-1" checked={checked} onChange={() => onToggleUser(u.id)} disabled={!!blocked} />
+                    {blocked && <span className="text-red-500 dark:text-red-400">{blocked.reason}</span>}
+                  </div>
+                </label>
+              );
+            })}
           </div>
         )}
         {children.length > 0 && (
           <div className="mt-3 space-y-3">
             {children.map((c) => (
-              <GroupItem key={c.id} node={c} level={level + 1} byParent={byParent} selectedGroups={selectedGroups} onToggleGroup={onToggleGroup} selectedUsers={selectedUsers} onToggleUser={onToggleUser} />
+              <GroupItem
+                key={c.id}
+                node={c}
+                level={level + 1}
+                byParent={byParent}
+                selectedGroups={selectedGroups}
+                onToggleGroup={onToggleGroup}
+                selectedUsers={selectedUsers}
+                onToggleUser={onToggleUser}
+                blockedUsers={blockedUsers}
+              />
             ))}
           </div>
         )}
