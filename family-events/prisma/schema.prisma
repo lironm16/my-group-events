@@ -16,6 +16,7 @@ model Family {
   groups     Group[]
   events     Event[]
   memberships FamilyMembership[]
+  unavailabilities Unavailability[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -50,6 +51,8 @@ model User {
   sentMessages     Message[]       @relation("MessageSender")
   messageReads     MessageRead[]
   pushSubscriptions PushSubscription[]
+  createdUnavailabilities Unavailability[] @relation("UnavailabilityCreator")
+  unavailabilityParticipations UnavailabilityParticipant[]
 }
 
 model Group {
@@ -67,6 +70,7 @@ model Group {
   memberships GroupMembership[]
   messages    Message[]
   eventNotes  EventGroupNote[]
+  unavailabilities Unavailability[]
 }
 
 model Event {
@@ -261,4 +265,60 @@ model FamilyMembership {
   @@unique([userId, familyId])
   @@index([familyId])
   @@index([userId])
+}
+
+model Unavailability {
+  id                     String                   @id @default(cuid())
+  title                  String?
+  reason                 String?
+  scope                  UnavailabilityScope       @default(INDIVIDUAL)
+  startAt                DateTime
+  endAt                  DateTime?
+  rsvpNote               String?
+  autoCancelHostedEvents Boolean                  @default(false)
+  autoUpdateRsvps        Boolean                  @default(false)
+  status                 UnavailabilityStatus      @default(ACTIVE)
+  family                 Family?                   @relation(fields: [familyId], references: [id])
+  familyId               String?
+  group                  Group?                    @relation(fields: [groupId], references: [id])
+  groupId                String?
+  createdBy              User                      @relation("UnavailabilityCreator", fields: [createdById], references: [id])
+  createdById            String
+  participants           UnavailabilityParticipant[]
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
+}
+
+model UnavailabilityParticipant {
+  id               String          @id @default(cuid())
+  unavailability   Unavailability  @relation(fields: [unavailabilityId], references: [id], onDelete: Cascade)
+  unavailabilityId String
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  role             UnavailabilityParticipantRole @default(MEMBER)
+  note             String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@unique([unavailabilityId, userId])
+  @@index([userId])
+  @@index([unavailabilityId])
+}
+
+enum UnavailabilityScope {
+  INDIVIDUAL
+  GROUP
+  FAMILY
+}
+
+enum UnavailabilityStatus {
+  ACTIVE
+  DRAFT
+  CANCELLED
+  ARCHIVED
+}
+
+enum UnavailabilityParticipantRole {
+  PRIMARY
+  MEMBER
 }
