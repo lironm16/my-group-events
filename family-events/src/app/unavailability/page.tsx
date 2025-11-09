@@ -118,8 +118,8 @@ export default function UnavailabilityPage() {
         if (groupsRes.ok) {
           const groupsJson = await groupsRes.json();
           setGroups(groupsJson?.groups || []);
-          if (!groupId && groupsJson?.groups?.length) {
-            setGroupId(groupsJson.groups[0].id);
+          if (groupsJson?.groups?.length) {
+            setGroupId((prev) => prev || groupsJson.groups[0].id);
           }
         }
         if (entriesRes.ok) {
@@ -543,7 +543,7 @@ export default function UnavailabilityPage() {
                     checked={autoUpdateRsvps}
                     onChange={(e) => setAutoUpdateRsvps(e.target.checked)}
                   />
-                  <span>עדכן RSVP באירועים שאני משתתף בהם ל"איני מגיע"</span>
+                  <span>עדכן RSVP באירועים שאני משתתף בהם ל&quot;איני מגיע&quot;</span>
                 </label>
               </div>
 
