@@ -44,7 +44,12 @@ export async function POST(req: Request) {
         : [];
     if (Array.isArray(guestIds)) {
       invitedGuestIds = Array.from(
-        new Set(guestIds.filter((x: any): x is string => typeof x === 'string' && x && x !== hostId))
+        new Set(
+          guestIds.filter(
+            (raw: unknown): raw is string =>
+              typeof raw === 'string' && raw.length > 0 && raw !== hostId
+          )
+        )
       );
     }
   } catch (err) {
